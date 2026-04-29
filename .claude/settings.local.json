@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__claude_ai_Notion__notion-search",
+      "WebSearch",
+      "Bash(python -c \"import transformers, peft, trl, accelerate, bitsandbytes, datasets, pandas, openpyxl, streamlit; print\\('Semua library utama sudah terinstall'\\)\")",
+      "Bash(pip install:*)",
+      "Bash(python preprocessing/extract_data.py)",
+      "Bash(python preprocessing/build_dataset.py)",
+      "Bash(python -c ':*)",
+      "Bash(python:*)",
+      "Bash(ls \"D:/Project/Machine_Learning/Fine-Tune SLM for Medical Chatbot/\"*.py)",
+      "Bash(mkdir -p \"D:/Project/Machine_Learning/Fine-Tune SLM for Medical Chatbot/notebooks\")",
+      "Bash(mkdir -p \"D:/Project/Machine_Learning/Fine-Tune SLM for Medical Chatbot/models\")",
+      "Bash(.env/Scripts/python.exe -c \"import torch, transformers, datasets, peft, trl; print\\('torch:', torch.__version__\\); print\\('transformers:', transformers.__version__\\); print\\('datasets:', datasets.__version__\\); print\\('peft:', peft.__version__\\); print\\('trl:', trl.__version__\\); print\\('CUDA:', torch.cuda.is_available\\(\\), torch.cuda.get_device_name\\(0\\) if torch.cuda.is_available\\(\\) else 'N/A'\\)\")",
+      "Bash(.env/Scripts/python.exe Data/data.py)",
+      "Bash(echo \"Download PID: $!\")",
+      "Bash(.env/Scripts/python.exe preprocessing/build_dataset.py)",
+      "Bash(.env/Scripts/python.exe -c ' *)",
+      "Bash(.env/Scripts/python.exe test_taxonomy.py)",
+      "Bash(.env/Scripts/python.exe inspect_lainlain.py)",
+      "Bash(.env/Scripts/python.exe inspect_lainlain2.py)"
+    ]
+  }
+}
