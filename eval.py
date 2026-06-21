@@ -208,9 +208,14 @@ def load_model(args):
     else:
         import torch
         from transformers import AutoModelForCausalLM
-        tok = AutoTokenizer.from_pretrained(args.model)
+        # --adapter: base(--model) + LoRA via PEFT (tanpa unsloth). Tokenizer dari folder
+        # adapter (memuat chat_template hasil training) bila ada, agar template == training.
+        tok = AutoTokenizer.from_pretrained(args.adapter or args.model)
         model = AutoModelForCausalLM.from_pretrained(
             args.model, torch_dtype=torch.bfloat16, device_map="auto")
+        if args.adapter:
+            from peft import PeftModel
+            model = PeftModel.from_pretrained(model, args.adapter)
         model.eval()
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
@@ -237,7 +242,10 @@ def generate_all(kind, handle, tok, prompts, batch_size, max_new_tokens):
     dev = next(handle.parameters()).device
     for i in range(0, len(prompts), batch_size):
         batch = prompts[i:i + batch_size]
-        enc = tok(batch, return_tensors="pt", padding=True, truncation=True,
+        # text=batch (BUKAN posisi): bila tok adalah Processor multimodal, argumen
+        # posisi pertama = `images` -> teks akan salah-diproses sbg gambar (load_image
+        # gagal "Incorrect image source"). Keyword `text` aman utk tokenizer & processor.
+        enc = tok(text=batch, return_tensors="pt", padding=True, truncation=True,
                   max_length=2048).to(dev)
         with torch.no_grad():
             out = handle.generate(
@@ -446,6 +454,8 @@ def main():
     ap.add_argument("--max_new_tokens", type=int, default=256)
     ap.add_argument("--max_seq_length", type=int, default=1024)
     ap.add_argument("--loader", choices=["unsloth", "hf"], default="unsloth")
+    ap.add_argument("--adapter", default=None,
+                    help="path adapter LoRA (QLoRA): base(--model)+adapter via PEFT (loader hf)")
     ap.add_argument("--load_in_4bit", action="store_true",
                     help="eval pada bobot 4-bit (default 16-bit utk Bagian 3)")
     ap.add_argument("--gguf", default=None,
