@@ -9,11 +9,28 @@ Objektif TIDAK lagi perbandingan antar-model. Sekarang SATU model:
     train loss 3.25 -> 1.94 ; eval loss 2.74 -> 2.075 (best = step terakhir, turun monoton).
     Adapter di Drive: .../outputs/checkpoints/qwen35-0.8b-train/ (adapter_model.safetensors 25.6MB
     + checkpoint-5628/). Kurva loss: results/qwen35_0_8b_trainer_state.json.
+
+- SUDAH DIKERJAKAN (sesi 2026-06-21, semua sudah di-push ke github.com/AriesDjae/Fine-Tune-SLM):
+    [a] Repo dirapikan + .gitignore lengkap (venv/Data/processed/model weights di-exclude;
+        commit dataset 142MB yg belum ke-push dibatalkan via reset ke remote). Repo ~1.7MB.
+    [b] Ditarik dari Drive: notebook yg BENAR-BENAR dijalankan -> notebooks/03_finetune_qwen3-5_0.8B_RUN.ipynb
+        (output di-strip) + kurva loss -> results/qwen35_0_8b_trainer_state.json.
+    [c] Reframe penuh dokumen ke Pivot 5 (HANDOFF_PIVOT4 = sumber kebenaran, README, CLAUDE banner,
+        catatan, PROGRESS) + arsipkan notebook Gemma/Llama/Pivot-3 ke notebooks/notebook-lawas/.
+    [d] eval.py DISESUAIKAN utk Pivot 5 & SUDAH DIVALIDASI di test set nyata (2998/2998 -> open/id):
+        - loader FastVisionModel -> FastLanguageModel (0.8B = model TEKS; auto-load base+adapter).
+        - default: --test_file Data/processed_id/test.jsonl, --model_type qwen, --max_seq_length 1024.
+        - is_id() pakai source_lang; bucket_of() hormati type="open"; metrik fokus token-F1 + ROUGE-L.
+        -> JADI: TIDAK perlu lagi override --test_file (sudah default benar).
+
 - BELUM dijalankan (langkah berikutnya yg diminta dosen):
-    1) tarik adapter Drive -> outputs/ lokal, merge ke 16-bit.
-    2) eval.py baseline vs fine-tuned -> token-F1 + ROUGE-L, per-bahasa ID/EN
-       (WAJIB --test_file Data/processed_id/test.jsonl ; default-nya masih path lama).
-    3) export GGUF Q4_K_M -> benchmark_ondevice.py (RAM/latency/ukuran) utk kelayakan offline.
+    1) tarik adapter Drive (qwen35-0.8b-train/) -> outputs/ lokal (atau mount Drive di Colab).
+    2) eval.py baseline vs fine-tuned (butuh GPU/unsloth -> Colab/Kaggle/.venv-gpu):
+         python eval.py --model unsloth/Qwen3.5-0.8B        --label qwen08_baseline
+         python eval.py --model outputs/qwen35-0.8b-medical --label qwen08_finetuned   (boleh dir adapter)
+         python eval.py --summarize results        -> tabel token-F1/ROUGE-L + delta (bukti RQ1)
+    3) export GGUF Q4_K_M -> benchmark_ondevice.py (RAM/latency/ukuran) utk kelayakan offline (RQ2).
+    (opsional) siapkan sel eval di dalam notebook Colab spy tinggal mount Drive -> run.
 - Sumber kebenaran terkini: HANDOFF_PIVOT4.md (sudah di-update ke Pivot 5).
 Baris-baris DI BAWAH ini = catatan historis (Pivot 3/4) — konteks lama, jangan diikuti.
 ================================================================================

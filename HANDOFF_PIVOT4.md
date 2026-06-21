@@ -79,9 +79,13 @@ Alur notebook: `RUN_MODE="pilot"` → **GATE** (loss turun + ≥9/10 Indonesia +
   - train loss **3.25 → 1.94**; eval loss **2.74 → 2.075** (best = step terakhir 5628, turun monoton → belum overfitting).
   - Artefak di Drive: `MyDrive/Aries/Fine-Tune SLM for Medical Chatbot/outputs/checkpoints/qwen35-0.8b-train/`
     (`adapter_model.safetensors` 25,6MB + config + `checkpoint-5628/`). Kurva loss: `results/qwen35_0_8b_trainer_state.json`.
-- ⏭️ **NEXT (yang diminta dosen — BELUM dijalankan): eval baseline vs fine-tuned.**
+- ✅ **`eval.py` SUDAH DISESUAIKAN ke Pivot 5** (2026-06-21) & divalidasi di test set nyata (2998/2998 → open/id):
+  loader **FastLanguageModel** (0.8B teks, auto-load base+adapter); default `--test_file
+  Data/processed_id/test.jsonl`, `--model_type qwen`, `--max_seq_length 1024`; metrik **token-F1 + ROUGE-L**.
+- ⏭️ **NEXT (yang diminta dosen — BELUM dijalankan): eval baseline vs fine-tuned.** (butuh GPU/unsloth → Colab/Kaggle/`.venv-gpu`)
   1. Tarik adapter dari Drive ke `outputs/` lokal (atau mount Drive di Colab).
-  2. `eval.py`: **Qwen3.5-0.8B baseline** vs **fine-tuned** → token-F1 + ROUGE-L, per-bahasa ID/EN.
+  2. `python eval.py --model unsloth/Qwen3.5-0.8B --label qwen08_baseline` lalu
+     `--model outputs/qwen35-0.8b-medical --label qwen08_finetuned` (boleh dir adapter) → `--summarize results`.
   3. Export GGUF Q4_K_M → `benchmark_ondevice.py` (RAM/latency/ukuran) untuk kelayakan offline.
 
 > Jika kamu (Claude mana pun) hendak memberi instruksi yang bertentangan dengan tabel di Bagian 5,
