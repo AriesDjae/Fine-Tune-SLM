@@ -1,0 +1,178 @@
+{
+  "date": "2026-06-17T11:15:54",
+  "max_seq_length": 1024,
+  "align": true,
+  "pool_lines": 393734,
+  "pool_signature_matched": 35632,
+  "splits": {
+    "train": {
+      "n": 30004,
+      "OVER_STRIP_HIGH": {
+        "q": 4,
+        "a": 848,
+        "q_rate_pct": 0.013,
+        "a_rate_pct": 2.826,
+        "total_fields": 852
+      },
+      "OVER_STRIP_LOW": {
+        "q": 337,
+        "a": 1296,
+        "q_rate_pct": 1.123,
+        "a_rate_pct": 4.319,
+        "total_fields": 1633
+      },
+      "BARE_CITATION_TAIL": {
+        "q": 21,
+        "a": 843,
+        "q_rate_pct": 0.07,
+        "a_rate_pct": 2.81,
+        "total_fields": 864
+      },
+      "DR_NAME_LEAK": {
+        "q": 14,
+        "a": 443,
+        "q_rate_pct": 0.047,
+        "a_rate_pct": 1.476,
+        "total_fields": 457
+      },
+      "TRUNCATION": {
+        "q": 465,
+        "a": 735,
+        "q_rate_pct": 1.55,
+        "a_rate_pct": 2.45,
+        "total_fields": 1200
+      }
+    },
+    "val": {
+      "n": 2998,
+      "OVER_STRIP_HIGH": {
+        "q": 1,
+        "a": 82,
+        "q_rate_pct": 0.033,
+        "a_rate_pct": 2.735,
+        "total_fields": 83
+      },
+      "OVER_STRIP_LOW": {
+        "q": 22,
+        "a": 140,
+        "q_rate_pct": 0.734,
+        "a_rate_pct": 4.67,
+        "total_fields": 162
+      },
+      "BARE_CITATION_TAIL": {
+        "q": 0,
+        "a": 93,
+        "q_rate_pct": 0.0,
+        "a_rate_pct": 3.102,
+        "total_fields": 93
+      },
+      "DR_NAME_LEAK": {
+        "q": 3,
+        "a": 35,
+        "q_rate_pct": 0.1,
+        "a_rate_pct": 1.167,
+        "total_fields": 38
+      },
+      "TRUNCATION": {
+        "q": 62,
+        "a": 84,
+        "q_rate_pct": 2.068,
+        "a_rate_pct": 2.802,
+        "total_fields": 146
+      }
+    },
+    "test": {
+      "n": 2998,
+      "OVER_STRIP_HIGH": {
+        "q": 0,
+        "a": 86,
+        "q_rate_pct": 0.0,
+        "a_rate_pct": 2.869,
+        "total_fields": 86
+      },
+      "OVER_STRIP_LOW": {
+        "q": 39,
+        "a": 135,
+        "q_rate_pct": 1.301,
+        "a_rate_pct": 4.503,
+        "total_fields": 174
+      },
+      "BARE_CITATION_TAIL": {
+        "q": 0,
+        "a": 76,
+        "q_rate_pct": 0.0,
+        "a_rate_pct": 2.535,
+        "total_fields": 76
+      },
+      "DR_NAME_LEAK": {
+        "q": 1,
+        "a": 38,
+        "q_rate_pct": 0.033,
+        "a_rate_pct": 1.268,
+        "total_fields": 39
+      },
+      "TRUNCATION": {
+        "q": 47,
+        "a": 66,
+        "q_rate_pct": 1.568,
+        "a_rate_pct": 2.201,
+        "total_fields": 113
+      }
+    }
+  },
+  "delta_char": {
+    "n": 6,
+    "min": 16,
+    "median": 16,
+    "p95": 17,
+    "max": 18,
+    "mean": 16.7
+  },
+  "top_head_removed_content": {
+    "Kista": 5,
+    "Siti": 1
+  },
+  "align_attempt": 35554,
+  "align_hit_total": 444,
+  "align_head_types": {
+    "name": 412,
+    "content": 6,
+    "forum": 8,
+    "greeting": 18
+  },
+  "over_strip_content_confirmed": 6,
+  "over_strip_high_source_identical": 427,
+  "total": {
+    "n": 36000,
+    "OVER_STRIP_HIGH": {
+      "q": 5,
+      "a": 1016,
+      "a_rate_pct": 2.822,
+      "q_rate_pct": 0.014
+    },
+    "OVER_STRIP_LOW": {
+      "q": 398,
+      "a": 1571,
+      "a_rate_pct": 4.364,
+      "q_rate_pct": 1.106
+    },
+    "BARE_CITATION_TAIL": {
+      "q": 21,
+      "a": 1012,
+      "a_rate_pct": 2.811,
+      "q_rate_pct": 0.058
+    },
+    "DR_NAME_LEAK": {
+      "q": 18,
+      "a": 516,
+      "a_rate_pct": 1.433,
+      "q_rate_pct": 0.05
+    },
+    "TRUNCATION": {
+      "q": 574,
+      "a": 885,
+      "a_rate_pct": 2.458,
+      "q_rate_pct": 1.594
+    }
+  }
+}

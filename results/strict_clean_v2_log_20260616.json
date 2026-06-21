@@ -1,0 +1,53 @@
+{
+  "pipeline": "strict_clean_v2",
+  "date": "2026-06-16T21:06:08",
+  "seed": 42,
+  "basis": "review manual 30 sampel; reuse pool ber-skor (no re-embed)",
+  "rules": [
+    {
+      "rule": "load_pool",
+      "in": 21003,
+      "out": 21003,
+      "dropped": 0,
+      "dropped_pct": 0.0,
+      "note": "final 36K + borderline 20K (skor v1)"
+    },
+    {
+      "rule": "B1_B6_clean",
+      "in": 21003,
+      "out": 20945,
+      "dropped": 58,
+      "dropped_pct": 0.28,
+      "text_modified": 15189,
+      "glued_too_broken": 58
+    },
+    {
+      "rule": "B7_length_deflection",
+      "in": 20945,
+      "out": 20944,
+      "dropped": 1,
+      "dropped_pct": 0.0,
+      "reasons": {
+        "answer_short": 1
+      }
+    },
+    {
+      "rule": "B1_NER_person",
+      "in": 20944,
+      "out": 20356,
+      "dropped": 588,
+      "dropped_pct": 2.81,
+      "dropped_q": 426,
+      "dropped_a": 165
+    }
+  ],
+  "selection": {
+    "clean_pool": 20356,
+    "selected": 20356,
+    "composite_cut": 0.7058
+  },
+  "cross_split_dedup": {
+    "val_removed": 0,
+    "test_removed": 0
+  }
+}

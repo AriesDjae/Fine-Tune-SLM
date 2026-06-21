@@ -1,1 +1,82 @@
-*Data/
+# ===========================================================================
+# Fine-Tune SLM for Medical Chatbot — .gitignore
+# Git = dokumentasi (kode + catatan + hasil ringan).
+# Semua artefak BERAT (dataset, model, venv) tetap di Google Drive.
+# ===========================================================================
+
+# --- Virtual environments (5 GB+) ----------------------------------------
+.venv/
+.venv-gpu/
+venv/
+env/
+ENV/
+
+# --- Datasets (di Drive, jangan di-track) ---------------------------------
+Data/
+processed/
+processed_*/
+*.jsonl
+*.csv
+*.xlsx
+*.xls
+*.parquet
+*.arrow
+*.npz
+
+# --- Model / training artifacts -------------------------------------------
+outputs/
+checkpoints/
+merged/
+gguf/
+llama.cpp/
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.onnx
+adapter_model.*
+adapter_config.json
+tokenizer.model
+
+# --- Python caches --------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Secrets / credentials ------------------------------------------------
+.env
+.env.*
+*.pem
+*.key
+kaggle.json
+hf_token*
+*credentials*.json
+service_account*.json
+
+# --- Stray screenshots / scratch images (bukan figur skripsi) -------------
+/output.png
+/output_preview.png
+training/download*.png
+
+# --- OS / editor cruft ----------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+
+# ===========================================================================
+# WHITELIST: hasil ringan untuk skripsi tetap di-track walau pola di atas
+# meng-exclude (*.json aman; *.jsonl/*.csv di results/ di-include lagi).
+# ===========================================================================
+!results/
+!results/**
+# ...tapi dump record mentah (flagged jsonl) tetap di Drive, bukan git
+results/*.jsonl
+results/**/*.jsonl

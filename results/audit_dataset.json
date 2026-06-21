@@ -1,0 +1,789 @@
+{
+  "_mode": "full",
+  "processed/train": {
+    "label": "processed/train",
+    "exists": true,
+    "path": "D:\\Project\\Machine_Learning\\Fine-Tune SLM for Medical Chatbot\\Data\\processed\\train.jsonl",
+    "n": 103857,
+    "sources": {
+      "chatdoctor": 30721,
+      "indonesia_qna": 23837,
+      "icd11": 15959,
+      "medquad": 10842,
+      "wikidoc": 7222,
+      "hidr": 7186,
+      "bioasq": 4051,
+      "medmcqa": 3257,
+      "pubmedqa": 782
+    },
+    "lang_detect_n": 103857,
+    "user_lang": {
+      "en": 79426,
+      "id": 23785,
+      "it": 193,
+      "ca": 72,
+      "de": 63,
+      "da": 53,
+      "tl": 48,
+      "af": 43,
+      "fr": 39,
+      "ro": 34,
+      "es": 30,
+      "pt": 15,
+      "nl": 12,
+      "cy": 10,
+      "et": 10,
+      "sv": 7,
+      "lt": 4,
+      "no": 3,
+      "pl": 2,
+      "sw": 2,
+      "fi": 2,
+      "sq": 1,
+      "sl": 1,
+      "lv": 1,
+      "hr": 1
+    },
+    "assistant_lang": {
+      "en": 79963,
+      "id": 23834,
+      "ro": 16,
+      "it": 11,
+      "fr": 9,
+      "ca": 7,
+      "pt": 5,
+      "da": 3,
+      "nl": 3,
+      "es": 2,
+      "lt": 2,
+      "de": 1,
+      "cy": 1
+    },
+    "user_lang_pct": {
+      "en": 76.48,
+      "id": 22.9,
+      "it": 0.19,
+      "ca": 0.07,
+      "de": 0.06,
+      "da": 0.05,
+      "tl": 0.05,
+      "af": 0.04,
+      "fr": 0.04,
+      "ro": 0.03,
+      "es": 0.03,
+      "pt": 0.01,
+      "nl": 0.01,
+      "cy": 0.01,
+      "et": 0.01,
+      "sv": 0.01,
+      "lt": 0.0,
+      "no": 0.0,
+      "pl": 0.0,
+      "sw": 0.0,
+      "fi": 0.0,
+      "sq": 0.0,
+      "sl": 0.0,
+      "lv": 0.0,
+      "hr": 0.0
+    },
+    "assistant_lang_pct": {
+      "en": 76.99,
+      "id": 22.95,
+      "ro": 0.02,
+      "it": 0.01,
+      "fr": 0.01,
+      "ca": 0.01,
+      "pt": 0.0,
+      "da": 0.0,
+      "nl": 0.0,
+      "es": 0.0,
+      "lt": 0.0,
+      "de": 0.0,
+      "cy": 0.0
+    },
+    "assistant_id_pct_by_source": {
+      "icd11": 0.0,
+      "medquad": 0.0,
+      "chatdoctor": 0.0,
+      "pubmedqa": 0.0,
+      "indonesia_qna": 99.99,
+      "wikidoc": 0.0,
+      "hidr": 0.0,
+      "medmcqa": 0.0,
+      "bioasq": 0.0
+    },
+    "mixed_lang_user_vs_asst": 21,
+    "mixed_lang_pct": 0.02,
+    "artifacts": {
+      "icd_or_hidr_lookup": 23147,
+      "icd_or_hidr_lookup_pct": 22.29,
+      "greeting_with_name": 29065,
+      "greeting_leading": 35176,
+      "greeting_leading_pct": 33.87,
+      "empty_think_tags": 0,
+      "empty_answer": 0
+    },
+    "user_len_chars": {
+      "min": 13,
+      "median": 153,
+      "max": 5777
+    },
+    "assistant_len_chars": {
+      "min": 80,
+      "median": 553,
+      "max": 7727
+    }
+  },
+  "processed/val": {
+    "label": "processed/val",
+    "exists": true,
+    "path": "D:\\Project\\Machine_Learning\\Fine-Tune SLM for Medical Chatbot\\Data\\processed\\val.jsonl",
+    "n": 12982,
+    "sources": {
+      "chatdoctor": 3766,
+      "indonesia_qna": 2976,
+      "icd11": 2074,
+      "medquad": 1348,
+      "hidr": 917,
+      "wikidoc": 893,
+      "bioasq": 472,
+      "medmcqa": 430,
+      "pubmedqa": 106
+    },
+    "lang_detect_n": 12982,
+    "user_lang": {
+      "en": 9933,
+      "id": 2967,
+      "it": 16,
+      "ca": 14,
+      "de": 11,
+      "es": 8,
+      "tl": 7,
+      "da": 6,
+      "fr": 4,
+      "ro": 4,
+      "af": 3,
+      "pt": 2,
+      "cy": 2,
+      "lt": 2,
+      "nl": 1,
+      "et": 1,
+      "no": 1
+    },
+    "assistant_lang": {
+      "en": 9997,
+      "id": 2978,
+      "it": 3,
+      "ca": 2,
+      "pt": 1,
+      "ro": 1
+    },
+    "user_lang_pct": {
+      "en": 76.51,
+      "id": 22.85,
+      "it": 0.12,
+      "ca": 0.11,
+      "de": 0.08,
+      "es": 0.06,
+      "tl": 0.05,
+      "da": 0.05,
+      "fr": 0.03,
+      "ro": 0.03,
+      "af": 0.02,
+      "pt": 0.02,
+      "cy": 0.02,
+      "lt": 0.02,
+      "nl": 0.01,
+      "et": 0.01,
+      "no": 0.01
+    },
+    "assistant_lang_pct": {
+      "en": 77.01,
+      "id": 22.94,
+      "it": 0.02,
+      "ca": 0.02,
+      "pt": 0.01,
+      "ro": 0.01
+    },
+    "assistant_id_pct_by_source": {
+      "pubmedqa": 0.0,
+      "medquad": 0.0,
+      "chatdoctor": 0.0,
+      "indonesia_qna": 99.97,
+      "wikidoc": 0.11,
+      "hidr": 0.0,
+      "icd11": 0.0,
+      "bioasq": 0.42,
+      "medmcqa": 0.0
+    },
+    "mixed_lang_user_vs_asst": 5,
+    "mixed_lang_pct": 0.04,
+    "artifacts": {
+      "icd_or_hidr_lookup": 2991,
+      "icd_or_hidr_lookup_pct": 23.04,
+      "greeting_with_name": 3647,
+      "greeting_leading": 4384,
+      "greeting_leading_pct": 33.77,
+      "empty_think_tags": 0,
+      "empty_answer": 0
+    },
+    "user_len_chars": {
+      "min": 14,
+      "median": 148,
+      "max": 7341
+    },
+    "assistant_len_chars": {
+      "min": 80,
+      "median": 554,
+      "max": 7186
+    }
+  },
+  "processed/test": {
+    "label": "processed/test",
+    "exists": true,
+    "path": "D:\\Project\\Machine_Learning\\Fine-Tune SLM for Medical Chatbot\\Data\\processed\\test.jsonl",
+    "n": 12983,
+    "sources": {
+      "chatdoctor": 3811,
+      "indonesia_qna": 3047,
+      "icd11": 1965,
+      "medquad": 1325,
+      "wikidoc": 926,
+      "hidr": 907,
+      "bioasq": 497,
+      "medmcqa": 399,
+      "pubmedqa": 106
+    },
+    "lang_detect_n": 12983,
+    "user_lang": {
+      "en": 9876,
+      "id": 3045,
+      "it": 19,
+      "ca": 11,
+      "de": 6,
+      "da": 5,
+      "fr": 5,
+      "ro": 4,
+      "af": 3,
+      "tl": 2,
+      "et": 2,
+      "es": 1,
+      "no": 1,
+      "fi": 1,
+      "nl": 1,
+      "unknown": 1
+    },
+    "assistant_lang": {
+      "en": 9931,
+      "id": 3046,
+      "ro": 2,
+      "es": 1,
+      "it": 1,
+      "sw": 1,
+      "ca": 1
+    },
+    "user_lang_pct": {
+      "en": 76.07,
+      "id": 23.45,
+      "it": 0.15,
+      "ca": 0.08,
+      "de": 0.05,
+      "da": 0.04,
+      "fr": 0.04,
+      "ro": 0.03,
+      "af": 0.02,
+      "tl": 0.02,
+      "et": 0.02,
+      "es": 0.01,
+      "no": 0.01,
+      "fi": 0.01,
+      "nl": 0.01,
+      "unknown": 0.01
+    },
+    "assistant_lang_pct": {
+      "en": 76.49,
+      "id": 23.46,
+      "ro": 0.02,
+      "es": 0.01,
+      "it": 0.01,
+      "sw": 0.01,
+      "ca": 0.01
+    },
+    "assistant_id_pct_by_source": {
+      "medmcqa": 0.0,
+      "indonesia_qna": 99.97,
+      "chatdoctor": 0.0,
+      "icd11": 0.0,
+      "wikidoc": 0.0,
+      "medquad": 0.0,
+      "hidr": 0.0,
+      "bioasq": 0.0,
+      "pubmedqa": 0.0
+    },
+    "mixed_lang_user_vs_asst": 1,
+    "mixed_lang_pct": 0.01,
+    "artifacts": {
+      "icd_or_hidr_lookup": 2872,
+      "icd_or_hidr_lookup_pct": 22.12,
+      "greeting_with_name": 3624,
+      "greeting_leading": 4366,
+      "greeting_leading_pct": 33.63,
+      "empty_think_tags": 0,
+      "empty_answer": 0
+    },
+    "user_len_chars": {
+      "min": 14,
+      "median": 154,
+      "max": 5509
+    },
+    "assistant_len_chars": {
+      "min": 80,
+      "median": 561,
+      "max": 3362
+    }
+  },
+  "processed_final/train_final": {
+    "label": "processed_final/train_final",
+    "exists": true,
+    "path": "D:\\Project\\Machine_Learning\\Fine-Tune SLM for Medical Chatbot\\Data\\processed_final\\train_final.jsonl",
+    "n": 20000,
+    "sources": {
+      "chatdoctor": 7623,
+      "indonesia_qna": 5918,
+      "medquad": 2669,
+      "wikidoc": 1791,
+      "bioasq": 1006,
+      "medmcqa": 799,
+      "pubmedqa": 194
+    },
+    "lang_detect_n": 20000,
+    "user_lang": {
+      "en": 13948,
+      "id": 5902,
+      "it": 41,
+      "ca": 15,
+      "de": 13,
+      "da": 12,
+      "es": 12,
+      "tl": 12,
+      "ro": 12,
+      "fr": 11,
+      "af": 8,
+      "pt": 3,
+      "cy": 3,
+      "et": 3,
+      "sv": 2,
+      "lt": 1,
+      "lv": 1,
+      "fi": 1
+    },
+    "assistant_lang": {
+      "en": 14064,
+      "id": 5917,
+      "ro": 7,
+      "fr": 3,
+      "ca": 3,
+      "it": 2,
+      "pt": 1,
+      "es": 1,
+      "nl": 1,
+      "da": 1
+    },
+    "user_lang_pct": {
+      "en": 69.74,
+      "id": 29.51,
+      "it": 0.2,
+      "ca": 0.07,
+      "de": 0.07,
+      "da": 0.06,
+      "es": 0.06,
+      "tl": 0.06,
+      "ro": 0.06,
+      "fr": 0.06,
+      "af": 0.04,
+      "pt": 0.01,
+      "cy": 0.01,
+      "et": 0.01,
+      "sv": 0.01,
+      "lt": 0.01,
+      "lv": 0.01,
+      "fi": 0.01
+    },
+    "assistant_lang_pct": {
+      "en": 70.32,
+      "id": 29.59,
+      "ro": 0.04,
+      "fr": 0.01,
+      "ca": 0.01,
+      "it": 0.01,
+      "pt": 0.01,
+      "es": 0.01,
+      "nl": 0.01,
+      "da": 0.01
+    },
+    "assistant_id_pct_by_source": {
+      "chatdoctor": 0.0,
+      "medquad": 0.0,
+      "indonesia_qna": 99.98,
+      "bioasq": 0.0,
+      "medmcqa": 0.0,
+      "wikidoc": 0.0,
+      "pubmedqa": 0.0
+    },
+    "mixed_lang_user_vs_asst": 10,
+    "mixed_lang_pct": 0.05,
+    "artifacts": {
+      "icd_or_hidr_lookup": 1,
+      "icd_or_hidr_lookup_pct": 0.01,
+      "greeting_with_name": 0,
+      "greeting_leading": 0,
+      "greeting_leading_pct": 0.0,
+      "empty_think_tags": 0,
+      "empty_answer": 0
+    },
+    "user_len_chars": {
+      "min": 13,
+      "median": 261,
+      "max": 4949
+    },
+    "assistant_len_chars": {
+      "min": 21,
+      "median": 696,
+      "max": 2973
+    }
+  },
+  "processed_final/val_final": {
+    "label": "processed_final/val_final",
+    "exists": true,
+    "path": "D:\\Project\\Machine_Learning\\Fine-Tune SLM for Medical Chatbot\\Data\\processed_final\\val_final.jsonl",
+    "n": 1500,
+    "sources": {
+      "chatdoctor": 566,
+      "indonesia_qna": 447,
+      "medquad": 202,
+      "wikidoc": 134,
+      "bioasq": 71,
+      "medmcqa": 64,
+      "pubmedqa": 16
+    },
+    "lang_detect_n": 1500,
+    "user_lang": {
+      "en": 1040,
+      "id": 447,
+      "ca": 3,
+      "it": 3,
+      "da": 2,
+      "lt": 1,
+      "ro": 1,
+      "af": 1,
+      "de": 1,
+      "es": 1
+    },
+    "assistant_lang": {
+      "en": 1051,
+      "id": 448,
+      "it": 1
+    },
+    "user_lang_pct": {
+      "en": 69.33,
+      "id": 29.8,
+      "ca": 0.2,
+      "it": 0.2,
+      "da": 0.13,
+      "lt": 0.07,
+      "ro": 0.07,
+      "af": 0.07,
+      "de": 0.07,
+      "es": 0.07
+    },
+    "assistant_lang_pct": {
+      "en": 70.07,
+      "id": 29.87,
+      "it": 0.07
+    },
+    "assistant_id_pct_by_source": {
+      "indonesia_qna": 100.0,
+      "chatdoctor": 0.0,
+      "wikidoc": 0.0,
+      "medquad": 0.0,
+      "medmcqa": 0.0,
+      "bioasq": 1.41,
+      "pubmedqa": 0.0
+    },
+    "mixed_lang_user_vs_asst": 1,
+    "mixed_lang_pct": 0.07,
+    "artifacts": {
+      "icd_or_hidr_lookup": 0,
+      "icd_or_hidr_lookup_pct": 0.0,
+      "greeting_with_name": 0,
+      "greeting_leading": 0,
+      "greeting_leading_pct": 0.0,
+      "empty_think_tags": 0,
+      "empty_answer": 0
+    },
+    "user_len_chars": {
+      "min": 14,
+      "median": 263,
+      "max": 2274
+    },
+    "assistant_len_chars": {
+      "min": 63,
+      "median": 700,
+      "max": 2239
+    }
+  },
+  "processed_final/test_final": {
+    "label": "processed_final/test_final",
+    "exists": true,
+    "path": "D:\\Project\\Machine_Learning\\Fine-Tune SLM for Medical Chatbot\\Data\\processed_final\\test_final.jsonl",
+    "n": 10108,
+    "sources": {
+      "chatdoctor": 3811,
+      "indonesia_qna": 3047,
+      "medquad": 1324,
+      "wikidoc": 926,
+      "bioasq": 497,
+      "medmcqa": 397,
+      "pubmedqa": 106
+    },
+    "lang_detect_n": 10108,
+    "user_lang": {
+      "en": 7007,
+      "id": 3045,
+      "it": 13,
+      "ca": 11,
+      "de": 6,
+      "da": 5,
+      "fr": 5,
+      "ro": 4,
+      "af": 3,
+      "tl": 2,
+      "et": 2,
+      "es": 1,
+      "no": 1,
+      "fi": 1,
+      "nl": 1,
+      "unknown": 1
+    },
+    "assistant_lang": {
+      "en": 7054,
+      "id": 3047,
+      "ro": 2,
+      "tl": 1,
+      "es": 1,
+      "it": 1,
+      "sw": 1,
+      "ca": 1
+    },
+    "user_lang_pct": {
+      "en": 69.32,
+      "id": 30.12,
+      "it": 0.13,
+      "ca": 0.11,
+      "de": 0.06,
+      "da": 0.05,
+      "fr": 0.05,
+      "ro": 0.04,
+      "af": 0.03,
+      "tl": 0.02,
+      "et": 0.02,
+      "es": 0.01,
+      "no": 0.01,
+      "fi": 0.01,
+      "nl": 0.01,
+      "unknown": 0.01
+    },
+    "assistant_lang_pct": {
+      "en": 69.79,
+      "id": 30.14,
+      "ro": 0.02,
+      "tl": 0.01,
+      "es": 0.01,
+      "it": 0.01,
+      "sw": 0.01,
+      "ca": 0.01
+    },
+    "assistant_id_pct_by_source": {
+      "medmcqa": 0.0,
+      "indonesia_qna": 100.0,
+      "chatdoctor": 0.0,
+      "wikidoc": 0.0,
+      "medquad": 0.0,
+      "bioasq": 0.0,
+      "pubmedqa": 0.0
+    },
+    "mixed_lang_user_vs_asst": 0,
+    "mixed_lang_pct": 0.0,
+    "artifacts": {
+      "icd_or_hidr_lookup": 0,
+      "icd_or_hidr_lookup_pct": 0.0,
+      "greeting_with_name": 1,
+      "greeting_leading": 1,
+      "greeting_leading_pct": 0.01,
+      "empty_think_tags": 0,
+      "empty_answer": 0
+    },
+    "user_len_chars": {
+      "min": 14,
+      "median": 261,
+      "max": 5509
+    },
+    "assistant_len_chars": {
+      "min": 32,
+      "median": 703,
+      "max": 2973
+    }
+  },
+  "processed_shared/train_reduced": {
+    "label": "processed_shared/train_reduced",
+    "exists": true,
+    "path": "D:\\Project\\Machine_Learning\\Fine-Tune SLM for Medical Chatbot\\Data\\processed_shared\\train_reduced.jsonl",
+    "n": 20000,
+    "sources": {
+      "<none>": 20000
+    },
+    "lang_detect_n": 20000,
+    "user_lang": {
+      "en": 15303,
+      "id": 4579,
+      "it": 27,
+      "ca": 16,
+      "da": 15,
+      "de": 12,
+      "af": 10,
+      "tl": 8,
+      "ro": 6,
+      "fr": 6,
+      "es": 5,
+      "pt": 4,
+      "lt": 3,
+      "et": 2,
+      "sw": 1,
+      "nl": 1,
+      "hr": 1,
+      "cy": 1
+    },
+    "assistant_lang": {
+      "en": 15401,
+      "id": 4590,
+      "nl": 2,
+      "it": 2,
+      "fr": 2,
+      "ro": 2,
+      "da": 1
+    },
+    "user_lang_pct": {
+      "en": 76.52,
+      "id": 22.89,
+      "it": 0.14,
+      "ca": 0.08,
+      "da": 0.07,
+      "de": 0.06,
+      "af": 0.05,
+      "tl": 0.04,
+      "ro": 0.03,
+      "fr": 0.03,
+      "es": 0.03,
+      "pt": 0.02,
+      "lt": 0.01,
+      "et": 0.01,
+      "sw": 0.01,
+      "nl": 0.01,
+      "hr": 0.01,
+      "cy": 0.01
+    },
+    "assistant_lang_pct": {
+      "en": 77.0,
+      "id": 22.95,
+      "nl": 0.01,
+      "it": 0.01,
+      "fr": 0.01,
+      "ro": 0.01,
+      "da": 0.01
+    },
+    "assistant_id_pct_by_source": {
+      "<none>": 22.95
+    },
+    "mixed_lang_user_vs_asst": 3,
+    "mixed_lang_pct": 0.01,
+    "artifacts": {
+      "icd_or_hidr_lookup": 3073,
+      "icd_or_hidr_lookup_pct": 15.37,
+      "greeting_with_name": 5595,
+      "greeting_leading": 6777,
+      "greeting_leading_pct": 33.88,
+      "empty_think_tags": 0,
+      "empty_answer": 0
+    },
+    "user_len_chars": {
+      "min": 14,
+      "median": 155,
+      "max": 5777
+    },
+    "assistant_len_chars": {
+      "min": 80,
+      "median": 550,
+      "max": 3927
+    }
+  },
+  "processed_shared/val_reduced": {
+    "label": "processed_shared/val_reduced",
+    "exists": true,
+    "path": "D:\\Project\\Machine_Learning\\Fine-Tune SLM for Medical Chatbot\\Data\\processed_shared\\val_reduced.jsonl",
+    "n": 1500,
+    "sources": {
+      "<none>": 1500
+    },
+    "lang_detect_n": 1500,
+    "user_lang": {
+      "en": 1147,
+      "id": 344,
+      "it": 3,
+      "de": 2,
+      "es": 2,
+      "pt": 1,
+      "ca": 1
+    },
+    "assistant_lang": {
+      "en": 1156,
+      "id": 344
+    },
+    "user_lang_pct": {
+      "en": 76.47,
+      "id": 22.93,
+      "it": 0.2,
+      "de": 0.13,
+      "es": 0.13,
+      "pt": 0.07,
+      "ca": 0.07
+    },
+    "assistant_lang_pct": {
+      "en": 77.07,
+      "id": 22.93
+    },
+    "assistant_id_pct_by_source": {
+      "<none>": 22.93
+    },
+    "mixed_lang_user_vs_asst": 0,
+    "mixed_lang_pct": 0.0,
+    "artifacts": {
+      "icd_or_hidr_lookup": 240,
+      "icd_or_hidr_lookup_pct": 16.0,
+      "greeting_with_name": 425,
+      "greeting_leading": 509,
+      "greeting_leading_pct": 33.93,
+      "empty_think_tags": 0,
+      "empty_answer": 0
+    },
+    "user_len_chars": {
+      "min": 17,
+      "median": 144,
+      "max": 3451
+    },
+    "assistant_len_chars": {
+      "min": 81,
+      "median": 556,
+      "max": 2239
+    }
+  }
+}

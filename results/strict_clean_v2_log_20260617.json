@@ -1,0 +1,83 @@
+{
+  "pipeline": "strict_clean_v2",
+  "date": "2026-06-17T08:01:53",
+  "seed": 42,
+  "basis": "review manual 30 sampel; reuse pool ber-skor (no re-embed)",
+  "rules": [
+    {
+      "rule": "load_pool",
+      "in": 393734,
+      "out": 393734,
+      "dropped": 0,
+      "dropped_pct": 0.0,
+      "source": "06_scored(393K full pool, no re-embed)"
+    },
+    {
+      "rule": "B1_B6_clean",
+      "in": 393734,
+      "out": 392166,
+      "dropped": 1568,
+      "dropped_pct": 0.4,
+      "text_modified": 347259,
+      "glued_too_broken": 1568
+    },
+    {
+      "rule": "B7_length_deflection",
+      "in": 392166,
+      "out": 391048,
+      "dropped": 1118,
+      "dropped_pct": 0.29,
+      "reasons": {
+        "answer_short": 1052,
+        "question_short": 13,
+        "deflection_only": 41,
+        "answer_long": 12
+      }
+    },
+    {
+      "rule": "echo_qa_dup",
+      "in": 391048,
+      "out": 390447,
+      "dropped": 601,
+      "dropped_pct": 0.15,
+      "echo": 581,
+      "patient_utterance": 20,
+      "note": "answer = ulangan/utterance pasien (bukan jawaban dokter)"
+    },
+    {
+      "rule": "precap_for_NER",
+      "in": 390447,
+      "out": 44000,
+      "dropped": 346447,
+      "dropped_pct": 88.73,
+      "note": "top-44000 komposit sebelum NER (efisiensi CPU)"
+    },
+    {
+      "rule": "B1_NER_person",
+      "in": 44000,
+      "out": 42854,
+      "dropped": 1146,
+      "dropped_pct": 2.6,
+      "nameset": 672,
+      "strip_lead_a": 430,
+      "strip_lead_q": 32,
+      "dropped_a": 279,
+      "dropped_q": 795,
+      "dropped_drmid": 6,
+      "dropped_leak": 1,
+      "dropped_utter": 17,
+      "dropped_resid": 48,
+      "note": "leading-name strip + gerbang akhir (PER>=0.90 + drName + leaked + echo/utterance + fragmen)"
+    }
+  ],
+  "pool_source": "06_scored(393K full pool, no re-embed)",
+  "selection": {
+    "clean_pool": 42854,
+    "selected": 36000,
+    "composite_cut": 0.7445
+  },
+  "cross_split_dedup": {
+    "val_removed": 0,
+    "test_removed": 0
+  }
+}

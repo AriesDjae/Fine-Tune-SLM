@@ -1,0 +1,165 @@
+{
+  "pipeline": "build_id_dataset (12-gate strict QC)",
+  "date": "2026-06-16T18:17:08",
+  "seed": 42,
+  "strategy": "Option A native-only (indonesia_qna); no translation; EM dropped (F1+ROUGE-L)",
+  "params": {
+    "LID_ANSWER_TH": 0.65,
+    "LID_QUESTION_TH": 0.3,
+    "MIN_ANSWER_WORDS": 20,
+    "MAX_ANSWER_WORDS": 400,
+    "MIN_QUESTION_CHARS": 20,
+    "NEAR_DUP_TH": 0.8,
+    "EMB_MODEL": "intfloat/multilingual-e5-small",
+    "EMB_PRECAP": 100000,
+    "REL_MIN": 0.84
+  },
+  "funnel": [
+    {
+      "gate": "G0_load",
+      "in": 681203,
+      "out": 681203,
+      "dropped": 0
+    },
+    {
+      "gate": "G1_format",
+      "in": 681203,
+      "out": 681092,
+      "dropped": 111,
+      "reasons": {
+        "non_string_or_null": 111
+      }
+    },
+    {
+      "gate": "G2_encoding",
+      "in": 681092,
+      "out": 681091,
+      "dropped": 1,
+      "mojibake_dropped": 1
+    },
+    {
+      "gate": "G5_artifacts",
+      "in": 681091,
+      "out": 679572,
+      "dropped": 1519,
+      "stripped": 675055,
+      "reasons": {
+        "patient_followup_as_answer": 1439,
+        "named_greeting": 80
+      }
+    },
+    {
+      "gate": "G4_length",
+      "in": 679572,
+      "out": 652640,
+      "dropped": 26932,
+      "reasons": {
+        "answer_too_short": 12954,
+        "q_equals_a": 95,
+        "question_too_short": 205,
+        "answer_too_long": 13027,
+        "question_too_long": 651
+      }
+    },
+    {
+      "gate": "G6_invisible_ref",
+      "in": 652640,
+      "out": 650117,
+      "dropped": 2523
+    },
+    {
+      "gate": "G9_deflection",
+      "in": 650117,
+      "out": 650025,
+      "dropped": 92,
+      "deflection_only_dropped": 92
+    },
+    {
+      "gate": "G10_toxic_spam",
+      "in": 650025,
+      "out": 645853,
+      "dropped": 4172,
+      "reasons": {
+        "spam": 3019,
+        "profanity": 1153
+      }
+    },
+    {
+      "gate": "G7_pii",
+      "in": 645853,
+      "out": 645853,
+      "dropped": 0,
+      "redactions": 11261
+    },
+    {
+      "gate": "G3_language_fasttext",
+      "in": 645853,
+      "out": 639016,
+      "dropped": 6837,
+      "dropped_reasons": {
+        "answer_id": 2600,
+        "question_id": 1814,
+        "question_ms": 1129,
+        "question_en": 693,
+        "answer_ms": 205,
+        "answer_en": 69,
+        "question_jv": 63,
+        "question_it": 37
+      }
+    },
+    {
+      "gate": "G11_dedup",
+      "in": 639016,
+      "out": 384750,
+      "dropped": 254266,
+      "exact_removed": 251262,
+      "near_removed": 3004,
+      "note": "cap 1 per near-cluster"
+    },
+    {
+      "gate": "precap_cheap_score",
+      "in": 384750,
+      "out": 108000,
+      "dropped": 276750,
+      "note": "top-108000 cheap-score sebelum embedding (efisiensi CPU)"
+    },
+    {
+      "gate": "G8_relevance_e5",
+      "in": 108000,
+      "out": 102868,
+      "dropped": 5132,
+      "rel_threshold": 0.84,
+      "rel_percentiles": {
+        "5": 0.841,
+        "25": 0.868,
+        "50": 0.882,
+        "75": 0.895,
+        "95": 0.912
+      }
+    },
+    {
+      "gate": "G12_score_select",
+      "in": 102868,
+      "out": 36000,
+      "dropped": 66868,
+      "composite_cut": 0.7258,
+      "borderline": 20483
+    }
+  ],
+  "mode": "full",
+  "targets": {
+    "train": 30000,
+    "val": 3000,
+    "test": 3000
+  },
+  "selection": {
+    "scored_pool": 102868,
+    "passed": 36000,
+    "composite_cut": 0.7258,
+    "borderline_for_review": 20483
+  },
+  "cross_split_dedup": {
+    "val_removed": 0,
+    "test_removed": 0
+  }
+}

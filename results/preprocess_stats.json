@@ -1,0 +1,50 @@
+[
+  {
+    "step": "00 load",
+    "train": 103857,
+    "val": 12982,
+    "test": 12983
+  },
+  {
+    "step": "01 dedup+leak",
+    "train": 103857,
+    "val": 12982,
+    "test": 12983
+  },
+  {
+    "step": "01b near-dup",
+    "train": 103746,
+    "val": 12976,
+    "test": 12982
+  },
+  {
+    "step": "02 greeting",
+    "train": 103746,
+    "val": 12976,
+    "test": 12982
+  },
+  {
+    "step": "03 quality",
+    "train": 103693,
+    "val": 12972,
+    "test": 12980
+  },
+  {
+    "step": "04 icd/hidr noise",
+    "train": 80555,
+    "val": 9981,
+    "test": 10108
+  },
+  {
+    "step": "05 balance",
+    "train": 80555,
+    "val": 9981,
+    "test": 10108
+  },
+  {
+    "step": "06 reduce",
+    "train": 20000,
+    "val": 1500,
+    "test": 10108
+  }
+]

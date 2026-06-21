@@ -1,0 +1,92 @@
+{
+  "date": "2026-06-17T12:00:52",
+  "model_id": "unsloth/Qwen3.5-0.8B",
+  "max_seq_length": 1024,
+  "counts": {
+    "train": {
+      "n": 30003,
+      "expected": 30003,
+      "ok": true
+    },
+    "val": {
+      "n": 2997,
+      "expected": 2997,
+      "ok": true
+    },
+    "test": {
+      "n": 2998,
+      "expected": 2998,
+      "ok": true
+    }
+  },
+  "fields": {},
+  "cross_split_dedup": {
+    "trainxval": 0,
+    "trainxtest": 0,
+    "valxtest": 0
+  },
+  "decode_check": {
+    "tokenizer": "unsloth/Qwen3.5-0.8B",
+    "status": "PASS",
+    "vocab_size": 248077,
+    "scaffold_think_inserted": true,
+    "response_marker_bare_pos": 102,
+    "response_marker_full_pos": 102,
+    "first_active_index": 109,
+    "first_active_tokens": [
+      "Tim",
+      "bul",
+      "nya",
+      " pemb",
+      "engk",
+      "akan",
+      " pada",
+      " kel",
+      "opak",
+      " mata"
+    ],
+    "answer_first_word": "Timbulnya",
+    "reconstructed_start": "Timbulnya pembengkakan pada kelopak mata anak merupakan",
+    "first_content_token_learned": true,
+    "infer_prompt_ends_think": true,
+    "recommended_response_part": "<|im_start|>assistant\n<think>\n\n</think>\n\n",
+    "note": "Template menyisipkan <think></think> kosong; gunakan RESPONSE_PART='<|im_start|>assistant\\n<think>\\n\\n</think>\\n\\n' agar train==infer (loss hanya pada jawaban medis).",
+    "example_text": "<|im_start|>system\nAnda adalah asisten informasi kesehatan berbahasa Indonesia. Berikan penjelasan yang jelas, akurat, dan hati-hati berdasarkan pengetahuan klinis yang mapan. Selalu ingatkan bahwa informasi ini bukan pengganti konsultasi langsung dengan dokter.<|im_end|>\n<|im_start|>user\nSudah 2 hri mata anak saya bengkak dok,tpi bengkaknya berpindah2, kadang d bwah mata kadang d kelopak mata, kira2 penyebabnya apa ya dok truz cara mengatasinya bagaimana?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nTimbulnya pembengkakan pada kelopak mata anak merupakan kondisi yang harus diwaspadai karena dapat disebabkan oleh kondisi yang ringan sampai dengan serius. Berikut beberapa hal yang dapat menimbulkan keluhan tersebut: Bintitan (hordeolum) Kalazion Peradangan pada kelenjar air mata Peradangan pada kelopak mata (blefaritis) Akibat kondisi medis lainya, contohnya sindrom nefrotik Kondisi"
+  },
+  "token_lengths": {
+    "train": {
+      "p50": 376,
+      "p95": 533,
+      "p99": 634,
+      "max": 1344,
+      "truncated_gt_1024": 7,
+      "truncated_pct": 0.023
+    },
+    "val": {
+      "p50": 376,
+      "p95": 536,
+      "p99": 634,
+      "max": 864,
+      "truncated_gt_1024": 0,
+      "truncated_pct": 0.0
+    },
+    "test": {
+      "p50": 372,
+      "p95": 537,
+      "p99": 630,
+      "max": 864,
+      "truncated_gt_1024": 0,
+      "truncated_pct": 0.0
+    }
+  },
+  "language": {
+    "status": "SKIPPED"
+  },
+  "verdict": "PASS",
+  "gates": {
+    "counts": true,
+    "fields": true,
+    "dedup": true,
+    "decode_check": true
+  }
+}

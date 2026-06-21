@@ -1,0 +1,45 @@
+{
+  "date": "2026-06-17T11:35:23",
+  "note": "independent recall+coverage verifier; precision-only B1-B6 ada di verify_v2_<date>.json",
+  "splits": {
+    "train": {
+      "n": 30003,
+      "OVER_STRIP_HIGH": 844,
+      "OVER_STRIP_HIGH_pct": 2.813,
+      "OVER_STRIP_LOW": 1296,
+      "OVER_STRIP_LOW_pct": 4.32,
+      "BARE_CITATION_TAIL": 24,
+      "BARE_CITATION_TAIL_pct": 0.08,
+      "DR_NAME_LEAK": 0,
+      "DR_NAME_LEAK_pct": 0.0,
+      "TRUNCATION": 465,
+      "TRUNCATION_pct": 1.55
+    },
+    "val": {
+      "n": 2997,
+      "OVER_STRIP_HIGH": 81,
+      "OVER_STRIP_HIGH_pct": 2.703,
+      "OVER_STRIP_LOW": 140,
+      "OVER_STRIP_LOW_pct": 4.671,
+      "BARE_CITATION_TAIL": 0,
+      "BARE_CITATION_TAIL_pct": 0.0,
+      "DR_NAME_LEAK": 0,
+      "DR_NAME_LEAK_pct": 0.0,
+      "TRUNCATION": 62,
+      "TRUNCATION_pct": 2.069
+    },
+    "test": {
+      "n": 2998,
+      "OVER_STRIP_HIGH": 86,
+      "OVER_STRIP_HIGH_pct": 2.869,
+      "OVER_STRIP_LOW": 135,
+      "OVER_STRIP_LOW_pct": 4.503,
+      "BARE_CITATION_TAIL": 1,
+      "BARE_CITATION_TAIL_pct": 0.033,
+      "DR_NAME_LEAK": 0,
+      "DR_NAME_LEAK_pct": 0.0,
+      "TRUNCATION": 47,
+      "TRUNCATION_pct": 1.568
+    }
+  }
+}
