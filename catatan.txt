@@ -1,0 +1,208 @@
+================================================================================
+CATATAN UNTUK BESOK  —  dibuat 2026-06-14
+Project: Fine-Tune SLM Medical Chatbot (Skripsi UII — chatbot medis offline Puskesmas)
+================================================================================
+
+Halo Aries. Kemarin pipeline-nya di-PIVOT (ke-3 kalinya) dari 3 model kecil
+menjadi 2 model ~2B untuk dibandingkan. SEMUA script & notebook sudah dibuat
+dan diuji (yang bisa diuji tanpa GPU). Tinggal kamu jalankan training di Colab.
+
+>>> UPDATE (2026-06-14, sore) — GANTI GEMMA 3n -> GEMMA 4 E2B <<<
+  Setelah verifikasi ke notebook/doc RESMI Unsloth:
+  - Model 2 sekarang = GEMMA 4 E2B (unsloth/gemma-4-E2B-it), BUKAN Gemma 3n lagi.
+    Gemma 4 E2B = DENSE + Per-Layer Embeddings (PLE), ~2.3B aktif / 5.1B total.
+    (BUKAN "elastic/MatFormer" — itu sifat Gemma 3n yang lama.)
+  - RQ2 jadi: "standard dense (Qwen) vs PLE effective-param dense (Gemma 4)".
+    Hipotesis RAM tetap: apakah memuat 5.1B embedding bikin berat, atau caching PLE meredam.
+  - KEDUA model ternyata MULTIMODAL -> di-load via FastVisionModel (vision OFF),
+    dilatih TEXT-ONLY. Qwen pakai unsloth/Qwen3.5-2B (bukan -unsloth-bnb-4bit).
+  - Gemma 4 SUDAH punya role 'system' native -> tak ada lagi gabung system->user.
+  - Turn-token: Qwen ChatML <|im_start|>, Gemma 4 <|turn>...<turn|> (get_chat_template "gemma-4").
+  - DITAMBAH: train_on_responses_only (loss hanya di jawaban) -> WAJIB packing=False.
+    Grafik B.2 jadi berbasis JUMLAH SAMPEL (bukan token, karena packing OFF).
+  - Notebook ke-2 namanya sekarang: notebooks/finetune_gemma4_e2b.ipynb
+    (file lama finetune_gemma3n_e2b.ipynb sudah dihapus).
+  - Sel install diganti ke versi PINNED resmi (transformers==4.56.2, trl==0.22.2, dll)
+    + ada TEST-FIRST & SMOKE_TEST. RESTART session setelah sel install.
+  Baris-baris di bawah yang masih menyebut "gemma3n"/"elastic" = konteks lama; perintah
+  yang benar pakai gemma-4-E2B-it & gemma4-e2b-medical (sudah dikoreksi di blok perintah).
+
+--------------------------------------------------------------------------------
+A. APA YANG BERUBAH KEMARIN (ringkas)
+--------------------------------------------------------------------------------
+1. MODEL: dari (Qwen3.5-0.8B / Llama-3.2-1B / Gemma3-1B)  ->  jadi 2 model
+   (lihat UPDATE 2026-06-14 di atas — Gemma 3n SUDAH diganti Gemma 4):
+     - Qwen3.5-2B        (STANDARD DENSE, ~2B)              -> unsloth/Qwen3.5-2B
+     - Gemma 4 E2B       (DENSE+PLE, ~2.3B aktif/5.1B total) -> unsloth/gemma-4-E2B-it
+   Fokus skripsi = TRADE-OFF akurasi vs efisiensi deployment (standard dense vs PLE
+   effective-param dense), bukan sekadar "siapa lebih akurat". RQ1 (peningkatan vs
+   baseline), RQ2 (trade-off RAM/kecepatan/ukuran), RQ3 (mana lebih layak di HP RAM 8GB).
+
+2. DATA BARU: dibuat folder Data/processed_final/ (INI yang dipakai training):
+     - train_final.jsonl  = 20,000  (bahasa Indonesia 29.6%)
+     - val_final.jsonl    = 1,500
+     - test_final.jsonl   = 10,109  (untuk evaluasi)
+   Dibersihkan dari: sapaan/basa-basi ("Hai Sofy", "Thank you for asking on Chat Doctor"),
+   data noise ICD-11 & indikator WHO (icd11/hidr), duplikat & kebocoran train-test.
+   (Sisa sapaan tinggal ~0.07% setelah upgrade cleaning — lihat bagian A2.)
+
+3. FILE BARU yang sudah dibuat untukmu:
+     - preprocessing/preprocess_dataset.py     (pembersih data — SUDAH dijalankan)
+     - chat_format.py                          (format prompt tunggal: train=eval=deploy)
+     - notebooks/finetune_qwen35_2b.ipynb      (training model 1)
+     - notebooks/finetune_gemma4_e2b.ipynb     (training model 2)
+     - notebooks/build_finetune_notebooks.py   (generator 2 notebook di atas)
+     - eval.py                                 (evaluasi multi-metrik + baseline + GGUF)
+     - export_gguf.py                          (konversi ke GGUF Q4_K_M)
+     - benchmark_ondevice.py                   (ukur RAM & kecepatan di CPU)
+     - README.md                               (PANDUAN LENGKAP urutan run — BACA INI)
+     - scripts/convert_to_gguf.sh
+
+   PENTING: notebook JANGAN diedit manual. Kalau mau ubah, edit
+   build_finetune_notebooks.py lalu jalankan: python notebooks/build_finetune_notebooks.py
+
+4. KEPUTUSAN yang kuambil (boleh kamu koreksi):
+   - Data diolah dari Data/processed/ (FULL, ada kolom "source"), BUKAN dari
+     processed_shared lama (kolom source-nya hilang -> filter tak bisa jalan).
+   - Notebook & folder LAMA (00-03, Data/processed_shared/, processed/ di root)
+     SENGAJA tidak kuhapus. Bilang saja kalau mau dibersihkan.
+   - max_seq_length dinaikkan ke 1024, learning_rate diturunkan ke 1e-4, epoch 5
+     + EarlyStopping (sesuai master note).
+
+--------------------------------------------------------------------------------
+A2. UPGRADE CLEANING DATASET (2026-06-14, sesi ke-2) — "EMAS"
+--------------------------------------------------------------------------------
+Lever ROI tertinggi (0 unit GPU). Dataset diregenerasi ulang. Yang ditambah:
+  1. NEAR-DUPLICATE MinHash LSH (langkah 1.2b) — pakai paket `datasketch`.
+     Exact-dedup melaporkan 0 duplikat, TAPI near-dup menemukan 118 near-duplicate,
+     29 di antaranya LEAKAGE train<->eval (parafrase) yg lolos hash exact.
+       (dlm split: train -84, val -4, test -1 | leakage: train -12(test) -15(val), val -2(test))
+  2. clean_greeting() DIPERBAIKI & dipindah jadi fungsi BERSAMA di chat_format.py
+     (menutup celah: "@tina,", "Salam,", "HelloThanks" yg dulu lolos). AMAN dari
+     over-strip (\b + lookahead terbatas -> "Hippocrates"/"Alopecia"/"Hip"/"Selamat
+     atas kehamilan" TIDAK terpotong).
+  3. POST-PROCESSING output di eval.py (Task 4) -> sapaan tak pernah sampai user
+     walau ada residual; bisa diablasi via --no_postclean.
+
+FILE BARU:
+  - preprocessing/inspect_noise.py    (inspeksi noise iteratif; --simulate = cek over-strip)
+  - preprocessing/verify_final.py     (verifikasi mutu file final; cetak tabel di bawah)
+  Jalankan ulang kapan saja: python preprocessing/verify_final.py
+
+HASIL VERIFIKASI FINAL (untuk tabel BAB III/V) — VERDICT: EMAS:
+  1) DEDUP & ANTI-LEAKAGE (exact, file final):
+     duplikat internal: train 0 | val 0 | test 0
+     leakage: train&test 0 | train&val 0 | val&test 0
+  2) PROPORSI BAHASA INDONESIA (konsisten ~30% di KETIGA split):
+     train 29.59% (5918) | val 29.80% (447) | test 30.14% (3047)
+     -> di atas target 18%, TIDAK upsample (hindari overfit). Subset ID test
+        terwakili kuat ~30% (relevan RQ3 Puskesmas).
+  3) OVER-STRIPPING (clean_greeting idempoten):
+     buang >50c lagi: 0/0/0 | jawaban <20 char: 0/0/0
+     panjang jawaban min/median/max: train 21/696/2973 | val 63/699/2239 | test 32/703/2973
+  Noise residual (inspect_noise): sapaan ~0.06-0.07%, mention 0.07-0.23% (kebanyakan
+  email di body, bukan sapaan), url/html/placeholder 0%.
+
+DEP BARU: `pip install datasketch` (sudah masuk requirements.txt).
+UPLOAD ULANG KE DRIVE: chat_format.py (ada clean_greeting) + Data/processed_final/*.
+
+--------------------------------------------------------------------------------
+A3. VISUALISASI DALAM PIPELINE (2026-06-14, sesi ke-2) — grafik dari DATA NYATA
+--------------------------------------------------------------------------------
+Semua grafik dari data/model nyata (bukan ilustrasi), disimpan PNG dpi=150 di
+results/figures/, tiap grafik disertai print angka + penjelasan.
+
+BAGIAN A — DATASET (lokal): preprocessing/visualize_dataset.py
+  A.1 fig_source_dist  (distribusi sumber)   A.2 fig_lang_prop (bahasa ID/EN)
+  A.3 fig_token_dist   (panjang token)        A.4 fig_noise_cat (noise/kategori)
+  A.5 fig_funnel       (sampel per tahap; baca results/preprocess_stats.json)
+  Jalankan: python preprocessing/visualize_dataset.py [--split train|val|test]
+  Temuan A.3 (train): token median 286, P95 531, max 1483 -> P95<<1024 =
+    justifikasi empiris max_seq_length=1024. A.5: 103,857 -> 20,000 (80.7% dibuang).
+
+BAGIAN B — TRAINING (di KEDUA notebook, sel 11.1-11.3; muncul saat run di Colab):
+  B.1 fig_loss_curve   (train/val loss)
+  B.2 fig_datascaling  (val_loss vs JUMLAH SAMPEL dilihat, epoch 1; packing OFF -> sumbu sampel)
+  B.3 fig_lora_params  (trainable params + ceiling kapasitas Morris 3.6 bit/param)
+  PNG prefix per-model (OUT_MERGED) -> dua model tak tertukar.
+
+PERUBAHAN CONFIG TRAINING (utk B.2): eval_strategy 'epoch' -> 'steps', eval_steps=
+  save_steps = steps_per_epoch//10 (~10x/epoch, dihitung dari dataloader nyata akun
+  packing OFF). load_best_model_at_end TETAP aman (save_steps==eval_steps). Efek: eval
+  ~12x lebih sering -> sedikit tambah waktu/unit L4. Kalau berat: ganti //10 jadi //6.
+
+DEP BARU: matplotlib (sudah masuk requirements.txt).
+UPLOAD ULANG KE DRIVE: kedua notebook (.ipynb) — sudah berisi grafik + config eval baru.
+
+--------------------------------------------------------------------------------
+B. YANG HARUS KAMU LAKUKAN BESOK (urut)
+--------------------------------------------------------------------------------
+LANGKAH 0 — Upload ke Google Drive
+   Upload seluruh folder project ke:
+       Google Drive / MyDrive / Fine-Tune SLM for Medical Chatbot /
+   WAJIB ikut terupload (karena gitignore / belum ada di Drive):
+       - Data/processed_final/   (train/val/test_final.jsonl)
+       - chat_format.py
+       - notebooks/finetune_qwen35_2b.ipynb & finetune_gemma4_e2b.ipynb
+
+LANGKAH 1 — Training model 1 di Colab
+   - Buka notebooks/finetune_qwen35_2b.ipynb di Colab.
+   - Runtime -> Change runtime type -> GPU = L4.
+   - Run all dari atas. (HF_TOKEN TIDAK wajib.)
+   - Kalau sesi putus, jalankan lagi -> resume otomatis dari checkpoint.
+   - Hasil: outputs/merged/qwen35-2b-medical/
+
+LANGKAH 2 — Training model 2
+   - Buka notebooks/finetune_gemma4_e2b.ipynb, ulangi seperti Langkah 1.
+   - Hasil: outputs/merged/gemma4-e2b-medical/
+
+LANGKAH 3 — Evaluasi (buktikan ada peningkatan vs baseline)  [lihat README bagian 3]
+   Jalankan 4 perintah (baseline + finetuned untuk tiap model), lalu ringkas.
+
+LANGKAH 4 — Export GGUF Q4_K_M + eval ulang versi terkuantisasi  [README bagian 4]
+
+LANGKAH 5 — Benchmark on-device (RAM + kecepatan, CPU saja)  [README bagian 5]
+   -> ini yang menghasilkan tabel trade-off untuk BAB IV (inti RQ2/RQ3).
+
+   >>> Semua perintah persisnya sudah ada di README.md (tinggal copy-paste). <<<
+
+--------------------------------------------------------------------------------
+C. PERINTAH SIAP-COPY (evaluasi, jalankan SETELAH training selesai)
+--------------------------------------------------------------------------------
+# Eval 16-bit (baseline vs finetuned):
+python eval.py --model unsloth/Qwen3.5-2B                 --model_type qwen  --label qwen_baseline
+python eval.py --model outputs/merged/qwen35-2b-medical  --model_type qwen  --label qwen_finetuned
+python eval.py --model unsloth/gemma-4-E2B-it            --model_type gemma --label gemma_baseline
+python eval.py --model outputs/merged/gemma4-e2b-medical --model_type gemma --label gemma_finetuned
+python eval.py --summarize results
+
+# GGUF + benchmark:
+python export_gguf.py --merged_dir outputs/merged/qwen35-2b-medical  --model_type qwen  --verify
+python export_gguf.py --merged_dir outputs/merged/gemma4-e2b-medical --model_type gemma --verify
+python benchmark_ondevice.py --gguf outputs/gguf/qwen35-2b-medical-Q4_K_M.gguf   --model_type qwen  --label qwen_q4
+python benchmark_ondevice.py --gguf outputs/gguf/gemma4-e2b-medical-Q4_K_M.gguf --model_type gemma --label gemma_q4
+python benchmark_ondevice.py --summarize results_bench
+
+--------------------------------------------------------------------------------
+D. CATATAN RISIKO / YANG BELUM DIVERIFIKASI (perlu kamu pantau)
+--------------------------------------------------------------------------------
+- Nama repo model (unsloth/Qwen3.5-2B & unsloth/gemma-4-E2B-it) diambil dari notebook
+  RESMI Unsloth (Vision). Kalau error "not found", notebook OTOMATIS fallback
+  (Qwen3.5-2B-Instruct / gemma-4-E2B). Perhatikan pesan "Fallback ke ...".
+- TEST-FIRST di sel 4: kalau output ngawur atau ada "no quant_state"/"UNEXPECTED",
+  JANGAN lanjut PEFT -> cek versi install / coba fallback model dulu.
+- Training BELUM pernah dijalankan (itu tugasmu di Colab). Begitu juga konversi
+  GGUF model arsitektur baru ini di llama.cpp -> pakai llama.cpp TERBARU.
+- packing SUDAH False (wajib utk train_on_responses_only). Kalau loss tetap aneh:
+  cek dulu hasil sel "Verifikasi format" (turn-token & response_part harus ketemu).
+  INGAT: loss Qwen vs Gemma 4 TIDAK sebanding (skala beda) -> nilai dari tren + eval.py.
+- Ekspektasi realistis: model 2B TIDAK akan akurat 90%+. Halusinasi pasti ada.
+  Itu TEMUAN VALID (perkuat argumen "butuh RAG = future work"), bukan kegagalan.
+
+--------------------------------------------------------------------------------
+E. KALAU MAU LANJUT KE CLAUDE BESOK, BISA MINTA:
+--------------------------------------------------------------------------------
+- Hapus artefak lama (notebook 00-03, processed_shared/, processed/ di root).
+- Tambah data Indonesia asli dari PPK Kemenkes (Bagian 1.7 master note).
+- Bantu interpretasi hasil eval & susun tabel BAB IV.
+================================================================================

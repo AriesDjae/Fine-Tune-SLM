@@ -16,6 +16,7 @@ pandas>=2.0.0
 openpyxl>=3.1.0
 numpy>=1.24.0
 scikit-learn>=1.3.0
+datasketch>=1.6.0          # near-duplicate MinHash LSH (preprocess Bagian 1.2b)
 
 # Utilities
 scipy
@@ -30,6 +31,18 @@ evaluate
 rouge-score
 nltk
 
-# Interface
+# Interface & Visualisasi
 streamlit>=1.36.0
 plotly>=5.18.0
+matplotlib>=3.7.0          # grafik dataset (visualize_dataset.py) & training (notebook Bagian B)
+
+# Training (Colab) — Unsloth stack (Qwen3.5-2B & Gemma 4 E2B, keduanya via FastVisionModel)
+# Diinstall di Colab via sel notebook (versi PINNED resmi), BUKAN lokal Windows:
+#   transformers==4.56.2 + trl==0.22.2 + unsloth unsloth_zoo timm (lihat sel 1 notebook)
+# unsloth
+# unsloth_zoo
+# timm
+
+# Evaluasi & benchmark GGUF Q4_K_M (Bagian 4-5)
+llama-cpp-python
+psutil

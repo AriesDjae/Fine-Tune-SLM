@@ -146,7 +146,7 @@ def write_jsonl(path: Path, samples: list):
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         for s in samples:
-            f.write(json.dumps({"messages": s["messages"]}, ensure_ascii=False) + "\n")
+            f.write(json.dumps({"messages": s["messages"], "source": s["source"]}, ensure_ascii=False) + "\n")
     print(f"  wrote {len(samples):,} -> {path}")
 
 

@@ -1,0 +1,29 @@
+{
+  "date": "2026-06-17T11:34:32",
+  "dry_run": false,
+  "actions": {
+    "dr_name_scrub_a": 516,
+    "truncation_trimmed": 412,
+    "citation_tail_trimmed": 1012,
+    "over_strip_restored": 5,
+    "dr_name_scrub_q": 18,
+    "dropped_truncation": 2
+  },
+  "counts": {
+    "train": {
+      "in": 30004,
+      "out": 30003,
+      "dropped": 1
+    },
+    "val": {
+      "in": 2998,
+      "out": 2997,
+      "dropped": 1
+    },
+    "test": {
+      "in": 2998,
+      "out": 2998,
+      "dropped": 0
+    }
+  }
+}
