@@ -8,9 +8,12 @@ Lalu evaluasi ULANG metrik Bagian 3 pada GGUF (lihat eval.py --gguf) dan laporka
 16-bit vs Q4_K_M (analisis trade-off kuantisasi). `--verify` menjalankan satu
 generasi via llama-cli memakai chat template SAMA (cek konsistensi template 4.4).
 
+PIVOT 5 (single-model): hanya Qwen3.5-0.8B. Merge adapter dulu (merge_adapter.py).
+
 Contoh:
-    python export_gguf.py --merged_dir outputs/merged/qwen35-2b-medical  --model_type qwen  --verify
-    python export_gguf.py --merged_dir outputs/merged/gemma4-e2b-medical --model_type gemma --verify
+    python merge_adapter.py --adapter outputs/checkpoints/qwen35-0.8b-train \
+                            --out outputs/merged/qwen35-0.8b-medical
+    python export_gguf.py --merged_dir outputs/merged/qwen35-0.8b-medical --verify
 
 Alternatif termudah (DI NOTEBOOK, model masih di memori, tanpa script ini):
     model.save_pretrained_gguf(GGUF_DIR, tokenizer, quantization_method="q4_k_m")
@@ -68,18 +71,15 @@ def sizeof(p):
     return f"{os.path.getsize(p) / 1e9:.2f} GB" if os.path.exists(p) else "?"
 
 
-def verify(llama_dir, gguf_path, model_type):
+def verify(llama_dir, gguf_path):
     cli = find_bin(llama_dir, "llama-cli")
     if not cli:
         print("llama-cli tak ditemukan -> lewati verify.")
         return
     q = "Apa penyebab umum demam pada anak dan kapan harus ke dokter?"
-    if model_type == "gemma":   # Gemma 4 turn-token format (<|turn> ... <turn|>)
-        prompt = (f"<|turn>system\nYou are a helpful medical assistant.<turn|>\n"
-                  f"<|turn>user\n{q}<turn|>\n<|turn>model\n")
-    else:  # qwen ChatML
-        prompt = ("<|im_start|>system\nYou are a helpful medical assistant.<|im_end|>\n"
-                  f"<|im_start|>user\n{q}<|im_end|>\n<|im_start|>assistant\n")
+    # Qwen3.5 ChatML (scaffold <think></think> kosong, sama spt train=eval=deploy)
+    prompt = ("<|im_start|>system\nYou are a helpful medical assistant.<|im_end|>\n"
+              f"<|im_start|>user\n{q}<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n")
     print("\n[verify] generasi via llama-cli (cek template & koherensi):")
     run([cli, "-m", str(gguf_path), "-p", prompt, "-n", "96",
          "--temp", "0", "-no-cnv"])
@@ -87,8 +87,8 @@ def verify(llama_dir, gguf_path, model_type):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--merged_dir", required=True, help="dir model merged 16-bit")
-    ap.add_argument("--model_type", choices=["qwen", "gemma"], required=True)
+    ap.add_argument("--merged_dir", default="outputs/merged/qwen35-0.8b-medical",
+                    help="dir model merged 16-bit (hasil merge_adapter.py)")
     ap.add_argument("--out_dir", default="outputs/gguf")
     ap.add_argument("--quant", default="Q4_K_M")
     ap.add_argument("--llama_cpp", default="llama.cpp")
@@ -118,11 +118,11 @@ def main():
     print(f"  GGUF {args.quant:8s}    : {out_q}  ({sizeof(out_q)})")
 
     if args.verify:
-        verify(llama_dir, out_q, args.model_type)
+        verify(llama_dir, out_q)
 
     print("\nLangkah berikut: eval ulang terkuantisasi ->")
     print(f"  python eval.py --gguf {out_q} --model {args.merged_dir} "
-          f"--model_type {args.model_type} --label {name}_q4 --loader gguf")
+          f"--label {name}_q4 --loader gguf --n_eval 3000")
 
 
 if __name__ == "__main__":
