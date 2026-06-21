@@ -1,0 +1,16 @@
+# Matikan file-watcher: mencegah Streamlit menelusuri submodule torch/transformers
+# di thread terpisah (penyebab ImportError transien `AutoModelForCausalLM` pada
+# transformers 5.x yang memakai lazy-import). Tanpa watcher, tidak ada auto-reload
+# saat file diedit -> hentikan & jalankan ulang `streamlit run` bila mengubah kode.
+[server]
+fileWatcherType = "none"
+runOnSave = false
+# headless=true WAJIB: mencegah Streamlit menjalankan skrip di thread event-loop
+# utama saat startup. Pada non-headless, init CUDA di thread itu bentrok dgn asyncio
+# uvicorn -> SEGFAULT saat load model. Dengan headless, skrip hanya jalan lewat sesi
+# browser (thread ScriptRunner terpisah) -> aman. Konsekuensi: browser TIDAK terbuka
+# otomatis; buka manual http://localhost:8501
+headless = true
+
+[runner]
+fastReruns = false

@@ -1,0 +1,127 @@
+{
+  "label": "qwen_finetuned",
+  "model": "unsloth/Qwen3.5-0.8B",
+  "model_type": "qwen",
+  "config": {
+    "n_eval": 200,
+    "max_new_tokens": 256,
+    "do_sample": false,
+    "no_repeat_ngram_size": 3,
+    "batch_size": 8,
+    "quant": "16bit",
+    "loader": "hf",
+    "gguf": null,
+    "test_file": "Data/processed_id_clean/test.jsonl",
+    "seed": 42,
+    "bertscore": false,
+    "bertscore_model": null
+  },
+  "metrics": {
+    "bucket:open": {
+      "rougeL": 0.1665,
+      "rouge1": 0.313,
+      "token_f1": 0.313,
+      "rougeL_n": 200,
+      "rouge1_n": 200,
+      "token_f1_n": 200
+    },
+    "bucket:open|lang:id": {
+      "rougeL": 0.1665,
+      "rouge1": 0.313,
+      "token_f1": 0.313,
+      "rougeL_n": 200,
+      "rouge1_n": 200,
+      "token_f1_n": 200
+    },
+    "lang:id": {
+      "rougeL": 0.1665,
+      "rouge1": 0.313,
+      "token_f1": 0.313,
+      "rougeL_n": 200,
+      "rouge1_n": 200,
+      "token_f1_n": 200
+    },
+    "overall": {
+      "rougeL": 0.1665,
+      "rouge1": 0.313,
+      "token_f1": 0.313,
+      "rougeL_n": 200,
+      "rouge1_n": 200,
+      "token_f1_n": 200
+    }
+  },
+  "examples": [
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Kuning pada mata dan telapak tangan dapat disebabkan oleh beberapa hal, seperti: 1. Penyakit kuning, seperti penyakit kuning akibat hepatitis, penyakit kuning karena konsumsi obat-obatan tertentu, penyakit kencing manis, penyakit hati, dll. 2. Penyakit mata kuning, yaitu penyakit mata akibat konsums",
+      "ref": "Mata kuning dan telapak tangan kuning bukanlah hal yang normal dan bisa disebabkan karena penyakit kuning. Penyakit kuning bisa menyebabkan mata kuning, kuku kuning, telapak kuning, urin seperti teh, dan tinja berwarna pucat. Penyakit kuning bisa disebabkan karena hepatitis A, hepatitis B, hepatitis"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Sakit kepala sebelah kiri dapat disebabkan oleh: sakit kepala tegang, sakit kepala yang dirasakan seperti tertindih beban atau tekanan di kepala, sering disebabkan oleh kelelahan, kurang tidur, stres, dehidrasi, kelaparan, kelainan otot leher sakit kepala klaster, sakit yang dirasakan tiba-tiba, bia",
+      "ref": "Keluhan yang Anda alami dengan gejala utama berupa sakit kepala yang timbul di sebelah kiri dapat disebabkan oleh: Migrain Sinusitis Sakit kepala tegang Sakit kepala klaster Tumor otak Stroke dll. Untuk mengatasi kondisi yang Anda alami, kami sangat menyarankan kepada Anda untuk segera mengunjungi D"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Perut yang membesar pada bagian kanan bisa disebabkan oleh beberapa hal, seperti: Gangguan pada organ di sekitar perut, seperti pankreas, kantung empedu, atau usus besar. Gangguan di organ di rongga perut, misalnya pada saluran cerna, saluran kemih, atau saluran pencernaan. Gangguan di organ lain, m",
+      "ref": "Penyakit liver merupakan berbagai penyakit yang dapat menyerang pada liver atau organ hati. Salah satu penyakit sendiri yaitu hepatitis. Sehingga dapat disimpulkan bahwa penyakit liver terdiri dari berbagai macam penyakit yang menimbulkan gangguan pada liver dan mengganggu fungsinya. Penyakit liver "
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Cacar air merupakan penyakit yang disebabkan oleh virus varicella zoster. Penyakit ini ditandai dengan munculnya ruam kemerahan yang kemudian akan menjadi bintik-bintik kecil berisi air. Selain itu, penderita juga dapat mengalami demam, nyeri otot, nyeri kepala, dan nyeri otot. Penanganan cacar ini ",
+      "ref": "Air merupakan sebuah infeksi virus yang sangat menular dengan manidpfestasi klinis terdapatnya lenting berisi cairan yang tersebar merata pada tubuh. Selain itu terdapat juga gejala lain seperti demam, nyeri tubuh, sakit kepala dll. Penanganan cacar air membutuhkan pengobatan dengan obat antivirus y"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Batu ginjal adalah kondisi ketika ginjal mengalami penyumbatan akibat terbentuknya batu. Batu ginjal terbentuk dari campuran dari mineral, zat kimia, dan kotoran. Batu ini dapat terbentuk di ginjal, ureter, atau kandung kemih. Batu yang terbentuk di saluran kemih dapat menyebabkan nyeri saat BAK dan",
+      "ref": "Batu ginjal dalam istilah medis disebut dengan nefrolitiasis yaitu suatu kondisi akibat terbentuknya endapan pada di dalam ginjal yang berasal dari zat kimia dalam urine. batu ginjal terbentuk akibat tingginya kadar zat kimia seperti kalsium, asam oksalat dan fosfor dalam urine, dimana zat-zat ini d"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Polip hidung adalah suatu kondisi dimana terjadi pertumbuhan jaringan di dalam rongga hidung yang bersifat jinak. Kondisi ini umumnya tidak menimbulkan gejala apapun, namun jika terjadi peradangan, polip bisa menyebabkan gangguan pencitraan, gangguan pernapasan, gangguan tidur, dan gangguan tidur. K",
+      "ref": "Polip hidung adalah pertumbuhan jaringan pada saluran pernapasan hidung atau pada sinus. Polip sendiri merupakan jaringan lembut yang tidak terasa sakit, dan tidak bersifat kanker. Bentuk polip sendiri seperti anggur yang tergantung pada batangnya. Gejala-gejala yang dapat muncul adalah: Sakit bagia"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Implan susur merupakan salah satu alat kontrasepsi hormonal yang mengandung hormon progesteron sintetik. Implan susu bekerja dengan cara mencegah kehamilan dengan cara menghambat pelepasan sel telur oleh indung telur dan mencegah sperma bertemu sel telur. Impan susur memiliki panjang sekitar 10 cm d",
+      "ref": "Implan KB umumnya dilakukan pada jaringan di bawah kulit (bagian superfisial=tidak menembus ke otot atau bahkan lebih dalam). Pemasangan Kb ini sebaiknya dilakukan oleh ahli (bidan berkompetensi, dokter umum dan dokter kandungan) untuk memastikan KB terpasang dengan baik dan berfungsi optimal. KB im"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Gangguan kecemasan umum (GAD) adalah suatu kondisi dimana seseorang mengalami kecemasan yang berlebihan dan tidak terkendali. GAD dapat terjadi pada seseorang yang memiliki riwayat keluarga dengan GAD, mengalami stres, atau mengalami gangguan kecemasan lainnya. GAB merupakan suatu kondisi yang menye",
+      "ref": "Obat-obatan jenis ini membutuhkan penyesuaian dosis secara rutin, pemantauan efek samping, dan tidak bisa diminum ataupun berhenti diminum secara sembarangan (berbeda dari obat antinyeri atau obat batuk pilek yang bisa dibeli bebas di apotek). Selain itu, diagnosis penyakit seperti GAD juga hanya bo"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Benjolan di sekitar pergelangankaki dapat disebabkan oleh: pembengkakan kelenjar getah bening kista lipoma kista dermoid kista sebasea kista epidermoid tumor kanker dsb. Untuk mengetahui penyebab pasti benjola tersebut, diperlukan pemeriksaan oleh dokter. Dokter akan melakukan pemeriksaan fisik dan ",
+      "ref": "Tyasning. Benjolan lunak pada pergelangan kaki kemungkinan disebabkan oleh adanya benjolan pada jaringan lunak atau lipoma. Ayah anda sebaiknya memeriksakan diri ke dokter spesialis bedah umum untuk memperoleh penanganan yang tepat. Lipoma dapat muncul di berbagai area tubuh. Benjolan ini teraba lun"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Radang tengorokan atau faringitis merupakan peradangan yang terjadi pada tenggorakannya. Radang tenggorkan dapat disebabkan oleh infeksi virus, bakteri, atau alergi. Gejala yang dialami oleh penderita radang tersebut adalah: - Sakit tenggorakan - Nyeri saat menelan - Demam - Batuk - Sesak nafas - Mu",
+      "ref": "Benjolan teraba di luar atau terlihat dari tenggorokan? apakah benjolan semakin membesar dengan cepat? Radang tenggorokan yang tidak membaik dengan terapi yang sudah diberikan dokter awal sebaiknya segera diperiksakan kembali. Normalnya radang ternggorokan akibat infeksi virus atau bakteri akan memb"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Hidrosalpin adalah suatu kondisi dimana saluran yang menghubungkan antara rahim dan ovarium mengalami pembengkakan. Pembengkakan ini bisa terjadi karena berbagai faktor, seperti infeksi, peradangan, gangguan hormon, dan sebagainya. Penanganan hidrosalin bisa dilakukan dengan pemberian obat-obatan, o",
+      "ref": "Hidrosalping merupakan suatu kondisi dimana tuba fallopi (saluran yang menghubungkan indung telur dengan rahim/uterus) mengalami pembengkakan dan terisi cairan sehingga saluran tersebut tersumbat yang dapat menghambat proses pembuahan atau bertemunya sperma laki-laki dan sel telur. Hal ini dapat men"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Pusing, sesaknya nafas, dan sering merasa mual dan haus bisa disebabkan oleh beberapa hal, seperti: dehidrasi anemia hipoglikemia hipotensi vertigo gangguan jantung, seperti penyakit jantung koroner, gagal jantung, serangan jantung, gagal ginjal, gagal hati, gagal otak, stroke, tumor otak, dll gangg",
+      "ref": "Keluhan yang Anda alami berupa sesak napas dan pusing kemungkinan besar karena penyebab yang sama. Penyebab dari sesak yang Anda alami diantaranya sebagai berikut: Tekanan darah rendah Anemia Alergi Pilek dll. Sedangkan pusing yang tiba - tiba dapat disebabkan oleh: Tekanan darah rendah Anemia Dehid"
+    }
+  ]
+}

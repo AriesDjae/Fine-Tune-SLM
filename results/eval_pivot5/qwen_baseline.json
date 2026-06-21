@@ -1,0 +1,127 @@
+{
+  "label": "qwen_baseline",
+  "model": "unsloth/Qwen3.5-0.8B",
+  "model_type": "qwen",
+  "config": {
+    "n_eval": 200,
+    "max_new_tokens": 256,
+    "do_sample": false,
+    "no_repeat_ngram_size": 3,
+    "batch_size": 8,
+    "quant": "16bit",
+    "loader": "hf",
+    "gguf": null,
+    "test_file": "Data/processed_id_clean/test.jsonl",
+    "seed": 42,
+    "bertscore": false,
+    "bertscore_model": null
+  },
+  "metrics": {
+    "bucket:open": {
+      "rougeL": 0.117,
+      "rouge1": 0.2568,
+      "token_f1": 0.2568,
+      "rougeL_n": 200,
+      "rouge1_n": 200,
+      "token_f1_n": 200
+    },
+    "bucket:open|lang:id": {
+      "rougeL": 0.117,
+      "rouge1": 0.2568,
+      "token_f1": 0.2568,
+      "rougeL_n": 200,
+      "rouge1_n": 200,
+      "token_f1_n": 200
+    },
+    "lang:id": {
+      "rougeL": 0.117,
+      "rouge1": 0.2568,
+      "token_f1": 0.2568,
+      "rougeL_n": 200,
+      "rouge1_n": 200,
+      "token_f1_n": 200
+    },
+    "overall": {
+      "rougeL": 0.117,
+      "rouge1": 0.2568,
+      "token_f1": 0.2568,
+      "rougeL_n": 200,
+      "rouge1_n": 200,
+      "token_f1_n": 200
+    }
+  },
+  "examples": [
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Saya mengerti bahwa kondisi ini membuat Anda merasa khawatir dan tidak nyaman.\n\nSebagai asisten informasi medis, saya akan memberikan penjelasan mengenai kemungkinan penyebabnya, namun **sangat penting untuk dicatat**: *Informasi ini adalah panduan edukasi, bukan pengganti diagnosis atau pengobatan ",
+      "ref": "Mata kuning dan telapak tangan kuning bukanlah hal yang normal dan bisa disebabkan karena penyakit kuning. Penyakit kuning bisa menyebabkan mata kuning, kuku kuning, telapak kuning, urin seperti teh, dan tinja berwarna pucat. Penyakit kuning bisa disebabkan karena hepatitis A, hepatitis B, hepatitis"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Saya sangat senang Anda bertanya.\n\n**Penting untuk dicatat:** Saya adalah asisten AI, bukan dokter. Informasi berikut adalah berdasarkan pengetahuan umum dan prinsip medis yang umum, namun **tidak dapat menggantikan konsultasi dengan dokter atau tenaga medis profesional**. Jika Anda mengalami gejala",
+      "ref": "Keluhan yang Anda alami dengan gejala utama berupa sakit kepala yang timbul di sebelah kiri dapat disebabkan oleh: Migrain Sinusitis Sakit kepala tegang Sakit kepala klaster Tumor otak Stroke dll. Untuk mengatasi kondisi yang Anda alami, kami sangat menyarankan kepada Anda untuk segera mengunjungi D"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Saya mengerti bahwa Anda khawatir dengan gejala perut yang membesar pada kanan. Ini adalah pertanyaan yang sangat penting dan perlu dijawab dengan hati-hatian karena **perut membesar** bisa menjadi tanda berbagai kondisi, mulai dari ringan hingga serius.\n\nSebagai asisten kesehatan, saya akan menjela",
+      "ref": "Penyakit liver merupakan berbagai penyakit yang dapat menyerang pada liver atau organ hati. Salah satu penyakit sendiri yaitu hepatitis. Sehingga dapat disimpulkan bahwa penyakit liver terdiri dari berbagai macam penyakit yang menimbulkan gangguan pada liver dan mengganggu fungsinya. Penyakit liver "
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Saya sangat senang bisa membantu Anda.\n\nUntuk anak usia 12 tahun (yang Anda sebutkan sebagai 11 tahun, karena usia anak biasanya dihitung dari hari lahir, bukan hari lahir orang tua), obat cacara air (seperti obat cacaran, obat cacaro, atau obat cacaron) adalah obat yang sangat umum digunakan untuk ",
+      "ref": "Air merupakan sebuah infeksi virus yang sangat menular dengan manidpfestasi klinis terdapatnya lenting berisi cairan yang tersebar merata pada tubuh. Selain itu terdapat juga gejala lain seperti demam, nyeri tubuh, sakit kepala dll. Penanganan cacar air membutuhkan pengobatan dengan obat antivirus y"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Pak. Terima kasih sudah bertanya.\n\nSebagai asisten informasi medis, saya sangat menghargai kepercayaan Anda. Namun, **sangat penting untuk dipahami dulu bahwa saya adalah AI, bukan dokter.** Informasi yang saya berikan di sini adalah berdasarkan pengetahuan umum dan prinsip medis yang telah saya pel",
+      "ref": "Batu ginjal dalam istilah medis disebut dengan nefrolitiasis yaitu suatu kondisi akibat terbentuknya endapan pada di dalam ginjal yang berasal dari zat kimia dalam urine. batu ginjal terbentuk akibat tingginya kadar zat kimia seperti kalsium, asam oksalat dan fosfor dalam urine, dimana zat-zat ini d"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Pertanyaan yang sangat bagus dan penting, terutama karena Anda menyebutkan bahwa bau busukan ini mengganggu teman-teman Anda.\n\nSecara medis, **bukanlah polip hidung yang secara langsung menyebabkan bau busukkan.** Namun, ada beberapa hubungan yang sangat kuat antara polip, gangguan pencintian, dan b",
+      "ref": "Polip hidung adalah pertumbuhan jaringan pada saluran pernapasan hidung atau pada sinus. Polip sendiri merupakan jaringan lembut yang tidak terasa sakit, dan tidak bersifat kanker. Bentuk polip sendiri seperti anggur yang tergantung pada batangnya. Gejala-gejala yang dapat muncul adalah: Sakit bagia"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Ini adalah keluhan yang sangat umum dan sering terjadi setelah pemasangan impan susuk (knotless implant).\n\nSebagai asisten informasi medis, saya akan menjelaskan hal-hal yang mungkin terjadi berdasarkan prinsip medis yang aman, namun **sangat penting untuk dicatat bahwa saya adalah AI, bukan dokter.",
+      "ref": "Implan KB umumnya dilakukan pada jaringan di bawah kulit (bagian superfisial=tidak menembus ke otot atau bahkan lebih dalam). Pemasangan Kb ini sebaiknya dilakukan oleh ahli (bidan berkompetensi, dokter umum dan dokter kandungan) untuk memastikan KB terpasang dengan baik dan berfungsi optimal. KB im"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Saya sangat senang Anda bertanya tentang obat SSRSI (Serotonin Reuptake Inhibitor) untuk GAD (Depresi Umum).\n\nSebagai asisten informasi, saya akan memberikan penjelasan medis yang akurat, namun **sangat penting** untuk saya sampaikan bahwa saya adalah AI, bukan dokter. Informasi berikut adalah berda",
+      "ref": "Obat-obatan jenis ini membutuhkan penyesuaian dosis secara rutin, pemantauan efek samping, dan tidak bisa diminum ataupun berhenti diminum secara sembarangan (berbeda dari obat antinyeri atau obat batuk pilek yang bisa dibeli bebas di apotek). Selain itu, diagnosis penyakit seperti GAD juga hanya bo"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Saya sangat senang Anda bertanya.\n\nSebagai asisten informasi medis, saya akan memberikan penjelasan mengenai kemungkinan penyebab benjola tersebut, langkah-langkah yang harus dilakukan, dan saran mengenai konsultasi ke dokter spesialis.\n\n### 1. Apa yang mungkin terjadi?\n\nBenjolan di sekitar pergelun",
+      "ref": "Tyasning. Benjolan lunak pada pergelangan kaki kemungkinan disebabkan oleh adanya benjolan pada jaringan lunak atau lipoma. Ayah anda sebaiknya memeriksakan diri ke dokter spesialis bedah umum untuk memperoleh penanganan yang tepat. Lipoma dapat muncul di berbagai area tubuh. Benjolan ini teraba lun"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Sebagai asisten informasi medis, saya sangat menghargai kesibukan Anda.\n\nSebagai AI, saya **tidak dapat memberikan diagnosis medis** atau memberikan saran pengobatan yang bisa menggantikan konsultasi dengan dokter Anda. Namun, saya dapat membantu menganalisis gejala Anda, menjelaskan kemungkinan pen",
+      "ref": "Benjolan teraba di luar atau terlihat dari tenggorokan? apakah benjolan semakin membesar dengan cepat? Radang tenggorokan yang tidak membaik dengan terapi yang sudah diberikan dokter awal sebaiknya segera diperiksakan kembali. Normalnya radang ternggorokan akibat infeksi virus atau bakteri akan memb"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Untuk penyakit **hidrosalpin** (kondisi di mana saluran kemih yang seharusnya berfungsi penuh mengalami pembengkakan atau penyumbatan), pemeriksaan **USG Abdomen** (Ultrasound Abdominal) adalah alat yang sangat efektif dan sering kali menjadi **pilihan pertama** sebelum atau bersamaan dengan pemerik",
+      "ref": "Hidrosalping merupakan suatu kondisi dimana tuba fallopi (saluran yang menghubungkan indung telur dengan rahim/uterus) mengalami pembengkakan dan terisi cairan sehingga saluran tersebut tersumbat yang dapat menghambat proses pembuahan atau bertemunya sperma laki-laki dan sel telur. Hal ini dapat men"
+    },
+    {
+      "bucket": "open",
+      "lang": "id",
+      "pred": "Sebagai asisten informasi medis, saya sangat menghargai kesabaran Anda. Berdasarkan deskripsi yang Anda berikan, ini adalah situasi yang sangat umum dan sangat wajar terjadi. Berikut adalah penjelasan medis yang hati-hatis mengenai kondisi Anda, langkah-langkah yang perlu Anda lakukan, dan saran unt",
+      "ref": "Keluhan yang Anda alami berupa sesak napas dan pusing kemungkinan besar karena penyebab yang sama. Penyebab dari sesak yang Anda alami diantaranya sebagai berikut: Tekanan darah rendah Anemia Alergi Pilek dll. Sedangkan pusing yang tiba - tiba dapat disebabkan oleh: Tekanan darah rendah Anemia Dehid"
+    }
+  ]
+}
