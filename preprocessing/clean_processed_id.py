@@ -16,6 +16,8 @@ Aturan (semuanya presisi-tinggi, ada log per-aturan):
      artikel lain (halaman berikut/dapat Anda baca/diskusi terkait/artikel ini).
   4. Pisah preposisi nempel (whitelist lokatif; 'keluar'/'dimana' DIBIARKAN).
   5. Kolaps huruf sama 3+ -> 2 (kecuali angka romawi).
+  5.5 Tanda baca: spasi setelah koma (skip desimal "37,5"); normalisasi singkatan enumerasi
+      dll/dsb/dst -> sisip ", " sebelum (bila nempel) + titik akhir abbr.
   6. Map typo terkurasi (lainya->lainnya).
   7. Tambah titik akhir bila hilang (kosmetik).
 Tahap-2 (typo berbasis KBBI) ada di fix_typos_kbbi.py — jalankan SETELAH skrip ini.
@@ -33,6 +35,11 @@ RE_CRED=re.compile(r"[\s.,;:-]*(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3}\s*,?\s*)?"
                    r"(?:BMed|B\.?Med|Sci?\b|S\.?Ked\b|Sp\.?[A-Z().\-]*|M\.?Kes\b|MARS\b|FINASIM\b|drg?\.)\.?\s*$")
 RE_PLAT=re.compile(r"(alodokter|halodoc|live\s*chat|fitur\s*chat|aplikasi\s+(?:alodokter|halodoc)|"
                    r"unduh\s+aplikasi|download\s+aplikasi|klik\s+(?:link|tautan))", re.I)
+# Tanda baca: spasi setelah koma HANYA bila diikuti HURUF (desimal "37,5"/"1,5" -> koma+digit AMAN,
+# tak disentuh). Singkatan enumerasi dll/dsb/dst -> sisipkan ", " sebelum (bila nempel kata) + titik.
+RE_COMMA_SP=re.compile(r",(?=[A-Za-z])")
+RE_ABBR_COMMA=re.compile(r"(?<=[a-z])\s+(?=(?:dll|dsb|dst)\b\.?(?:\s|$|[,.]))", re.I)
+RE_ABBR_DOT=re.compile(r"\b(dll|dsb|dst)\b(?!\.)", re.I)
 RE_DIPREP=re.compile(r"\bdi(atas|bawah|dalam|luar|rumah|sini|sana|samping|bagian|kamar|tempat|depan|belakang)\b", re.I)
 RE_KEPREP=re.compile(r"\bke(dokter|dalam|rumah|atas|bawah|samping|bagian|sini|sana|depan|belakang)\b", re.I)
 ROMAN=re.compile(r"^[ivxlcdm]+$", re.I)
@@ -103,6 +110,13 @@ def clean_answer(a):
     # 5. triple letters
     a2=collapse_triples(a)
     if a2!=a: stat["triple"]+=1; a=a2
+    # 5.5 tanda baca: spasi setelah koma (skip desimal) + normalisasi dll/dsb/dst (koma+titik)
+    a2,n=RE_COMMA_SP.subn(", ", a)
+    if n: stat["comma_space"]+=n; a=a2
+    a2,n=RE_ABBR_COMMA.subn(", ", a)
+    if n: stat["abbr_comma"]+=n; a=a2
+    a2,n=RE_ABBR_DOT.subn(lambda m: m.group(1)+".", a)
+    if n: stat["abbr_dot"]+=n; a=a2
     # 6. typo map
     for k,v in TYPO.items():
         if re.search(r"\b"+k+r"\b", a): a=re.sub(r"\b"+k+r"\b", v, a); stat["typo_map"]+=1
@@ -131,7 +145,8 @@ for split in ["train","val","test"]:
 with open(os.path.join(DST,"CLEANING_REPORT.txt"),"w",encoding="utf-8") as f:
     f.write("LAPORAN PEMBERSIHAN processed_id -> processed_id_clean\n"+"="*50+"\n")
     for k in ["records_train","records_val","records_test","changed_total","sig_name","sig_cred",
-              "sentence_split","platform_or_ref","prep_di","prep_ke","triple","typo_map","add_period"]:
+              "sentence_split","platform_or_ref","prep_di","prep_ke","triple",
+              "comma_space","abbr_comma","abbr_dot","typo_map","add_period"]:
         f.write(f"{k:18}: {stat[k]:,}\n")
 with open(os.path.join(DST,"changes_sample.txt"),"w",encoding="utf-8") as f:
     for o,c in samples:
@@ -140,5 +155,5 @@ with open(os.path.join(DST,"changes_sample.txt"),"w",encoding="utf-8") as f:
 tot=stat['records_train']+stat['records_val']+stat['records_test']
 print(f"Selesai. {tot:,} record -> {DST}/")
 for k in ["changed_total","sig_name","sig_cred","sentence_split","platform_or_ref",
-          "prep_di","prep_ke","triple","typo_map","add_period"]:
+          "prep_di","prep_ke","triple","comma_space","abbr_comma","abbr_dot","typo_map","add_period"]:
     print(f"  {k:18}: {stat[k]:,}")
