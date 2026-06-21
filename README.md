@@ -77,17 +77,18 @@ Buka `notebooks/train_qwen_qlora.ipynb`, set `RUN_MODE="pilot"` → cek GATE →
 Hasil: adapter QLoRA (di Drive). `HF_TOKEN` opsional (`unsloth/*` ungated).
 
 ### 2 — Evaluasi 16-bit (RQ1: baseline vs fine-tuned) — *langkah berikutnya*
+`eval.py` sudah disesuaikan Pivot 5: default `--model_type qwen`, `--test_file
+Data/processed_id/test.jsonl`, loader **FastLanguageModel** (Qwen0.8B = teks), metrik
+**token-F1 + ROUGE-L** (EM/MCQA di-drop).
 ```bash
-# Catatan: default --test_file eval.py masih menunjuk processed_final lama → override ke processed_id.
-python eval.py --model unsloth/Qwen3.5-0.8B  --model_type qwen --label qwen08_baseline  \
-               --test_file Data/processed_id/test.jsonl
-python eval.py --model outputs/qwen35-0.8b-medical --model_type qwen --label qwen08_finetuned \
-               --test_file Data/processed_id/test.jsonl
-python eval.py --summarize results          # tabel + delta (finetuned − baseline), per-bahasa ID/EN
+python eval.py --model unsloth/Qwen3.5-0.8B        --label qwen08_baseline
+python eval.py --model outputs/qwen35-0.8b-medical --label qwen08_finetuned
+python eval.py --summarize results          # tabel + delta (finetuned − baseline)
 ```
-> Model fine-tuned = adapter dari Drive. Untuk eval, **merge dulu** ke 16-bit
-> (`model.save_pretrained_merged("outputs/qwen35-0.8b-medical", tokenizer, save_method="merged_16bit")`)
-> atau load base + adapter.
+> Model fine-tuned (`--model`) boleh berupa **direktori adapter** dari Drive langsung
+> (Unsloth `FastLanguageModel` auto-load base + adapter) **atau** merged 16-bit
+> (`model.save_pretrained_merged("outputs/qwen35-0.8b-medical", tokenizer, save_method="merged_16bit")`).
+> Default `--n_eval 200`; naikkan bila ingin seluruh 2998 sampel test.
 
 ### 3 — Export GGUF Q4_K_M + eval terkuantisasi
 ```bash
@@ -115,5 +116,5 @@ python benchmark_ondevice.py --summarize results_bench
 - **Keterbatasan (BAB V):** model 0.8B tidak mencapai akurasi klinis; halusinasi faktual pasti ada;
   metrik otomatis (F1/ROUGE) tak menangkap kebenaran medis; single-run. Ini **temuan valid** yang
   memperkuat argumen "butuh RAG = future work", bukan kegagalan.
-- **`eval.py` default `--test_file`** masih `Data/processed_final/test_final.jsonl` (artefak Pivot-3) →
-  selalu override `--test_file Data/processed_id/test.jsonl`, atau update default-nya di kode.
+- **Test set Indonesia-only:** semua 2998 sampel `processed_id` = `type=open`, `source_lang=id` →
+  eval otomatis masuk bucket **open** (token-F1/ROUGE-L), kolom `lang:en` kosong (wajar).

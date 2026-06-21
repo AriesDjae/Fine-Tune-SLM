@@ -1,26 +1,27 @@
 """
-eval.py  —  BAGIAN 3 (MASTER NOTE FINAL): evaluasi fair, multi-metrik, per-bahasa.
+eval.py  —  BAGIAN 3: evaluasi fair, multi-metrik (PIVOT 5: single-model baseline vs fine-tuned).
 
-Mengevaluasi SATU model pada test_final.jsonl dan menyimpan hasil JSON. Untuk
-membuktikan "peningkatan" (RQ1), jalankan untuk KEEMPAT konfigurasi dgn protokol
-identik, lalu ringkas deltanya:
+OBJEKTIF (revisi dosen): SATU model `Qwen3.5-0.8B` dibandingkan dgn DIRINYA SENDIRI —
+baseline (pre-trained) vs setelah fine-tuning (QLoRA). Jalankan dua konfigurasi dgn
+protokol identik lalu ringkas deltanya:
 
-    # baseline (sebelum fine-tune) + finetuned, dua-duanya:
-    python eval.py --model unsloth/Qwen3.5-2B               --model_type qwen  --label qwen_baseline
-    python eval.py --model outputs/merged/qwen35-2b-medical --model_type qwen  --label qwen_finetuned
-    python eval.py --model unsloth/gemma-4-E2B-it           --model_type gemma --label gemma_baseline
-    python eval.py --model outputs/merged/gemma4-e2b-medical --model_type gemma --label gemma_finetuned
-    python eval.py --summarize results                      # tabel perbandingan + delta
+    # baseline (pre-trained) + fine-tuned, pada test set Indonesia (processed_id):
+    python eval.py --model unsloth/Qwen3.5-0.8B        --label qwen08_baseline
+    python eval.py --model outputs/qwen35-0.8b-medical --label qwen08_finetuned
+    python eval.py --summarize results                 # tabel perbandingan + delta (RQ1)
 
-Protokol FAIR (3.4): test_final SAMA, n_eval SAMA, greedy (do_sample=False),
-max_new_tokens=256, no_repeat_ngram_size=3, format prompt SAMA (chat_format.py).
-Optimasi kecepatan (3.5): padding kiri + batching, TANPA empty_cache di loop.
+  Catatan: `--model_type` default "qwen" (boleh diabaikan). Model fine-tuned bisa berupa
+  direktori merged 16-bit ATAU direktori adapter QLoRA (Unsloth FastLanguageModel
+  auto-load base + adapter). `--test_file` default sudah `Data/processed_id/test.jsonl`.
 
-Metrik (3.2):
-  - MCQA berhuruf (medmcqa)      -> Exact Match huruf opsi (accuracy)
-  - Yes/No/Maybe (pubmedqa,...)  -> Exact Match ternormalisasi (accuracy)
-  - Open-ended (sisanya)         -> ROUGE-L, ROUGE-1, token-F1
-Dipecah per BAHASA (ID vs EN) (3.3) dan per bucket.
+Protokol FAIR (3.4): test set SAMA, n_eval SAMA, greedy (do_sample=False),
+max_new_tokens=256, no_repeat_ngram_size=3, format prompt SAMA (chat_format.py — ChatML
+Qwen + scaffold <think></think> via template, identik train=eval=deploy).
+
+Metrik (3.2) — EM/MCQA DI-DROP utk Pivot 4/5 (data native open-ended saja):
+  - Open-ended (semua sampel processed_id) -> token-F1, ROUGE-L, ROUGE-1
+  (bucket mcqa/yesno tetap didukung utk dataset lama, tapi processed_id 100% "open").
+Dipecah per BAHASA (ID vs EN; processed_id mayoritas ID) dan per bucket.
 """
 import argparse
 import glob
@@ -43,6 +44,12 @@ _ID_KW = ["puskesmas", "dokter", "pasien", "obat", "demam", "rumah sakit", "kese
 
 
 def is_id(sample):
+    # processed_id (Pivot 4/5) menyertakan field eksplisit `source_lang` -> pakai itu dulu.
+    sl = str(sample.get("source_lang", "")).lower()
+    if sl in ("id", "ms"):
+        return True
+    if sl in ("en",):
+        return False
     src = sample.get("source", "").lower()
     if any(x in src for x in _ID_SOURCES):
         return True
@@ -125,6 +132,11 @@ def extract_yesno(text):
 
 
 def bucket_of(sample, ref):
+    # processed_id (Pivot 4/5) menandai tipe eksplisit -> native QA SELALU "open"
+    # (cegah salah-bucket jawaban yg kebetulan diawali "Ya,"/"Tidak," jadi yes/no).
+    if str(sample.get("type", "")).lower() == "open" or \
+            sample.get("source", "") == "indonesia_qna":
+        return "open"
     src = sample.get("source", "")
     user = " ".join(m["content"] for m in sample["messages"] if m["role"] == "user")
     if src == "medmcqa" or re.search(r"\n\s*[A-E]\)", user):
@@ -150,20 +162,14 @@ def load_model(args):
         return "gguf", llm, tok
 
     if args.loader == "unsloth":
-        import unsloth
-        # KEDUA model (Qwen3.5-2B & Gemma 4 E2B) multimodal -> FastVisionModel (sama spt training).
-        Loader = unsloth.FastVisionModel
-        try:
-            model, tok = Loader.from_pretrained(
-                model_name=args.model, max_seq_length=args.max_seq_length,
-                load_in_4bit=args.load_in_4bit, dtype=None)
-        except TypeError:   # versi Unsloth yg tak terima max_seq_length pada loader vision
-            model, tok = Loader.from_pretrained(
-                model_name=args.model, load_in_4bit=args.load_in_4bit, dtype=None)
-        Loader.for_inference(model)
-        # FastVisionModel bisa mengembalikan processor (mis. Gemma 4) -> ambil tokenizer teks
-        # di dalamnya (eval ini text-only; chat template ikut di tokenizer).
-        tok = getattr(tok, "tokenizer", tok)
+        # Qwen3.5-0.8B = model TEKS -> FastLanguageModel (SAMA spt training Pivot 4/5),
+        # BUKAN FastVisionModel (itu utk varian 2B multimodal Pivot 3). FastLanguageModel
+        # meng-auto-load base + adapter bila --model menunjuk direktori adapter QLoRA.
+        from unsloth import FastLanguageModel
+        model, tok = FastLanguageModel.from_pretrained(
+            model_name=args.model, max_seq_length=args.max_seq_length,
+            load_in_4bit=args.load_in_4bit, dtype=None)
+        FastLanguageModel.for_inference(model)   # inferensi 2x lebih cepat
     else:
         import torch
         from transformers import AutoModelForCausalLM
@@ -315,22 +321,30 @@ def summarize_results(folder):
         print("Tak ada hasil JSON di", folder)
         return
 
-    cols = ["overall", "bucket:mcqa", "bucket:yesno", "bucket:open", "lang:id", "lang:en"]
+    # Pivot 5: metrik utama OPEN-ENDED = token-F1 & ROUGE-L (EM/MCQA di-drop).
+    # Kolom open ditampilkan sbg "tokenF1 / rougeL"; bucket mcqa/yesno (dataset lama) = accuracy.
+    cols = ["overall", "lang:id", "lang:en", "bucket:open", "bucket:mcqa", "bucket:yesno"]
 
-    def metric_for(m):
-        return "accuracy" if m in ("bucket:mcqa", "bucket:yesno") else "rougeL"
+    def cell(met, c):
+        d = met.get(c, {})
+        if c in ("bucket:mcqa", "bucket:yesno"):
+            v = d.get("accuracy")
+            return f"{v:13.4f}" if isinstance(v, (int, float)) else f"{'-':>13s}"
+        f1, rl = d.get("token_f1"), d.get("rougeL")
+        if isinstance(f1, (int, float)) and isinstance(rl, (int, float)):
+            return f"{f1:.4f}/{rl:.4f}"
+        return f"{'-':>13s}"
 
-    print(f"\n{'label':22s} | " + " | ".join(f"{c.split(':')[-1]:>8s}" for c in cols))
-    print("-" * 100)
+    print("\n(sel open-ended = tokenF1 / rougeL ; mcqa/yesno = accuracy)")
+    print(f"\n{'label':22s} | " + " | ".join(f"{c.split(':')[-1]:>13s}" for c in cols))
+    print("-" * 120)
     for label, met in runs.items():
-        cells = []
-        for c in cols:
-            mk = metric_for(c)
-            v = met.get(c, {}).get(mk)
-            cells.append(f"{v:8.4f}" if isinstance(v, (int, float)) else f"{'-':>8s}")
-        print(f"{label:22s} | " + " | ".join(cells))
+        print(f"{label:22s} | " + " | ".join(cell(met, c) for c in cols))
 
-    # delta untuk pasangan *_finetuned vs *_baseline
+    # delta untuk pasangan *_finetuned vs *_baseline (token-F1 & ROUGE-L terpisah)
+    def val(met, c, mk):
+        return met.get(c, {}).get(mk)
+
     print("\n--- PENINGKATAN (finetuned - baseline) ---")
     for ft in [l for l in runs if l.endswith("_finetuned")]:
         base = ft.replace("_finetuned", "_baseline")
@@ -338,11 +352,18 @@ def summarize_results(folder):
             continue
         cells = []
         for c in cols:
-            mk = metric_for(c)
-            a = runs[ft].get(c, {}).get(mk)
-            b = runs[base].get(c, {}).get(mk)
-            cells.append(f"{a - b:+8.4f}" if isinstance(a, (int, float))
-                         and isinstance(b, (int, float)) else f"{'-':>8s}")
+            mk = "accuracy" if c in ("bucket:mcqa", "bucket:yesno") else None
+            if mk:
+                a, b = val(runs[ft], c, mk), val(runs[base], c, mk)
+                cells.append(f"{a - b:+13.4f}" if isinstance(a, (int, float))
+                             and isinstance(b, (int, float)) else f"{'-':>13s}")
+            else:
+                af, bf = val(runs[ft], c, "token_f1"), val(runs[base], c, "token_f1")
+                ar, br = val(runs[ft], c, "rougeL"), val(runs[base], c, "rougeL")
+                if all(isinstance(x, (int, float)) for x in (af, bf, ar, br)):
+                    cells.append(f"{af - bf:+.4f}/{ar - br:+.4f}")
+                else:
+                    cells.append(f"{'-':>13s}")
         print(f"{ft.replace('_finetuned',''):22s} | " + " | ".join(cells))
 
 
@@ -350,13 +371,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--summarize", metavar="FOLDER", help="ringkas semua *.json di folder")
     ap.add_argument("--model", help="path model merged ATAU HF id (baseline)")
-    ap.add_argument("--model_type", choices=["qwen", "gemma"])
+    ap.add_argument("--model_type", choices=["qwen", "gemma"], default="qwen")
     ap.add_argument("--label", default="run")
-    ap.add_argument("--test_file", default="Data/processed_final/test_final.jsonl")
+    ap.add_argument("--test_file", default="Data/processed_id/test.jsonl")
     ap.add_argument("--n_eval", type=int, default=200)
     ap.add_argument("--batch_size", type=int, default=8)
     ap.add_argument("--max_new_tokens", type=int, default=256)
-    ap.add_argument("--max_seq_length", type=int, default=2048)
+    ap.add_argument("--max_seq_length", type=int, default=1024)
     ap.add_argument("--loader", choices=["unsloth", "hf"], default="unsloth")
     ap.add_argument("--load_in_4bit", action="store_true",
                     help="eval pada bobot 4-bit (default 16-bit utk Bagian 3)")
