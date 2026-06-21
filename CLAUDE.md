@@ -1,11 +1,13 @@
 # Fine-Tune SLM for Medical Chatbot
 
-> ## 🟢 KONDISI AKTIF = PIVOT 4 — baca `HANDOFF_PIVOT4.md` (SUMBER KEBENARAN)
-> Pivot 4 (3 model **≤1B**, Indonesia-only, data `Data/processed_id/` 30003/2997/2998,
-> notebook `train_{qwen,gemma3_1b,llama32_1b}_qlora.ipynb`, packing=False + train_on_responses_only,
-> LR 1e-4) **menggantikan** deskripsi **Pivot 3** di bawah. **Qwen3.5-0.8B = model TEKS
-> (FastLanguageModel), BUKAN multimodal.** Detail + koreksi asumsi usang: **`HANDOFF_PIVOT4.md`**
-> (juga di Drive, untuk sinkronisasi dengan Claude browser).
+> ## 🟢 KONDISI AKTIF = PIVOT 5 (REVISI DOSEN) — baca `HANDOFF_PIVOT4.md` (SUMBER KEBENARAN)
+> **Objektif baru: SATU model `Qwen3.5-0.8B`, baseline (pre-trained) vs fine-tuned (QLoRA).**
+> BUKAN lagi perbandingan antar-model. Data `Data/processed_id/` 30003/2997/2998, packing=False +
+> train_on_responses_only, LR 1e-4. **Qwen3.5-0.8B = model TEKS (FastLanguageModel), BUKAN multimodal.**
+> Gemma 3 1B & Llama 3.2 1B **di-drop** (notebook diarsipkan ke `notebooks/notebook-lawas/`).
+> **Training Qwen0.8B SUDAH SELESAI** (3 epoch/5628 step, eval loss 2.74→2.075; adapter di Drive;
+> kurva `results/qwen35_0_8b_trainer_state.json`). NEXT = eval baseline vs fine-tuned (token-F1+ROUGE-L).
+> Detail + koreksi asumsi usang: **`HANDOFF_PIVOT4.md`** (juga di Drive, sinkron dgn Claude browser).
 
 ## Project Overview
 Fine-tuning Small Language Model (SLM) untuk Medical Chatbot yang mampu menjelaskan keluhan pasien secara detail.

@@ -1,20 +1,26 @@
-# HANDOFF / SUMBER KEBENARAN — Pivot 4 (sinkronisasi Claude Code ⇄ Claude browser)
+# HANDOFF / SUMBER KEBENARAN — Pivot 5 (REVISI DOSEN: single-model, baseline vs fine-tuned)
 
 > **Tujuan dokumen ini:** satu acuan tunggal yang dibaca **kedua** asisten (Claude Code di IDE
 > dan Claude di browser/claude.ai) supaya tidak saling bertentangan. Jika ada konflik antara
 > dokumen lain dan file ini, **file ini yang menang** untuk hal "kondisi proyek saat ini".
 >
-> _Update terakhir: 2026-06-18 — Pivot 4 aktif. Menggantikan deskripsi Pivot 3 di `CLAUDE.md`._
+> _Update terakhir: 2026-06-21 — **Pivot 5 aktif** (revisi dosen). Menggantikan Pivot 4 (3 model komparatif)._
 
 ---
 
-## 1. PIVOT AKTIF = PIVOT 4 (≤1B, Indonesia-only)
+## 1. PIVOT AKTIF = PIVOT 5 (1 model: Qwen3.5-0.8B, baseline vs fine-tuned)
 
-- Studi **comparative 3 model ≤1B** untuk chatbot medis **offline** (Puskesmas/Termux Android), QLoRA 4-bit di **Kaggle/Colab T4**.
+- **Revisi dosen:** objektif **BUKAN lagi perbandingan antar-model**. Sekarang **satu model**
+  (`Qwen3.5-0.8B`) dibandingkan dengan **dirinya sendiri**: **baseline pre-trained vs setelah fine-tuning**
+  (QLoRA pada dataset medis Indonesia).
+- Use-case tetap: chatbot medis **offline** (Puskesmas / HP Android via Termux), QLoRA 4-bit di **Kaggle/Colab T4**.
 - Bahasa: **Indonesia native-only** (sumber `indonesia_qna` / Alodokter). Tidak ada translasi.
-- Metrik eval: **token-F1 + ROUGE-L** (Exact-Match / MCQA **DI-DROP** untuk Pivot 4).
+- Metrik eval: **token-F1 + ROUGE-L** (Exact-Match / MCQA tetap **DI-DROP**).
 
-> Pivot 3 (2 model ~2B, FastVisionModel, `processed_final`) **sudah superseded**. Notebook `finetune_qwen35_2b.ipynb` & `finetune_gemma4_e2b.ipynb` = artefak Pivot 3.
+> **Gemma 3 1B & Llama 3.2 1B = DI-DROP dari studi** (revisi dosen). Notebook-nya **diarsipkan** ke
+> `notebooks/notebook-lawas/` sebagai jejak eksplorasi (tidak dihapus, untuk sidang). Pivot 3 (2 model
+> ~2B, FastVisionModel) juga superseded — notebook `finetune_qwen35_2b.ipynb` & `finetune_gemma4_e2b.ipynb`
+> ikut diarsipkan.
 
 ---
 
@@ -28,21 +34,21 @@
 
 ---
 
-## 3. MODEL & NOTEBOOK (3 notebook, harness IDENTIK)
-
-Di-generate oleh **`notebooks/build_train_qwen_qlora.py`** (multi-model). **JANGAN edit `.ipynb` manual** — edit generator lalu `python notebooks/build_train_qwen_qlora.py`.
+## 3. MODEL & NOTEBOOK (1 model aktif)
 
 | Notebook | Model | Loader | Turn-token | System |
 |---|---|---|---|---|
-| `notebooks/train_qwen_qlora.ipynb` | `unsloth/Qwen3.5-0.8B` | **FastLanguageModel** | ChatML `<\|im_start\|>` + scaffold `<think>` | native |
-| `notebooks/train_gemma3_1b_qlora.ipynb` | `unsloth/gemma-3-1b-it` | **FastLanguageModel** | `<start_of_turn>` | **di-merge ke user** (Gemma tak punya role system) |
-| `notebooks/train_llama32_1b_qlora.ipynb` | `unsloth/Llama-3.2-1B-Instruct` | **FastLanguageModel** | header `<\|start_header_id\|>` | native |
+| `notebooks/train_qwen_qlora.ipynb` (generator) | `unsloth/Qwen3.5-0.8B` | **FastLanguageModel** | ChatML `<\|im_start\|>` + scaffold `<think>` | native |
+| `notebooks/03_finetune_qwen3-5_0.8B_RUN.ipynb` | — versi yang **BENAR-BENAR dijalankan** di Colab (hasil ditarik dari Drive, output di-strip) | — | — | — |
 
-Urutan run: **Qwen0.8B dulu** (baseline sehat) → Gemma 3 1B → Llama 3.2 1B. Alur tiap notebook: `RUN_MODE="pilot"` → **GATE** (loss turun + ≥9/10 Indonesia + non-degeneratif) → kalau PASS set `RUN_MODE="full"`. Panduan: `notebooks/README_TRAIN.md`.
+> Generator `notebooks/build_train_qwen_qlora.py` masih bisa mem-build 3 model, tapi **hanya Qwen0.8B
+> yang dipakai**. **JANGAN edit `.ipynb` manual** — edit generator lalu regenerate. Panduan: `notebooks/README_TRAIN.md`.
+
+Alur notebook: `RUN_MODE="pilot"` → **GATE** (loss turun + ≥9/10 Indonesia + non-degeneratif) → kalau PASS set `RUN_MODE="full"`.
 
 ---
 
-## 4. HYPERPARAMETER KANONIK (sama di 3 notebook — controlled variable)
+## 4. HYPERPARAMETER KANONIK
 
 - QLoRA 4-bit; `r=16, alpha=32, dropout=0.05`; target 7 proj (`q,k,v,o,gate,up,down`).
 - `LEARNING_RATE=1e-4` (cosine, warmup 0.10, weight_decay 0.01, adamw_8bit, max_grad_norm 1.0).
@@ -52,18 +58,15 @@ Urutan run: **Qwen0.8B dulu** (baseline sehat) → Gemma 3 1B → Llama 3.2 1B. 
 
 ---
 
-## 5. ⚠️ KOREKSI ASUMSI USANG (yang sering muncul dari dokumen/NOTE lama)
+## 5. ⚠️ KOREKSI ASUMSI USANG
 
-Ini penyebab utama tabrakan knowledge. **Yang BENAR (Pivot 4):**
-
-| Klaim usang (SALAH untuk Pivot 4) | Yang BENAR |
+| Klaim usang (SALAH) | Yang BENAR (Pivot 5) |
 |---|---|
-| "Qwen3.5-0.8B multimodal / VL Processor, perlu override AutoTokenizer" | **0.8B = model TEKS → FastLanguageModel.** Yang VLM itu varian **2B** (Pivot 3), bukan 0.8B. |
-| Data `processed_shared/train_reduced.jsonl` | **`processed_id/`** (30003/2997/2998). `processed_shared` & `processed_final` = artefak Pivot-2/3. |
-| `packing=True` | **`packing=False`** — wajib agar `train_on_responses_only` akurat. |
-| `LEARNING_RATE=2e-4` | **`1e-4`** (2e-4 terbukti terlalu agresif). |
-| Notebook target `01/02/03_finetune_*.ipynb` | Notebook aktif = **`train_{qwen,gemma3_1b,llama32_1b}_qlora.ipynb`**. `01/02/03` = lawas/superseded. |
-| System prompt ICD-11 | System prompt empati Indonesia (sudah ada di data `processed_id`). |
+| "Studi membandingkan 3 model ≤1B / 2 model ~2B" | **Satu model: Qwen3.5-0.8B baseline vs fine-tuned.** Gemma/Llama di-drop (revisi dosen). |
+| "Qwen3.5-0.8B multimodal / VL Processor" | **0.8B = model TEKS → FastLanguageModel.** Yang VLM itu varian 2B (Pivot 3). |
+| Data `processed_shared` / `processed_final` | **`processed_id/`** (30003/2997/2998). `processed_shared`/`processed_final` = artefak Pivot-2/3. |
+| `packing=True` / `LEARNING_RATE=2e-4` | **`packing=False`** + **`1e-4`**. |
+| Notebook target `01/02/03_finetune_*.ipynb` lama | Aktif = **`train_qwen_qlora.ipynb`** (+ run-version `03_finetune_qwen3-5_0.8B_RUN.ipynb`). Sisanya di `notebook-lawas/`. |
 | Tanpa scaffold `<think>` untuk Qwen | Qwen3.5 menyisipkan `<think></think>` walau thinking OFF → `RESPONSE_PART` Qwen memuat scaffold itu (kalau tidak, train ≠ infer). |
 
 ---
@@ -71,9 +74,15 @@ Ini penyebab utama tabrakan knowledge. **Yang BENAR (Pivot 4):**
 ## 6. STATUS & NEXT
 
 - ✅ Dataset `processed_id` final + validasi PASS.
-- ✅ 3 notebook training siap (harness Pivot-4 + pengerasan install Colab-modern + sel verifikasi import).
-- ⏭️ Peneliti: upload `Data/processed_id/` (3 `.jsonl`) + notebook ke Kaggle/Colab → jalankan **pilot → GATE → full** (Qwen dulu).
-- ⏭️ Setelah training: eval token-F1 + ROUGE-L per-bahasa → export GGUF Q4_K_M → benchmark on-device (RAM/latency).
+- ✅ Notebook training Qwen0.8B siap + **SUDAH DIJALANKAN** (lihat hasil di bawah).
+- ✅ **TRAINING SELESAI (Qwen3.5-0.8B, QLoRA, 3 epoch / 5628 step):**
+  - train loss **3.25 → 1.94**; eval loss **2.74 → 2.075** (best = step terakhir 5628, turun monoton → belum overfitting).
+  - Artefak di Drive: `MyDrive/Aries/Fine-Tune SLM for Medical Chatbot/outputs/checkpoints/qwen35-0.8b-train/`
+    (`adapter_model.safetensors` 25,6MB + config + `checkpoint-5628/`). Kurva loss: `results/qwen35_0_8b_trainer_state.json`.
+- ⏭️ **NEXT (yang diminta dosen — BELUM dijalankan): eval baseline vs fine-tuned.**
+  1. Tarik adapter dari Drive ke `outputs/` lokal (atau mount Drive di Colab).
+  2. `eval.py`: **Qwen3.5-0.8B baseline** vs **fine-tuned** → token-F1 + ROUGE-L, per-bahasa ID/EN.
+  3. Export GGUF Q4_K_M → `benchmark_ondevice.py` (RAM/latency/ukuran) untuk kelayakan offline.
 
 > Jika kamu (Claude mana pun) hendak memberi instruksi yang bertentangan dengan tabel di Bagian 5,
 > **berhenti dan konfirmasi ke user** dulu — kemungkinan besar itu knowledge lama.

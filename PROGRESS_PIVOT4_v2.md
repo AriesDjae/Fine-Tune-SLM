@@ -1,5 +1,13 @@
 # PROGRESS — Pivot 4 Dataset (Strict Clean v2)
-_Update terakhir: 2026-06-17 (sesi siang) — **STRICT CLEAN v2 SELESAI & QC BERSIH**._
+_Update terakhir: 2026-06-21 — **REVISI DOSEN (Pivot 5): single-model + training Qwen0.8B SELESAI**._
+
+> ## 🔔 REVISI DOSEN (2026-06-21) — PIVOT 5
+> Objektif jadi **single-model: Qwen3.5-0.8B baseline vs fine-tuned** (bukan perbandingan 3 model).
+> Gemma 3 1B & Llama 3.2 1B di-drop (notebook → `notebooks/notebook-lawas/`).
+> **Training Qwen0.8B SELESAI** (3 epoch/5628 step): eval loss **2.74 → 2.075**; adapter di Drive;
+> kurva `results/qwen35_0_8b_trainer_state.json`. NEXT = eval baseline vs fine-tuned (token-F1+ROUGE-L)
+> → GGUF Q4_K_M → benchmark on-device. Sumber kebenaran: `HANDOFF_PIVOT4.md`.
+> Bagian di bawah = catatan proses dataset (historis, tetap valid soal `processed_id`).
 
 > ## ✅ STATUS: SELESAI sampai QC (2026-06-17)
 > Dataset final `Data/processed_id/{train,val,test}.jsonl` = **30.004 / 2.998 / 2.998**.

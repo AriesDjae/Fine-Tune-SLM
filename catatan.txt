@@ -1,4 +1,24 @@
 ================================================================================
+>>> REVISI DOSEN (2026-06-21) — PIVOT 5: SINGLE-MODEL, BASELINE vs FINE-TUNED <<<
+================================================================================
+Objektif TIDAK lagi perbandingan antar-model. Sekarang SATU model:
+  Qwen3.5-0.8B  ->  baseline (pre-trained)  vs  fine-tuned (QLoRA, processed_id).
+- Gemma 3 1B & Llama 3.2 1B DI-DROP. Notebook diarsipkan ke notebooks/notebook-lawas/
+  (tidak dihapus — jejak penelitian untuk sidang). Pivot-3 (2 model ~2B) ikut diarsip.
+- TRAINING QWEN0.8B SUDAH SELESAI (3 epoch / 5628 step, Colab):
+    train loss 3.25 -> 1.94 ; eval loss 2.74 -> 2.075 (best = step terakhir, turun monoton).
+    Adapter di Drive: .../outputs/checkpoints/qwen35-0.8b-train/ (adapter_model.safetensors 25.6MB
+    + checkpoint-5628/). Kurva loss: results/qwen35_0_8b_trainer_state.json.
+- BELUM dijalankan (langkah berikutnya yg diminta dosen):
+    1) tarik adapter Drive -> outputs/ lokal, merge ke 16-bit.
+    2) eval.py baseline vs fine-tuned -> token-F1 + ROUGE-L, per-bahasa ID/EN
+       (WAJIB --test_file Data/processed_id/test.jsonl ; default-nya masih path lama).
+    3) export GGUF Q4_K_M -> benchmark_ondevice.py (RAM/latency/ukuran) utk kelayakan offline.
+- Sumber kebenaran terkini: HANDOFF_PIVOT4.md (sudah di-update ke Pivot 5).
+Baris-baris DI BAWAH ini = catatan historis (Pivot 3/4) — konteks lama, jangan diikuti.
+================================================================================
+
+================================================================================
 CATATAN UNTUK BESOK  —  dibuat 2026-06-14
 Project: Fine-Tune SLM Medical Chatbot (Skripsi UII — chatbot medis offline Puskesmas)
 ================================================================================
