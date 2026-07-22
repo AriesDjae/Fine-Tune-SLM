@@ -32,6 +32,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 from chat_format import MODEL_MODES, SYSTEM_DEFAULT, build_prompt, clean_greeting  # noqa: E402
+from inference.typo_postprocess import get_corrector  # noqa: E402  (koreksi typo output — Pivot 6)
 
 BASE_MODEL = "unsloth/Qwen3.5-0.8B"
 CKPT_ROOT = os.path.join(ROOT, "outputs", "checkpoints", "qwen35-0.8b-train")
@@ -160,17 +161,23 @@ def prettify(text):
     return "\n\n".join(blocks)
 
 
-def _block(title, fn, apply_clean, apply_pretty):
+def _block(title, fn, apply_clean, apply_pretty, apply_typo, typo_aggressive):
     st.subheader(title)
     t0 = time.time()
     with st.spinner("Menghasilkan jawaban ..."):
         ans = fn()
     if apply_clean:
         ans = clean_greeting(ans)
+    n_typo = 0
+    if apply_typo:                              # Pivot 6: koreksi typo pada OUTPUT (bukan retrain)
+        ans, n_typo = get_corrector().correct_with_count(ans, aggressive=typo_aggressive)
     if apply_pretty:
         ans = prettify(ans)
     st.markdown(ans or "_(kosong)_")
-    st.caption(f"⏱ {time.time() - t0:.1f} s")
+    cap = f"⏱ {time.time() - t0:.1f} s"
+    if apply_typo:
+        cap += f"  ·  ✍️ {n_typo} typo dikoreksi"
+    st.caption(cap)
 
 
 # --------------------------------------------------------------------------- #
@@ -201,6 +208,14 @@ with st.sidebar:
     apply_pretty = st.checkbox("Rapikan jadi poin-poin (interaktif)", value=True,
                                help="Hanya melayout ulang teks model jadi bullet — "
                                     "TIDAK mengubah isi, akurasi tetap utuh.")
+    apply_typo = st.checkbox("Koreksi typo (KBBI, pasca-proses)", value=True,
+                             help="Pivot 6 — perbaiki typo pada JAWABAN model saat runtime "
+                                  "(hemat resource: tanpa fine-tuning ulang). Konservatif: "
+                                  "istilah medis & nama diri tidak disentuh.")
+    typo_aggressive = st.checkbox("↳ mode agresif (edit-1 KBBI)", value=False,
+                                  disabled=not apply_typo,
+                                  help="Tambah koreksi edit-jarak-1 ke kandidat KBBI tunggal. "
+                                       "Recall lebih tinggi, sedikit lebih berisiko.")
     system_prompt = st.text_area("System prompt", SYSTEM_DEFAULT, height=140)
 
     st.divider()
@@ -225,16 +240,16 @@ if go:
         with col_base:
             _block("📦 Baseline (pre-trained)",
                    lambda: answer_baseline(model, tok, prompt, max_new_tokens),
-                   apply_clean, apply_pretty)
+                   apply_clean, apply_pretty, apply_typo, typo_aggressive)
         with col_ft:
             _block(f"✨ Fine-tuned · {adapter_label}",
                    lambda: answer_finetuned(model, tok, prompt, max_new_tokens, adapter_name),
-                   apply_clean, apply_pretty)
+                   apply_clean, apply_pretty, apply_typo, typo_aggressive)
     elif view == "Fine-tuned saja":
         _block(f"✨ Fine-tuned · {adapter_label}",
                lambda: answer_finetuned(model, tok, prompt, max_new_tokens, adapter_name),
-               apply_clean, apply_pretty)
+               apply_clean, apply_pretty, apply_typo, typo_aggressive)
     else:  # Baseline saja
         _block("📦 Baseline (pre-trained)",
                lambda: answer_baseline(model, tok, prompt, max_new_tokens),
-               apply_clean, apply_pretty)
+               apply_clean, apply_pretty, apply_typo, typo_aggressive)

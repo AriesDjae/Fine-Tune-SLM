@@ -97,10 +97,28 @@ def clean_answer(a):
     # 2.5 pulihkan batas kalimat (sisip ". " sebelum kata-pembuka terkurasi)
     a2, ncnt = RE_GLUE.subn(". ", a)
     if ncnt: stat["sentence_split"]+=ncnt; a=a2
-    # 3. buang kalimat promosi platform ATAU rujukan artikel lain
-    sents=re.split(r"(?<=[.!?])\s+", a)
-    kept=[s for s in sents if not RE_PLAT.search(s) and not RE_REF.search(s)]
-    if len(kept)<len(sents): stat["platform_or_ref"]+=1
+    # 3. buang promosi platform / rujukan artikel — SURGICAL: potong tepat di posisi
+    #    match & PERTAHANKAN konten medis sebelumnya (sumber Alodokter sering 1 paragraf
+    #    "rata" tanpa titik -> drop-utuh dulu menghapus jawaban penuh). Kalimat dibuang
+    #    utuh hanya bila sisa konten di depannya sepele (<40 char = promo/rujukan murni).
+    sents=re.split(r"(?<=[.!?])\s+", a); kept=[]; touched=False
+    for s in sents:
+        mref=RE_REF.search(s); mpl=RE_PLAT.search(s)
+        if not mref and not mpl:
+            kept.append(s); continue
+        pos=min(m.start() for m in (mref,mpl) if m)
+        # Yang akan dibuang = dari posisi match s/d akhir kalimat. Bila BESAR (>120 char),
+        # itu pertanda paragraf "rata" dgn konten medis NYATA setelah pointer -> JANGAN
+        # hapus (biarkan pointer; noise kecil >> kehilangan konten). Hanya pointer pendek
+        # (lazimnya di ekor jawaban) yang dipotong.
+        if len(s)-pos>120:
+            kept.append(s); continue
+        touched=True
+        head=s[:pos].rstrip(" ,;:-—")
+        if len(head)>=40:
+            kept.append(head if head.endswith((".","!","?")) else head+".")
+        # head<40 (promo/rujukan murni & pendek) -> buang kalimat
+    if touched: stat["platform_or_ref"]+=1
     a=" ".join(kept).strip()
     # 4. preposisi nempel
     a2=RE_DIPREP.sub(lambda m:"di "+m.group(1), a); 

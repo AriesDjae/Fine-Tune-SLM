@@ -3,7 +3,7 @@
   "model": "unsloth/Qwen3.5-0.8B",
   "model_type": "qwen",
   "config": {
-    "n_eval": 200,
+    "n_eval": 2998,
     "max_new_tokens": 256,
     "do_sample": false,
     "no_repeat_ngram_size": 3,
@@ -11,43 +11,51 @@
     "quant": "16bit",
     "loader": "hf",
     "gguf": null,
-    "test_file": "Data/processed_id_clean/test.jsonl",
+    "test_file": "Data/processed_id/test.jsonl",
     "seed": 42,
-    "bertscore": false,
-    "bertscore_model": null
+    "bertscore": true,
+    "bertscore_model": "bert-base-multilingual-cased"
   },
   "metrics": {
     "bucket:open": {
-      "rougeL": 0.117,
-      "rouge1": 0.2568,
-      "token_f1": 0.2568,
-      "rougeL_n": 200,
-      "rouge1_n": 200,
-      "token_f1_n": 200
+      "rougeL": 0.1176,
+      "rouge1": 0.2605,
+      "token_f1": 0.2605,
+      "bertscore": 0.6588,
+      "rougeL_n": 2998,
+      "rouge1_n": 2998,
+      "token_f1_n": 2998,
+      "bertscore_n": 2998
     },
     "bucket:open|lang:id": {
-      "rougeL": 0.117,
-      "rouge1": 0.2568,
-      "token_f1": 0.2568,
-      "rougeL_n": 200,
-      "rouge1_n": 200,
-      "token_f1_n": 200
+      "rougeL": 0.1176,
+      "rouge1": 0.2605,
+      "token_f1": 0.2605,
+      "bertscore": 0.6588,
+      "rougeL_n": 2998,
+      "rouge1_n": 2998,
+      "token_f1_n": 2998,
+      "bertscore_n": 2998
     },
     "lang:id": {
-      "rougeL": 0.117,
-      "rouge1": 0.2568,
-      "token_f1": 0.2568,
-      "rougeL_n": 200,
-      "rouge1_n": 200,
-      "token_f1_n": 200
+      "rougeL": 0.1176,
+      "rouge1": 0.2605,
+      "token_f1": 0.2605,
+      "bertscore": 0.6588,
+      "rougeL_n": 2998,
+      "rouge1_n": 2998,
+      "token_f1_n": 2998,
+      "bertscore_n": 2998
     },
     "overall": {
-      "rougeL": 0.117,
-      "rouge1": 0.2568,
-      "token_f1": 0.2568,
-      "rougeL_n": 200,
-      "rouge1_n": 200,
-      "token_f1_n": 200
+      "rougeL": 0.1176,
+      "rouge1": 0.2605,
+      "token_f1": 0.2605,
+      "bertscore": 0.6588,
+      "rougeL_n": 2998,
+      "rouge1_n": 2998,
+      "token_f1_n": 2998,
+      "bertscore_n": 2998
     }
   },
   "examples": [
@@ -91,7 +99,7 @@
       "bucket": "open",
       "lang": "id",
       "pred": "Ini adalah keluhan yang sangat umum dan sering terjadi setelah pemasangan impan susuk (knotless implant).\n\nSebagai asisten informasi medis, saya akan menjelaskan hal-hal yang mungkin terjadi berdasarkan prinsip medis yang aman, namun **sangat penting untuk dicatat bahwa saya adalah AI, bukan dokter.",
-      "ref": "Implan KB umumnya dilakukan pada jaringan di bawah kulit (bagian superfisial=tidak menembus ke otot atau bahkan lebih dalam). Pemasangan Kb ini sebaiknya dilakukan oleh ahli (bidan berkompetensi, dokter umum dan dokter kandungan) untuk memastikan KB terpasang dengan baik dan berfungsi optimal. KB im"
+      "ref": "Implan KB umumnya dilakukan pada jaringan dibawah kulit (bagian superfisial=tidak menembus ke otot atau bahkan lebih dalam). Pemasangan Kb ini sebaiknya dilakukan oleh ahli (bidan berkompetensi, dokter umum dan dokter kandungan) untuk memastikan KB terpasang dengan baik dan berfungsi optimal. KB imp"
     },
     {
       "bucket": "open",

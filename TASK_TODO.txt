@@ -1,0 +1,171 @@
+================================================================
+ TASK TODO — Fine-Tune SLM for Medical Chatbot (Pivot 5 -> Pivot 6)
+ Dibuat: 2026-07-06 | Update: 2026-07-23 (REVISI roster Qwen-only + H100 bf16)
+================================================================
+
+Ringkasan status: TRAINING selesai, EVAL 16-bit selesai, GGUF Q4_K_M
+sudah dibuat & lolos uji-load (Pivot 5). PIVOT 6 (jurnal) dibuka -> lihat
+blok di bawah. Sisa pekerjaan Pivot 5 tetap berlaku (T1-T6).
+
+================================================================
+ PIVOT 6 (JURNAL) — REVISI 2026-07-23: scaling SATU KELUARGA Qwen3.5
+================================================================
+Objektif: ukur pengaruh PARAMETER secara TERKONTROL (arsitektur &
+tokenizer IDENTIK -> sumbu parameter bersih, bukan tren observasional).
+Roster lintas-arsitektur lama (Gemma-3-4B / Llama-3.2-3B) DIBATALKAN
+user 2026-07-23. 3 model (semua Qwen3.5, batas dosen <=4B tetap):
+  - Qwen3.5-0.8B  (lantai range; TEKS -> FastLanguageModel)
+  - Qwen3.5-2B    (titik tengah; VLM -> FastModel, text-only)
+  - Qwen3.5-4B    (plafon range; VLM -> FastModel, text-only;
+                   TUNDUK GATE RAM on-device -> Fase D / "bagian 7")
+Dataset SAMA: Data/processed_id_final/ (20000/2947/2952, terbersih).
+Typo pipeline (saran dosen) = POST-PROCESSING output inference (bukan
+retrain); VALID utk jurnal via ablation C3 (on/off, seragam 3 model).
+HARDWARE: dipinjamkan RunPod H100 -> LoRA bf16 MURNI (LOAD_IN_4BIT=False,
+default notebook; QLoRA 4-bit = set True bila turun ke GPU 24GB).
+Effective batch DIKUNCI 16 di kedua mode; LR 1e-4 dst tidak berubah.
+Metodologi jurnal kini: LoRA bf16 (bukan QLoRA) + justifikasi "4-bit
+tak diperlukan di H100 80GB; hindari confound artefak kuantisasi".
+
+FASE A — prep (SELESAI 2026-07-23, kecuali A4):
+  [x] A1. Verifikasi checkpoint (2026-07-23): unsloth/Qwen3.5-2B &
+          unsloth/Qwen3.5-4B ADA di HF; KEDUANYA MULTIMODAL (vision
+          encoder) -> FastModel + finetune_vision_layers=False.
+          Template ChatML + scaffold <think> IDENTIK dgn 0.8B
+          (RESPONSE_PART sama; sel SELF-CHECK menjaga saat run).
+          Fallback resmi: Qwen/Qwen3.5-{2B,4B} (ungated).
+          (Verifikasi Gemma/Llama 2026-07-21 = OBSOLET.)
+  [x] A2. Generator notebook di-update (2026-07-23):
+          notebooks/build_train_pivot6.py -> train_qwen35_{0.8b,2b,4b}_p6.ipynb.
+          Saklar presisi LOAD_IN_4BIT: False=LoRA bf16 H100 (batch 8x2),
+          True=QLoRA 24GB (2x8); MODEL_ID plain (bukan bnb-4bit); fallback
+          pre-quantized dipaksa 4-bit + WARNING keras (jangan campur run
+          bf16 vs 4-bit di tabel). Lolos validasi JSON + syntax per sel.
+          Artefak baru: requirements_pivot6.txt (install 2-tahap, JANGAN
+          replace torch image) + scripts/setup_runpod_p6.sh (auto-xformers).
+          Notebook gemma/llama lama DIHAPUS (roster batal).
+          (Generator <=1B lama dibiarkan utuh = jejak.)
+  [x] A3. Typo post-processor runtime (2026-07-21):
+          inference/typo_postprocess.py (KBBI konservatif: peta-baku+CURATED
+          default aman-medis; aggressive=edit-1 opsional; proteksi nama/ALL-CAPS;
+          singleton get_corrector(); offline degrade CURATED-only tanpa crash).
+          Di-wire ke inference/app.py (toggle + mode agresif + caption).
+          py_compile OK + self-test OK.
+          CATATAN: cache KBBI HF (Lyon28) TIDAK ada di mesin saat ini -> corrector
+          jalan CURATED-only (28 entri). Utk peta penuh: taruh Data/kbbi/data.csv
+          atau set env DATA_KBBI_CSV, atau jalankan di env yg punya cache.
+  [ ] A4. Lengkapi peta KBBI penuh: sediakan Data/kbbi/data.csv (saat ini
+          corrector jalan CURATED-only 28 entri) — WAJIB sebelum ablation C3
+          & deploy. (Opsional: export KBBI -> JSON gzip utk startup cepat HP.)
+
+FASE B — training di H100 (SEMUA bf16 LoRA, pod & presisi sama):
+  [ ] B0. Retrain Qwen3.5-0.8B di processed_id_final — jalankan PERTAMA
+          (tercepat; validasi harness E2E). Menggantikan rencana lama
+          "retrain lokal RTX 4050". Artefak Pivot-5 (30k) tak sebanding;
+          angka evalnya = referensi, bukan final.
+  [ ] B1. Train Qwen3.5-2B. CEK sel Load & SELF-CHECK run pertama
+          (processor VLM vs tokenizer, pad_token, scaffold <think>) —
+          leg ini belum diuji lokal.
+  [ ] B2. Train Qwen3.5-4B (idem B1).
+
+FASE C — eval 3-arah (inti hasil jurnal):
+  [ ] C1. eval.py --loader hf, protokol identik (seed42, greedy, BERTScore) di
+          test set processed_id_final, base vs finetuned utk 3 model.
+  [ ] C2. Tabel scaling parameter TERKONTROL (0.8B/2B/4B; arsitektur+tokenizer
+          identik -> loss antar model kini SEBANDING, dulu tidak).
+  [ ] C3. Ablation typo post-processor (on vs off, terapkan SAMA ke 3 model)
+          + metrik pendamping TYPO-RATE output. Catatan interpretasi: delta
+          F1/ROUGE bisa ~0 atau sedikit negatif krn bentuk kata di referensi
+          — jelaskan di pembahasan. Mode aggressive=OFF (risiko medis).
+
+FASE D — trade-off deployment (RQ Puskesmas): GGUF Q4_K_M x3 + benchmark_ondevice
+  (ukur peak RAM TERMASUK corrector KBBI). GATE RAM 4B diputuskan di sini
+  ("bagian 7"): 4B lolos deploy hanya bila RAM Q4_K_M muat di perangkat uji.
+FASE E — tulis jurnal (restructure dari skripsi/ + tabel C + ablation + trade-off;
+  metodologi training = LoRA bf16 H100, bukan QLoRA).
+
+OPSIONAL / KEPUTUSAN TERTUNDA (2026-07-21):
+  [ ] O1. Eval lintas-bahasa ID->EN (ANALISIS SEKUNDER — jangan dahulukan sblm Fase C).
+          Tool lokal offline: NLLB-200 (nllb-200-distilled-600M lokal / 1.3B-3.3B RunPod,
+          ind_Latn<->eng_Latn) = rekomendasi; alt: CTranslate2+NLLB, Argos, Opus-MT.
+          Fork A = terjemah test ID->EN (matched-pairs, isolasi bahasa, gold=translationese
+          -> pakai BERTScore). Fork D = test NATIVE EN dari Data/processed/ (PubMedQA/
+          MedQuAD/ChatDoctor, tanpa translator, tapi language x domain confound).
+          MENUNGGU keputusan: klaim-utama vs pelengkap; Fork A (skrip NLLB) vs D (carve
+          native-EN) vs tunda. Belum ada kode dibuat.
+
+================================================================
+ (PIVOT 5) SISA PEKERJAAN — tetap berlaku
+================================================================
+
+----------------------------------------------------------------
+ SUDAH SELESAI (jangan diulang) — untuk konteks
+----------------------------------------------------------------
+[x] Training QLoRA Qwen3.5-0.8B: 3 epoch / 5628 step, best eval_loss 2.0754
+[x] Eval 16-bit FULL (n=2998) baseline vs finetuned + BERTScore
+        baseline  : F1 0.261 / RougeL 0.118 / BERTScore 0.659
+        finetuned : F1 0.306 / RougeL 0.163 / BERTScore 0.698
+        delta     : +0.045 / +0.045 / +0.039  (RQ1: uplift konsisten)
+[x] Kurva loss  -> results/figures/qwen35_0_8b_loss_curve.png
+[x] Merge adapter -> outputs/merged/qwen35-0.8b-medical/ (1.5 GB)
+[x] GGUF Q4_K_M   -> outputs/gguf/qwen35-0.8b-medical-Q4_K_M.gguf (529 MB, load OK)
+[x] Draf skripsi BAB I-IV (skripsi/) + form dokter (human_eval/)
+
+----------------------------------------------------------------
+ BELUM DIKERJAKAN
+----------------------------------------------------------------
+
+[ ] T1. EVAL Q4_K_M + QUANTIZATION GAP  (Task C2 — BLOCKED lokal)
+    - Butuh Colab/Linux: llama-cpp-python tak bisa di-build di Windows (no compiler).
+    - Upload ke Drive: Q4_K_M.gguf + tokenizer dir + eval.py + chat_format.py
+      + Data/processed_id/test.jsonl + results/eval_pivot5/qwen_finetuned.json
+    - Jalankan (protokol IDENTIK: seed 42, n_eval 3000, greedy):
+        python eval.py --gguf outputs/gguf/qwen35-0.8b-medical-Q4_K_M.gguf \
+            --model outputs/checkpoints/qwen35-0.8b-train \
+            --label qwen_finetuned_q4 --loader gguf \
+            --test_file Data/processed_id/test.jsonl --n_eval 3000 --bertscore \
+            --out results/eval_pivot5/qwen_finetuned_q4.json
+        python eval.py --summarize results/eval_pivot5
+    - Label WAJIB "qwen_finetuned_q4" agar terpasang jadi baris QUANTIZATION GAP.
+    - Detail lengkap: HANDOFF_C2_GGUF_EVAL.md
+
+[ ] T2. BENCHMARK ON-DEVICE (RQ3, opsional tapi disarankan)
+    - CPU/HP: peak RAM (load vs infer), tokens/sec, ukuran file — GGUF Q4.
+    - Script: benchmark_ondevice.py. Perangkat uji harus SAMA antar-run.
+
+[ ] T3. EXPERT SPOT-CHECK DOKTER (RQ keamanan/akurasi)
+    - Form siap: human_eval/form_dokter_spotcheck.md + gold_set.csv (10-20 Q).
+    - Generate output Base vs Fine-tuned untuk tiap pertanyaan gold set.
+    - Isi form bersama dokter -> rekap rate Aman/Akurat/Menyesatkan (tabel paper).
+
+[ ] T4. KEPUTUSAN DATA FINAL (processed_id -> processed_id_final)
+    - Training/eval saat ini masih menunjuk Data/processed_id/ (30003/2997/2998).
+    - Tersedia Data/processed_id_final/ (20000/2947/2952, terbersih, 0 noise/dup/leak).
+    - Perbaikan kalimat BELUM diterapkan (nunggu keputusan):
+        * name-strip 579 record (aman, refine filter agar tak buang "Asma."/"Vitamin.")
+        * pembuka-tanpa-subjek 469 record (butuh LLM-rewrite; ubah target training)
+    - Jika pakai data final: ganti path & (jika mau) re-train + re-eval.
+    - Detail: memory audit-strict-clean + Data/processed_id_final/DATA_CARD.md
+
+[ ] T5. LENGKAPI SKRIPSI (isi placeholder [MENYUSUL])
+    - BAB 4: tabel Q4_K_M (dari T1), benchmark on-device (T2), spot-check dokter (T3).
+    - Isi juga penanda [ISI: ...] identitas (universitas, NIM, dll).
+    - Convert final -> docx via Pandoc (perintah di skripsi/README.md).
+
+[ ] T6. (OPSIONAL) BERSIH-BERSIH ARTEFAK PIVOT-2/3
+    - notebooks/notebook-lawas/ (00-03), Data/processed_shared/, root processed/
+    - Hapus hanya bila yakin tak dipakai.
+
+----------------------------------------------------------------
+ CATATAN PENTING
+----------------------------------------------------------------
+- Target ROUGE-L >= 0.30 BELUM tercapai (finetuned 0.163). Uplift nyata &
+  konsisten di 3 metrik; laporkan apa adanya + jelaskan keterbatasan (model 0.8B,
+  jawaban Alodokter variatif) di pembahasan.
+- LEGAL DATASET DITUTUP (2026-07-23): abid/indonesia-medical-qna ber-DOI DataCite
+  10.57967/hf/8356 (citable jurnal). Pertahanan: UU Hak Cipta 28/2014 Psl 44 +
+  de-ID terverifikasi + email izin (tak dibalas = due diligence, simpan bukti) +
+  Data/ gitignored (tak meredistribusi). Tidak perlu kontak lanjutan.
+- Sumber kebenaran: HANDOFF_PIVOT4.md, HANDOFF_C2_GGUF_EVAL.md, RUN_SENIN.md.
+- Prioritas untuk sidang: T1 (quant gap) + T3 (dokter) + T5 (skripsi lengkap).
+================================================================

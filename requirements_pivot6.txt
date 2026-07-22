@@ -1,0 +1,43 @@
+# ================================================================
+# requirements_pivot6.txt — training Pivot 6 (RunPod H100 bf16 LoRA,
+# atau GPU 24GB QLoRA). Padanan sel Install di notebook train_*_p6.ipynb.
+#
+# PENTING:
+#  1) JANGAN install torch dari file ini — image RunPod/Colab sudah membawa
+#     torch+CUDA yang cocok. Me-replace torch = cara tercepat merusak env.
+#  2) xformers HARUS dipilih sesuai versi torch image (lihat peta di bawah /
+#     sel Install notebook). Baris xformers di sini sengaja TANPA pin.
+#  3) Cara install yang benar = 2 tahap (paket inti pakai --no-deps agar
+#     torch tidak ke-replace). Gunakan scripts/setup_runpod_p6.sh, atau:
+#
+#       pip install -r requirements_pivot6.txt          # tahap 1 (baris aktif di bawah)
+#       pip install --no-deps unsloth unsloth_zoo trl==0.22.2 peft bitsandbytes \
+#           accelerate xformers==<lihat peta> triton tyro msgspec cut_cross_entropy torchao
+#
+#     Peta xformers per torch: 2.4->0.0.27.post2 | 2.5/2.6->0.0.29.post3 |
+#       2.8->0.0.32.post2 | 2.9->0.0.33.post1 | 2.10->0.0.34 | 2.11->0.0.35
+# ================================================================
+
+# --- Tahap 1: dependensi biasa (aman via resolver pip) ---
+sentencepiece
+protobuf
+huggingface_hub>=0.34.0
+hf_transfer
+langdetect
+rouge_score
+transformers==4.56.2
+datasets>=3.4.1,<4.0.0
+
+# --- Tahap 2 (INSTALL MANUAL dengan --no-deps, lihat header) ---
+# unsloth
+# unsloth_zoo
+# trl==0.22.2
+# peft
+# bitsandbytes
+# accelerate
+# xformers==<sesuai torch>
+# triton
+# tyro
+# msgspec
+# cut_cross_entropy
+# torchao
