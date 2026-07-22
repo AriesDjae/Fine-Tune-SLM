@@ -64,6 +64,16 @@ service_account*.json
 /output_preview.png
 training/download*.png
 
+# --- Binari llama.cpp lokal (42MB; unduh dari release resmi) --------------
+llama_bin/
+
+# --- Artefak run notebook (di-generate ulang tiap run) ---------------------
+pilot_generations.txt
+
+# --- Draf skripsi: repo PUBLIK -> jangan publikasikan sebelum sidang. ------
+#     (Hapus baris ini bila memang ingin skripsi ikut ter-push.)
+skripsi/
+
 # --- OS / editor cruft ----------------------------------------------------
 .DS_Store
 Thumbs.db

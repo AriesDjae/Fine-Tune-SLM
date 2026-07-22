@@ -3,13 +3,18 @@
 Koreksi typo jawaban assistant. GUARD: target di KBBI, len>=4, |Δlen|<=2, freq target>=30,
 bukan kata-berinfleksi-sah (akar di KBBI), bukan nama (pernah kapital di tengah kalimat).
 IN/OUT: Data/processed_id_clean/*.jsonl (asli Data/processed_id/ aman)."""
-import json, re, csv, os, collections, sys, io
-from huggingface_hub import hf_hub_download
+import json, re, csv, os, collections, sys, io, glob
 sys.stdout=io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8"); csv.field_size_limit(10**7)
 DST="Data/processed_id_clean"; WORD=re.compile(r"[A-Za-z]+")
 def toks(t): return WORD.findall(t or "")
 
-path=hf_hub_download('Lyon28/kamus-besar-bahasa-indonesia','data.csv',repo_type='dataset')
+def _kbbi_path():  # OFFLINE: pakai cache HF lokal; fallback download bila belum ada
+    hits=glob.glob(os.path.expanduser(
+        "~/.cache/huggingface/hub/datasets--Lyon28--kamus-besar-bahasa-indonesia/snapshots/*/data.csv"))
+    if hits: return hits[0]
+    from huggingface_hub import hf_hub_download
+    return hf_hub_download('Lyon28/kamus-besar-bahasa-indonesia','data.csv',repo_type='dataset')
+path=_kbbi_path()
 VALID=set(); OFFICIAL={}
 with open(path,encoding="utf-8",errors="replace") as f:
     for row in csv.DictReader(f):

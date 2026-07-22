@@ -28,8 +28,9 @@ import psutil
 
 # Dokumentasi arsitektur (dari model card; "active" tak bisa diintrospeksi otomatis).
 ARCH = {
-    "qwen":  {"family": "Qwen3.5-2B", "type": "dense",
-              "total_params_B": 2.0, "active_params_B": 2.0,
+    # Pivot 5: SATU model Qwen3.5-0.8B (baseline vs fine-tuned QLoRA), model TEKS dense.
+    "qwen":  {"family": "Qwen3.5-0.8B", "type": "dense",
+              "total_params_B": 0.8, "active_params_B": 0.8,
               "note": "standard dense; semua parameter aktif tiap inferensi"},
     "gemma": {"family": "Gemma 4 E2B", "type": "PLE effective-param dense",
               "total_params_B": 5.1, "active_params_B": 2.3,
