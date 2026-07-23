@@ -153,6 +153,8 @@ def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
     # ============ ENV (sel 2) ============
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"      # single GPU
     os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
+    # Anti-fragmentasi CUDA (disarankan pesan error OOM job 16a4ecda) — gratis, aman.
+    os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
     if not use_compile:
         # Saklar darurat {"compile": false}: matikan compile Unsloth TOTAL (eager penuh).
         # Default = compile ON utk kecepatan training di H100; fase GENERATE selalu
@@ -164,6 +166,16 @@ def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
     if on_volume:
         os.environ.setdefault("HF_HOME", "/runpod-volume/hf_cache")  # cache model persisten
     OUT_ROOT = "/runpod-volume" if on_volume else "/tmp/p6_out"
+
+    # FAIL-FAST storage (pelajaran biaya 2026-07-23): run full tanpa volume DAN tanpa
+    # HF_OUT_REPO+HF_TOKEN = hasil PASTI hilang -> gagalkan SEBELUM detik GPU terbayar,
+    # jangan cuma warning di akhir seperti dulu.
+    if run_mode == "full" and not on_volume and not (
+            os.environ.get("HF_OUT_REPO") and os.environ.get("HF_TOKEN")):
+        raise AssertionError(
+            "Storage tak aman utk mode full: /runpod-volume tidak terpasang dan "
+            "HF_OUT_REPO/HF_TOKEN tidak diset -> adapter akan hilang saat worker mati. "
+            "Pasang network volume di endpoint ATAU set env HF_OUT_REPO + HF_TOKEN.")
 
     # Import unsloth PERTAMA (mem-patch transformers/trl).
     from unsloth import FastLanguageModel, FastModel  # noqa: F401
@@ -403,10 +415,25 @@ def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
     prog(f"trainer siap | steps_kw={steps_kw} | eff_batch={PER_DEVICE_BATCH * GRAD_ACCUM}")
 
     # ============ TRAIN (sel 10 — resume-aware) ============
-    _ckpts = glob.glob(os.path.join(ADAPTER_DIR, "checkpoint-*"))
-    _resume = len(_ckpts) > 0
-    prog(f"resume={_resume} ({len(_ckpts)} checkpoint)")
-    trainer.train(resume_from_checkpoint=_resume or None)
+    _ckpts = sorted(glob.glob(os.path.join(ADAPTER_DIR, "checkpoint-*")),
+                    key=lambda p: int(p.rsplit("-", 1)[-1]))
+    prog(f"resume={bool(_ckpts)} ({len(_ckpts)} checkpoint)")
+    # Resume tahan-banting: checkpoint TERBARU bisa korup (worker mati saat save)
+    # -> resume crash -> submit ulang crash lagi = loop bayar-gagal. Solusi: buang
+    # checkpoint korup, mundur ke sebelumnya (JANGAN dari nol). Error training asli
+    # (sudah ada progress melewati step checkpoint) tetap di-raise apa adanya.
+    for _ in range(len(_ckpts) + 1):
+        try:
+            trainer.train(resume_from_checkpoint=bool(_ckpts) or None)
+            break
+        except Exception as e:
+            _resumed_step = int(_ckpts[-1].rsplit("-", 1)[-1]) if _ckpts else 0
+            if not _ckpts or trainer.state.global_step > _resumed_step:
+                raise                      # bukan masalah checkpoint -> laporkan asli
+            bad = _ckpts.pop()
+            prog(f"[WARN] resume gagal ({type(e).__name__}: {str(e)[:120]}) -> "
+                 f"hapus {os.path.basename(bad)}, coba checkpoint sebelumnya")
+            shutil.rmtree(bad, ignore_errors=True)
     prog("training selesai")
 
     result = {
@@ -438,31 +465,39 @@ def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
         B2_noexplode = (loss_max <= 2 * losses[0]) if losses else False
         B1_stable = all(np.isfinite(l) for l in losses) and len(losses) > 0
 
+        # Generate DIBUNGKUS try/except: crash di sini (mis. recompile GatedDeltaNet,
+        # job 58dbcc7d) TIDAK boleh membakar hasil training — adapter tetap di-SAVE
+        # + di-push di bawah; verdict jadi STOP dgn alasan tercatat.
+        gen_error = None
         Loader.for_inference(model)
         test_ds = load_dataset("json", data_files=os.path.join(DATA_DIR, "test.jsonl"), split="train")
         gens, id_ok, degen = [], 0, 0
-        with _eager_generation():
-            for i in range(10):
-                msgs = [m for m in test_ds[i]["messages"] if m["role"] != "assistant"]
-                p = render_chat(msgs, add_generation_prompt=True)
-                inp = TOK(p, return_tensors="pt").to(model.device)
-                out = model.generate(**inp, max_new_tokens=200, do_sample=False,
-                                     no_repeat_ngram_size=3, repetition_penalty=1.1,
-                                     pad_token_id=PAD_ID)
-                txt = TOK.decode(out[0][inp["input_ids"].shape[1]:], skip_special_tokens=True).strip()
-                gens.append((msgs[-1]["content"], txt))
-                try:
-                    if detect(txt[:500]) == "id":
-                        id_ok += 1
-                except Exception:
-                    pass
-                toks = txt.split()
-                grams = [tuple(toks[j:j + 4]) for j in range(len(toks) - 3)]
-                rep = (1 - len(set(grams)) / len(grams)) if grams else 0
-                if rep > 0.30:
-                    degen += 1
-        B3a_lang = id_ok >= 9
-        B3b_degen = degen == 0
+        try:
+            with _eager_generation():
+                for i in range(10):
+                    msgs = [m for m in test_ds[i]["messages"] if m["role"] != "assistant"]
+                    p = render_chat(msgs, add_generation_prompt=True)
+                    inp = TOK(p, return_tensors="pt").to(model.device)
+                    out = model.generate(**inp, max_new_tokens=200, do_sample=False,
+                                         no_repeat_ngram_size=3, repetition_penalty=1.1,
+                                         pad_token_id=PAD_ID)
+                    txt = TOK.decode(out[0][inp["input_ids"].shape[1]:], skip_special_tokens=True).strip()
+                    gens.append((msgs[-1]["content"], txt))
+                    try:
+                        if detect(txt[:500]) == "id":
+                            id_ok += 1
+                    except Exception:
+                        pass
+                    toks = txt.split()
+                    grams = [tuple(toks[j:j + 4]) for j in range(len(toks) - 3)]
+                    rep = (1 - len(set(grams)) / len(grams)) if grams else 0
+                    if rep > 0.30:
+                        degen += 1
+        except Exception as e:
+            gen_error = f"{type(e).__name__}: {str(e)[:300]}"
+            prog(f"[WARN] generate GATE crash: {gen_error} -> verdict STOP, adapter tetap disimpan")
+        B3a_lang = id_ok >= 9 and gen_error is None
+        B3b_degen = degen == 0 and gen_error is None
         Loader.for_training(model)
 
         gen_file = os.path.join(RESULTS_DIR, "pilot_generations.txt")
@@ -473,6 +508,7 @@ def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
         PASS = B1_stable and B2_trend and B2_noexplode and B3a_lang and B3b_degen
         result["gate"] = {
             "verdict": "PASS_GREEN" if PASS else "STOP",
+            "generate_error": gen_error,
             "B1_stable_no_nan": B1_stable,
             "B2_loss_start": round(loss_start, 4), "B2_loss_end": round(loss_end, 4),
             "B2_trend_drop_ge_0.15": B2_trend, "B2_no_explode": B2_noexplode,
@@ -518,22 +554,32 @@ def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
         N = min(100, len(val_eval))
         scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=False)
         f1s, rls = [], []
-        with _eager_generation():
-            for i in range(N):
-                msgs = val_eval[i]["messages"]
-                ref = next(m["content"] for m in msgs if m["role"] == "assistant")
-                p = render_chat([m for m in msgs if m["role"] != "assistant"], add_generation_prompt=True)
-                inp = TOK(p, return_tensors="pt").to(model.device)
-                out = model.generate(**inp, max_new_tokens=256, do_sample=False,
-                                     no_repeat_ngram_size=3, repetition_penalty=1.1,
-                                     pad_token_id=PAD_ID)
-                pred = TOK.decode(out[0][inp["input_ids"].shape[1]:], skip_special_tokens=True).strip()
-                f1s.append(_f1(pred, ref))
-                rls.append(scorer.score(ref, pred)["rougeL"].fmeasure)
-        result["quick_eval"] = {"n": N, "token_f1": round(sum(f1s) / N, 4),
-                                "rougeL": round(sum(rls) / N, 4)}
-        prog(f"quick-eval n={N}: F1={result['quick_eval']['token_f1']} "
-             f"RL={result['quick_eval']['rougeL']}")
+        # Dibungkus try/except: quick-eval crash TIDAK boleh menggagalkan push hasil
+        # training full run (pola rugi yang sama dgn GATE — lihat komentar sel 11).
+        try:
+            with _eager_generation():
+                for i in range(N):
+                    msgs = val_eval[i]["messages"]
+                    ref = next(m["content"] for m in msgs if m["role"] == "assistant")
+                    p = render_chat([m for m in msgs if m["role"] != "assistant"], add_generation_prompt=True)
+                    inp = TOK(p, return_tensors="pt").to(model.device)
+                    out = model.generate(**inp, max_new_tokens=256, do_sample=False,
+                                         no_repeat_ngram_size=3, repetition_penalty=1.1,
+                                         pad_token_id=PAD_ID)
+                    pred = TOK.decode(out[0][inp["input_ids"].shape[1]:], skip_special_tokens=True).strip()
+                    f1s.append(_f1(pred, ref))
+                    rls.append(scorer.score(ref, pred)["rougeL"].fmeasure)
+            result["quick_eval"] = {"n": N, "token_f1": round(sum(f1s) / N, 4),
+                                    "rougeL": round(sum(rls) / N, 4)}
+            prog(f"quick-eval n={N}: F1={result['quick_eval']['token_f1']} "
+                 f"RL={result['quick_eval']['rougeL']}")
+        except Exception as e:
+            done = len(rls)
+            result["quick_eval"] = {
+                "error": f"{type(e).__name__}: {str(e)[:300]}", "n_done": done,
+                "token_f1_partial": round(sum(f1s) / done, 4) if done else None,
+                "rougeL_partial": round(sum(rls) / done, 4) if done else None}
+            prog(f"[WARN] quick-eval crash setelah {done} sampel -> hasil training tetap di-push")
 
     # ============ PUSH ke HF Hub (wajib di mode tanpa volume) ============
     pushed = _push_to_hf(
