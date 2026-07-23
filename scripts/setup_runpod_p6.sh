@@ -24,8 +24,8 @@ echo "torch=$(python -c 'import torch;print(torch.__version__)') -> ${XFORMERS}"
 pip install -q sentencepiece protobuf "huggingface_hub>=0.34.0" hf_transfer langdetect rouge_score
 pip install -q --no-deps unsloth_zoo bitsandbytes accelerate "${XFORMERS}" peft triton unsloth \
     tyro msgspec cut_cross_entropy torchao
-pip install -q transformers==4.56.2
-pip install -q --no-deps trl==0.22.2
+pip install -q transformers==5.5.0    # qwen3_5 butuh >=5.x; 5.5.0 = maks didukung unsloth
+pip install -q --no-deps trl==0.24.0
 pip install -q "datasets>=3.4.1,<4.0.0"
 
 python - <<'PY'
