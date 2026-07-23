@@ -48,3 +48,4 @@ jobs:
           tags: |
             ghcr.io/ariesdjae/p6-train:v1
             ghcr.io/ariesdjae/p6-train:latest
+            ghcr.io/ariesdjae/p6-train:sha-${{ github.sha }}
