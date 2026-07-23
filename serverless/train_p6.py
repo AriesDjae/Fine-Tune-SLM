@@ -535,8 +535,6 @@ def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
         TOK.save_pretrained(ADAPTER_DIR)
     with open(os.path.join(RESULTS_DIR, "log_history.json"), "w", encoding="utf-8") as f:
         json.dump(trainer.state.log_history, f, ensure_ascii=False, indent=1)
-    with open(os.path.join(RESULTS_DIR, "run_summary.json"), "w", encoding="utf-8") as f:
-        json.dump({k: v for k, v in result.items() if k != "gate"}, f, ensure_ascii=False, indent=1)
     # trainer_state best checkpoint utk kurva jurnal
     if trainer.state.best_model_checkpoint:
         src = os.path.join(trainer.state.best_model_checkpoint, "trainer_state.json")
@@ -588,6 +586,12 @@ def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
                 "token_f1_partial": round(sum(f1s) / done, 4) if done else None,
                 "rougeL_partial": round(sum(rls) / done, 4) if done else None}
             prog(f"[WARN] quick-eval crash setelah {done} sampel -> hasil training tetap di-push")
+
+    # run_summary LENGKAP (termasuk gate + quick_eval) ditulis TERAKHIR sebelum push:
+    # output job RunPod expire ±30 mnt setelah selesai (pelajaran 2B full 2026-07-23,
+    # "Failed to fetch" di console) -> satu-satunya salinan permanen = file di HF/volume.
+    with open(os.path.join(RESULTS_DIR, "run_summary.json"), "w", encoding="utf-8") as f:
+        json.dump(result, f, ensure_ascii=False, indent=1)
 
     # ============ PUSH ke HF Hub (wajib di mode tanpa volume) ============
     pushed = _push_to_hf(
