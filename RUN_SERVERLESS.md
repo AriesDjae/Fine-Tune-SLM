@@ -6,7 +6,7 @@
 > dari repo GitHub ini), training dikirim sebagai **job** via API, GPU nyala hanya selama job
 > jalan (bayar per detik pemakaian, mati sendiri — tidak ada risiko "lupa stop pod").
 
-**File harness:** `serverless/handler.py` + `serverless/train_p6.py` (konversi 1:1 dari
+**File harness:** `handler.py` (root — pemindai RunPod hanya cek root) + `serverless/train_p6.py` (konversi 1:1 dari
 notebook `train_*_p6.ipynb`; SELF-CHECK, GATE, resume, hyperparameter tak diubah) + `Dockerfile`.
 
 ---
