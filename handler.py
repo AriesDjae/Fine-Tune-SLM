@@ -44,7 +44,7 @@ def handler(job):
             run_mode=mode,
             load_in_4bit=bool(inp.get("load_in_4bit", False)),
             quick_eval=inp.get("quick_eval", None),
-            use_compile=bool(inp.get("compile", False)),
+            use_compile=bool(inp.get("compile", True)),
             progress=prog,
         )
     except AssertionError as e:      # SELF-CHECK / gate assert -> jangan train, laporkan
