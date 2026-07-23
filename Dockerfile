@@ -17,11 +17,13 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 WORKDIR /app
 
-# Layer dependensi terpisah dari kode -> rebuild kode tak mengulang install
+# Layer dependensi terpisah dari kode -> rebuild kode tak mengulang install.
+# transformers >=5.5 WAJIB: arsitektur qwen3_5 tak ada di seluruh jalur 4.x
+# (dicek registry v4.57.6 vs v5.5.0, 2026-07-23); 5.5.0 = maks yg didukung unsloth.
 RUN pip install -q sentencepiece protobuf "huggingface_hub>=0.34.0" hf_transfer langdetect rouge_score && \
     pip install -q --no-deps unsloth_zoo bitsandbytes accelerate xformers==0.0.32.post2 peft triton unsloth tyro msgspec cut_cross_entropy torchao && \
-    pip install -q transformers==4.56.2 && \
-    pip install -q --no-deps trl==0.22.2 && \
+    pip install -q transformers==5.5.0 && \
+    pip install -q --no-deps trl==0.24.0 && \
     pip install -q "datasets>=3.4.1,<4.0.0" && \
     pip install -q runpod
 

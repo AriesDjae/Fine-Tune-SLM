@@ -35,9 +35,9 @@ MODELS = {
     "0.8b": dict(
         label="Qwen3.5-0.8B",
         model_id="unsloth/Qwen3.5-0.8B",
-        model_id_fallback="unsloth/Qwen3.5-0.8B-Instruct",
-        loader="FastLanguageModel",           # model TEKS -> FastLanguageModel
-        adapter_name="qwen35_0.8b_p6",
+        model_id_fallback="Qwen/Qwen3.5-0.8B",  # resmi Qwen (ungated). "-Instruct" TIDAK ADA di HF
+        loader="FastModel",                   # config repo kini multimodal (vision_config, cek 2026-07-23)
+        adapter_name="qwen35_0.8b_p6",        # -> FastModel + vision beku, seragam dgn 2B/4B
     ),
     "2b": dict(
         label="Qwen3.5-2B",
@@ -192,10 +192,18 @@ def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
     try:
         model, tokenizer = _load(M["model_id"])
         loaded_id = M["model_id"]
-    except Exception as e:
-        print("Gagal:", repr(e)[:160], "-> fallback", M["model_id_fallback"], flush=True)
-        model, tokenizer = _load(M["model_id_fallback"])
-        loaded_id = M["model_id_fallback"]
+    except Exception as e_primary:
+        print("Gagal:", repr(e_primary)[:300], "-> fallback", M["model_id_fallback"], flush=True)
+        try:
+            model, tokenizer = _load(M["model_id_fallback"])
+            loaded_id = M["model_id_fallback"]
+        except Exception as e_fb:
+            # Laporkan KEDUA error — error primary-lah yang biasanya informatif
+            # (error fallback saja pernah menyesatkan diagnosa, 2026-07-23).
+            raise RuntimeError(
+                "Gagal load model di KEDUA id.\n"
+                f"- PRIMARY  {M['model_id']}: {repr(e_primary)[:800]}\n"
+                f"- FALLBACK {M['model_id_fallback']}: {repr(e_fb)[:400]}") from e_fb
 
     _q = bool(getattr(model, "is_loaded_in_4bit", False))
     precision = "QLoRA 4-bit (bnb)" if _q else f"LoRA {next(model.parameters()).dtype}"
