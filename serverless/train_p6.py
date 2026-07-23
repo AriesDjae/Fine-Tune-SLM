@@ -355,9 +355,10 @@ def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
     cfg = SFTConfig(
         output_dir=ADAPTER_DIR,
         per_device_train_batch_size=PER_DEVICE_BATCH,
-        # Eval = forward-only (tanpa gradien) -> batch besar aman & TIDAK mengubah
-        # angka eval loss sama sekali; memangkas ~30 mnt/run (eval ~30x di val penuh).
-        per_device_eval_batch_size=PER_DEVICE_BATCH if load_in_4bit else 64,
+        # Eval batch JANGAN dibesarkan: accelerate meng-upcast logits [B, seq, vocab~250k]
+        # ke fp32 per forward -> batch 64 minta ~51 GiB sekaligus = OOM di H100 80GB
+        # (job 16a4ecda, 2026-07-23). Batch 16 ~ 13 GiB fp32 logits, aman.
+        per_device_eval_batch_size=PER_DEVICE_BATCH,
         gradient_accumulation_steps=GRAD_ACCUM,
         warmup_ratio=WARMUP_RATIO,
         learning_rate=LEARNING_RATE,
