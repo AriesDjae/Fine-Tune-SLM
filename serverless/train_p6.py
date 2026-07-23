@@ -128,7 +128,7 @@ def _push_to_hf(local_dirs, path_prefix, progress):
 
 
 def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
-        quick_eval=None, progress=None):
+        quick_eval=None, use_compile=False, progress=None):
     """Jalankan satu leg training. Return dict ringkasan (gate, loss, path)."""
     assert model_key in MODELS, f"model harus salah satu {list(MODELS)}"
     assert run_mode in ("pilot", "full"), "mode harus 'pilot' atau 'full'"
@@ -140,6 +140,12 @@ def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
     # ============ ENV (sel 2) ============
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"      # single GPU
     os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
+    if not use_compile:
+        # Qwen3.5 punya linear attention (GatedDeltaNet) yang di-recompile torch.compile
+        # TIAP step decode -> FailOnRecompileLimitHit saat generate (job 58dbcc7d,
+        # 2026-07-23). Default: matikan compile Unsloth (eager = benar, sedikit lebih
+        # lambat). Coba lagi dgn compile via job input {"compile": true}.
+        os.environ["UNSLOTH_COMPILE_DISABLE"] = "1"
     on_volume = os.path.isdir("/runpod-volume")
     if on_volume:
         os.environ.setdefault("HF_HOME", "/runpod-volume/hf_cache")  # cache model persisten
@@ -384,6 +390,7 @@ def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
 
     result = {
         "model": M["label"], "loaded_id": loaded_id, "mode": run_mode,
+        "unsloth_compile": use_compile,
         "precision": precision, "forced_4bit_fallback": forced_4bit_warning,
         "trainable_params": trainable, "total_params": total,
         "eff_batch": PER_DEVICE_BATCH * GRAD_ACCUM,
