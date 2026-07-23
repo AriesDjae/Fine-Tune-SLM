@@ -76,6 +76,19 @@ MAX_GRAD_NORM = 1.0
 PILOT_TRAIN_N, PILOT_VAL_N, PILOT_MAX_STEPS = 1500, 200, 250
 
 
+def _eager_generation():
+    """Context manager: paksa EAGER hanya selama generate.
+    Decode GatedDeltaNet Qwen3.5 memicu recompile torch.compile per step
+    (FailOnRecompileLimitHit) — training tetap compiled (cepat di H100),
+    generation eager (stabil). Fallback nullcontext bila set_stance tak ada."""
+    import torch
+    from contextlib import nullcontext
+    try:
+        return torch.compiler.set_stance("force_eager")
+    except Exception:
+        return nullcontext()
+
+
 def _first_existing(paths):
     for p in paths:
         if p and os.path.exists(os.path.join(p, "train.jsonl")):
@@ -128,7 +141,7 @@ def _push_to_hf(local_dirs, path_prefix, progress):
 
 
 def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
-        quick_eval=None, use_compile=False, progress=None):
+        quick_eval=None, use_compile=True, progress=None):
     """Jalankan satu leg training. Return dict ringkasan (gate, loss, path)."""
     assert model_key in MODELS, f"model harus salah satu {list(MODELS)}"
     assert run_mode in ("pilot", "full"), "mode harus 'pilot' atau 'full'"
@@ -141,10 +154,11 @@ def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"      # single GPU
     os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
     if not use_compile:
-        # Qwen3.5 punya linear attention (GatedDeltaNet) yang di-recompile torch.compile
-        # TIAP step decode -> FailOnRecompileLimitHit saat generate (job 58dbcc7d,
-        # 2026-07-23). Default: matikan compile Unsloth (eager = benar, sedikit lebih
-        # lambat). Coba lagi dgn compile via job input {"compile": true}.
+        # Saklar darurat {"compile": false}: matikan compile Unsloth TOTAL (eager penuh).
+        # Default = compile ON utk kecepatan training di H100; fase GENERATE selalu
+        # dipaksa eager via _eager_generation() (lihat bawah) karena linear attention
+        # Qwen3.5 (GatedDeltaNet) recompile tiap step decode -> FailOnRecompileLimitHit
+        # (job 58dbcc7d, 2026-07-23).
         os.environ["UNSLOTH_COMPILE_DISABLE"] = "1"
     on_volume = os.path.isdir("/runpod-volume")
     if on_volume:
@@ -420,25 +434,26 @@ def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
         Loader.for_inference(model)
         test_ds = load_dataset("json", data_files=os.path.join(DATA_DIR, "test.jsonl"), split="train")
         gens, id_ok, degen = [], 0, 0
-        for i in range(10):
-            msgs = [m for m in test_ds[i]["messages"] if m["role"] != "assistant"]
-            p = render_chat(msgs, add_generation_prompt=True)
-            inp = TOK(p, return_tensors="pt").to(model.device)
-            out = model.generate(**inp, max_new_tokens=200, do_sample=False,
-                                 no_repeat_ngram_size=3, repetition_penalty=1.1,
-                                 pad_token_id=PAD_ID)
-            txt = TOK.decode(out[0][inp["input_ids"].shape[1]:], skip_special_tokens=True).strip()
-            gens.append((msgs[-1]["content"], txt))
-            try:
-                if detect(txt[:500]) == "id":
-                    id_ok += 1
-            except Exception:
-                pass
-            toks = txt.split()
-            grams = [tuple(toks[j:j + 4]) for j in range(len(toks) - 3)]
-            rep = (1 - len(set(grams)) / len(grams)) if grams else 0
-            if rep > 0.30:
-                degen += 1
+        with _eager_generation():
+            for i in range(10):
+                msgs = [m for m in test_ds[i]["messages"] if m["role"] != "assistant"]
+                p = render_chat(msgs, add_generation_prompt=True)
+                inp = TOK(p, return_tensors="pt").to(model.device)
+                out = model.generate(**inp, max_new_tokens=200, do_sample=False,
+                                     no_repeat_ngram_size=3, repetition_penalty=1.1,
+                                     pad_token_id=PAD_ID)
+                txt = TOK.decode(out[0][inp["input_ids"].shape[1]:], skip_special_tokens=True).strip()
+                gens.append((msgs[-1]["content"], txt))
+                try:
+                    if detect(txt[:500]) == "id":
+                        id_ok += 1
+                except Exception:
+                    pass
+                toks = txt.split()
+                grams = [tuple(toks[j:j + 4]) for j in range(len(toks) - 3)]
+                rep = (1 - len(set(grams)) / len(grams)) if grams else 0
+                if rep > 0.30:
+                    degen += 1
         B3a_lang = id_ok >= 9
         B3b_degen = degen == 0
         Loader.for_training(model)
@@ -496,17 +511,18 @@ def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
         N = min(100, len(val_eval))
         scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=False)
         f1s, rls = [], []
-        for i in range(N):
-            msgs = val_eval[i]["messages"]
-            ref = next(m["content"] for m in msgs if m["role"] == "assistant")
-            p = render_chat([m for m in msgs if m["role"] != "assistant"], add_generation_prompt=True)
-            inp = TOK(p, return_tensors="pt").to(model.device)
-            out = model.generate(**inp, max_new_tokens=256, do_sample=False,
-                                 no_repeat_ngram_size=3, repetition_penalty=1.1,
-                                 pad_token_id=PAD_ID)
-            pred = TOK.decode(out[0][inp["input_ids"].shape[1]:], skip_special_tokens=True).strip()
-            f1s.append(_f1(pred, ref))
-            rls.append(scorer.score(ref, pred)["rougeL"].fmeasure)
+        with _eager_generation():
+            for i in range(N):
+                msgs = val_eval[i]["messages"]
+                ref = next(m["content"] for m in msgs if m["role"] == "assistant")
+                p = render_chat([m for m in msgs if m["role"] != "assistant"], add_generation_prompt=True)
+                inp = TOK(p, return_tensors="pt").to(model.device)
+                out = model.generate(**inp, max_new_tokens=256, do_sample=False,
+                                     no_repeat_ngram_size=3, repetition_penalty=1.1,
+                                     pad_token_id=PAD_ID)
+                pred = TOK.decode(out[0][inp["input_ids"].shape[1]:], skip_special_tokens=True).strip()
+                f1s.append(_f1(pred, ref))
+                rls.append(scorer.score(ref, pred)["rougeL"].fmeasure)
         result["quick_eval"] = {"n": N, "token_f1": round(sum(f1s) / N, 4),
                                 "rougeL": round(sum(rls) / N, 4)}
         prog(f"quick-eval n={N}: F1={result['quick_eval']['token_f1']} "
