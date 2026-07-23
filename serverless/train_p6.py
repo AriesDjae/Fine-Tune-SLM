@@ -178,8 +178,10 @@ def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
     # Effective batch DIKUNCI 16 di kedua mode (komparabilitas antar-run/antar-model).
     if load_in_4bit:                    # GPU 24GB: batch kecil + akumulasi
         PER_DEVICE_BATCH, GRAD_ACCUM = 2, 8
-    else:                               # H100 80GB bf16
-        PER_DEVICE_BATCH, GRAD_ACCUM = 8, 2
+    else:                               # H100 80GB bf16: chunk terbesar, tanpa akumulasi
+        # (16x1 == 8x2 secara matematis: eff batch, step count, LR schedule identik —
+        #  tapi GPU dapat kerja 2x lebih besar per forward -> utilisasi naik.)
+        PER_DEVICE_BATCH, GRAD_ACCUM = 16, 1
 
     # ============ PATHS (sel 4) ============
     DATA_DIR = _resolve_data_dir(prog)
@@ -374,6 +376,8 @@ def run(model_key="0.8b", run_mode="pilot", load_in_4bit=False,
         dataset_text_field="text",
         max_length=MAX_SEQ_LENGTH,
         packing=False,                        # WAJIB utk train_on_responses_only
+        dataloader_num_workers=8,             # GPU jangan menunggu CPU tunggal (util 20%)
+        dataloader_pin_memory=True,
         report_to="none",
         **steps_kw,
     )
