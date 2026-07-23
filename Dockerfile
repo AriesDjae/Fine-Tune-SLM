@@ -27,4 +27,4 @@ RUN pip install -q sentencepiece protobuf "huggingface_hub>=0.34.0" hf_transfer 
 
 COPY . /app
 
-CMD ["python", "-u", "serverless/handler.py"]
+CMD ["python", "-u", "handler.py"]

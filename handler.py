@@ -1,5 +1,7 @@
 """
-serverless/handler.py — entrypoint worker RunPod Serverless (Pivot 6).
+handler.py — entrypoint worker RunPod Serverless (Pivot 6).
+DI ROOT repo karena pre-deploy check RunPod hanya memindai root utk
+`runpod.serverless.start()`. Logika training tetap di serverless/train_p6.py.
 
 Job input (JSON):
     {"input": {"model": "0.8b"|"2b"|"4b",      # wajib
@@ -16,7 +18,7 @@ import traceback
 
 import runpod
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "serverless"))
 from train_p6 import MODELS, run  # noqa: E402
 
 
