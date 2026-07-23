@@ -79,14 +79,22 @@ PILOT_TRAIN_N, PILOT_VAL_N, PILOT_MAX_STEPS = 1500, 200, 250
 def _eager_generation():
     """Context manager: paksa EAGER hanya selama generate.
     Decode GatedDeltaNet Qwen3.5 memicu recompile torch.compile per step
-    (FailOnRecompileLimitHit) — training tetap compiled (cepat di H100),
-    generation eager (stabil). Fallback nullcontext bila set_stance tak ada."""
+    (FailOnRecompileLimitHit). set_stance("force_eager") TERBUKTI TAK MEMPAN
+    di worker (job pilot 2B c99173ab, 2026-07-23: tetap crash di generasi ke-4)
+    -> pakai kill-switch dynamo global torch._dynamo.config.disable, dipulihkan
+    setelah generate. Training sebelum/sesudahnya tetap compiled (cepat)."""
     import torch
-    from contextlib import nullcontext
-    try:
-        return torch.compiler.set_stance("force_eager")
-    except Exception:
-        return nullcontext()
+    from contextlib import contextmanager
+
+    @contextmanager
+    def _ctx():
+        prev = torch._dynamo.config.disable
+        torch._dynamo.config.disable = True      # dynamo off total -> eager murni
+        try:
+            yield
+        finally:
+            torch._dynamo.config.disable = prev
+    return _ctx()
 
 
 def _first_existing(paths):
