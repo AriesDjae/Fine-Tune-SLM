@@ -90,3 +90,7 @@ desktop.ini
 # ...tapi dump record mentah (flagged jsonl) tetap di Drive, bukan git
 results/*.jsonl
 results/**/*.jsonl
+
+# ...dan prediksi mentah eval P6 (6 file, ~20 MB) — arsip resmi di HuggingFace
+# `AriesDjaenuri/p6-hasil/preds/`. Lihat results/preds_p6/README.md untuk cara tarik ulang.
+results/preds_p6/preds/
