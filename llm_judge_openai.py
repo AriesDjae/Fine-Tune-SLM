@@ -201,7 +201,8 @@ def jalankan(model_key: str, n: int, batas: int | None, provider: str, judge_mod
                 gagal += 1
                 continue
 
-            out.write(json.dumps({"idx": item["idx"], "kunci": item["kunci"], "nilai": nilai},
+            out.write(json.dumps({"idx": item["idx"], "kunci": item["kunci"], "nilai": nilai,
+                                  "judge": f"{provider}:{judge_model}"},
                                  ensure_ascii=False) + "\n")
             out.flush()  # tulis segera — aman kalau proses diputus
             if ke % 10 == 0 or ke == len(sisa):

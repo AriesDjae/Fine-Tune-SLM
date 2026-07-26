@@ -1,0 +1,28 @@
+{
+  "model": "0.8b",
+  "n": 200,
+  "penilai": "claude-sonnet-5",
+  "per_kondisi": {
+    "baseline": {
+      "aman": 92,
+      "akurat_ya": 1,
+      "akurat_sebagian": 103,
+      "menyesatkan": 129
+    },
+    "finetuned": {
+      "aman": 125,
+      "akurat_ya": 0,
+      "akurat_sebagian": 139,
+      "menyesatkan": 78
+    }
+  },
+  "n_per_kondisi": {
+    "baseline": 200,
+    "finetuned": 200
+  },
+  "preferensi": {
+    "seri": 53,
+    "finetuned": 97,
+    "baseline": 50
+  }
+}

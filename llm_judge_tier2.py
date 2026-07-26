@@ -358,6 +358,7 @@ def jalankan(model_key: str, n: int, batas: int | None, judge_model: str, effort
                 "idx": item["idx"],
                 "kunci": item["kunci"],
                 "nilai": nilai,
+                "judge": judge_model,  # catat penilai per baris -> ringkasan akurat
             }, ensure_ascii=False) + "\n")
             out.flush()  # tulis segera — aman kalau proses diputus
             if ke % 10 == 0 or ke == len(sisa):
@@ -394,7 +395,11 @@ def ringkas(model_key: str) -> None:
             menang[rec["kunci"].get(pilih, "seri") if pilih in ("A", "B") else "seri"] += 1
 
     n = len(baris)
-    print(f"Tier 2 LLM-judge — model {model_key} | n={n} pasangan | penilai={JUDGE_MODEL}")
+    penilai = sorted({r.get("judge", "tak tercatat") for r in baris})
+    penilai_txt = ", ".join(penilai)
+    if len(penilai) > 1:
+        penilai_txt += "  ⚠️ LEBIH DARI SATU PENILAI — hasil tidak seragam!"
+    print(f"Tier 2 LLM-judge — model {model_key} | n={n} pasangan | penilai={penilai_txt}")
     print(f"Rubrik identik dengan human_eval/form_dokter_spotcheck.md (untuk agreement Tier 3)\n")
     print(f"{'':14s} {'Aman':>8s} {'Akurat(ya)':>11s} {'Akurat(sbg)':>12s} {'Menyesatkan':>12s}")
     for kondisi in ("baseline", "finetuned"):
