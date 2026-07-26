@@ -14,19 +14,25 @@ Pemakaian:
 
     pip install openai
 
-    # OpenAI (kredit sendiri) — GPT-4o-mini ~ $0,10 untuk n=200
-    export OPENAI_API_KEY=sk-...
-    python llm_judge_openai.py --run --model-key 0.8b --judge-model gpt-4o-mini
+    # KUNCI API: jangan tempel di chat/perintah. Simpan di file `openai.key`
+    # (otomatis ter-gitignore lewat pola *.key). Skrip membacanya sendiri.
+    #   1) buat file openai.key berisi HANYA key-nya
+    #   2) jalankan:
+    python llm_judge_openai.py --run --model-key 0.8b --judge-model gpt-4o
 
-    # OpenRouter (Llama 3.3 70B gratis; rate-limited)
-    export OPENROUTER_API_KEY=sk-or-...
+    # uji coba dulu 20 item (murah) sebelum full 200:
+    python llm_judge_openai.py --run --model-key 0.8b --judge-model gpt-4o --limit 20
+
+    # OpenRouter (Llama 3.3 70B gratis; rate-limited) — key di file openrouter.key
     python llm_judge_openai.py --run --model-key 0.8b --provider openrouter \
            --judge-model meta-llama/llama-3.3-70b-instruct
 
     # ringkas (skrip mana pun sama-sama menulis results/llm_judge/tier2_<key>.jsonl)
     python llm_judge_tier2.py --summarize --model-key 0.8b
 
-Checkpoint + resume otomatis (aman diputus). Pakai `--limit 20` untuk uji coba dulu.
+DEFAULT OBJEKTIF: referensi dokter TIDAK disodorkan ke penilai (fine-tuned lebih mirip
+referensi -> menyodorkannya bisa memberi keunggulan semu). Aktifkan --show-reference
+hanya bila ingin membandingkan. Checkpoint + resume otomatis (aman diputus).
 """
 from __future__ import annotations
 
@@ -36,13 +42,28 @@ import os
 import sys
 
 # Pakai ulang seluruh bagian ilmiah dari skrip Anthropic supaya SEBANDING.
-from llm_judge_tier2 import OUT_DIR, RUBRIK, SCHEMA, _prompt, bangun_sampel
+from llm_judge_tier2 import OUT_DIR, REF_NOTE, RUBRIK, SCHEMA, _prompt, bangun_sampel
 
 PROVIDER = {
-    # nama: (base_url, env var untuk API key)
-    "openai": (None, "OPENAI_API_KEY"),  # base_url default SDK
-    "openrouter": ("https://openrouter.ai/api/v1", "OPENROUTER_API_KEY"),
+    # nama: (base_url, env var, nama file kunci)
+    "openai": (None, "OPENAI_API_KEY", "openai.key"),  # base_url default SDK
+    "openrouter": ("https://openrouter.ai/api/v1", "OPENROUTER_API_KEY", "openrouter.key"),
 }
+
+
+def _api_key(env_key: str, key_file: str) -> str | None:
+    """Ambil kunci dari env var, atau dari file lokal (ter-gitignore lewat *.key).
+
+    Sengaja TIDAK menerima kunci lewat argumen CLI supaya tak masuk riwayat shell.
+    """
+    v = os.environ.get(env_key)
+    if v:
+        return v.strip()
+    if os.path.exists(key_file):
+        with open(key_file, encoding="utf-8") as f:
+            k = f.read().strip()
+            return k or None
+    return None
 
 # Instruksi JSON eksplisit: OpenAI mendukung json_schema ketat, tapi Llama via OpenRouter
 # belum tentu — jadi kita minta JSON via prompt + parse defensif agar portabel.
@@ -85,16 +106,41 @@ def _valid(nilai: dict) -> bool:
         return False
 
 
-def jalankan(model_key: str, n: int, batas: int | None, provider: str, judge_model: str) -> None:
+def _panggil(client, kwargs: dict, state: dict):
+    """Panggil chat completion; pakai json_object mode bila model mendukungnya.
+
+    Hanya MATIKAN json mode secara permanen kalau errornya jelas soal `response_format`
+    (mis. Llama via OpenRouter tak dukung) — error lain (jaringan/rate-limit) DILEMPAR
+    ulang supaya ditangani sbg kegagalan per-item, tidak meracuni sisa run.
+    """
+    if state["json"]:
+        try:
+            return client.chat.completions.create(response_format={"type": "json_object"}, **kwargs)
+        except Exception as e:
+            msg = str(e).lower()
+            if "response_format" in msg or "json_object" in msg or "json mode" in msg:
+                state["json"] = False
+                print("  (model tak dukung json mode -> lanjut via instruksi prompt saja)")
+                return client.chat.completions.create(**kwargs)
+            raise
+    return client.chat.completions.create(**kwargs)
+
+
+def jalankan(model_key: str, n: int, batas: int | None, provider: str, judge_model: str,
+             show_reference: bool, max_tokens: int) -> None:
     try:
         from openai import OpenAI
     except ImportError:
         raise SystemExit("Butuh SDK OpenAI: pip install openai")
 
-    base_url, env_key = PROVIDER[provider]
-    api_key = os.environ.get(env_key)
+    base_url, env_key, key_file = PROVIDER[provider]
+    api_key = _api_key(env_key, key_file)
     if not api_key:
-        raise SystemExit(f"Set dulu {env_key} (key {provider}-mu sendiri).")
+        raise SystemExit(
+            f"Kunci {provider} tak ditemukan.\n"
+            f"Simpan kunci di file '{key_file}' (ter-gitignore), atau set env {env_key}.\n"
+            f"JANGAN tempel kunci di perintah/chat."
+        )
 
     client = OpenAI(api_key=api_key, base_url=base_url)
 
@@ -112,36 +158,28 @@ def jalankan(model_key: str, n: int, batas: int | None, provider: str, judge_mod
                     pass
         print(f"Resume: {len(sudah)} item sudah dinilai.")
 
+    sistem = RUBRIK + (REF_NOTE if show_reference else "") + "\n\n" + _INSTRUKSI_JSON
     sisa = [it for it in sampel if it["idx"] not in sudah]
     if batas:
         sisa = sisa[:batas]
-    print(f"Menilai {len(sisa)} item — {provider}:{judge_model} (rubrik sama dgn form dokter)...")
+    ref_txt = "DENGAN referensi" if show_reference else "TANPA referensi (objektif)"
+    print(f"Menilai {len(sisa)} item — {provider}:{judge_model} | {ref_txt} | temperature=0")
 
-    # response_format json_object bila didukung; kalau ditolak, ulang tanpa itu.
-    pakai_json_mode = True
+    state = {"json": True}  # apakah json_object mode masih dipakai
     gagal = 0
     with open(ckpt, "a", encoding="utf-8") as out:
         for ke, item in enumerate(sisa, 1):
             kwargs = dict(
                 model=judge_model,
                 messages=[
-                    {"role": "system", "content": RUBRIK + "\n\n" + _INSTRUKSI_JSON},
-                    {"role": "user", "content": _prompt(item)},
+                    {"role": "system", "content": sistem},
+                    {"role": "user", "content": _prompt(item, show_reference)},
                 ],
                 temperature=0,
-                max_tokens=1200,
+                max_tokens=max_tokens,
             )
             try:
-                if pakai_json_mode:
-                    try:
-                        resp = client.chat.completions.create(
-                            response_format={"type": "json_object"}, **kwargs
-                        )
-                    except Exception:
-                        pakai_json_mode = False  # model tak dukung json mode -> jatuh ke prompt saja
-                        resp = client.chat.completions.create(**kwargs)
-                else:
-                    resp = client.chat.completions.create(**kwargs)
+                resp = _panggil(client, kwargs, state)
                 nilai = _ekstrak_json(resp.choices[0].message.content)
                 if not _valid(nilai):
                     raise ValueError("nilai di luar enum rubrik")
@@ -158,7 +196,8 @@ def jalankan(model_key: str, n: int, batas: int | None, provider: str, judge_mod
 
     print(f"\nSelesai. Gagal/dilewati: {gagal}. Checkpoint -> {ckpt}")
     print(f"Ringkas: python llm_judge_tier2.py --summarize --model-key {model_key}")
-    print("(Catat di naskah: penilai = " + f"{provider}:{judge_model}, temperature=0)")
+    print(f"(Catat di naskah: penilai = {provider}:{judge_model}, temperature=0, "
+          f"{'dengan' if show_reference else 'tanpa'} referensi, blind & paired, seed=42)")
 
 
 def main() -> None:
@@ -166,14 +205,20 @@ def main() -> None:
     ap.add_argument("--run", action="store_true", help="jalankan penilaian")
     ap.add_argument("--model-key", default="0.8b", choices=["0.8b", "2b", "4b"])
     ap.add_argument("--provider", default="openai", choices=sorted(PROVIDER))
-    ap.add_argument("--judge-model", default="gpt-4o-mini",
-                    help="mis. gpt-4o-mini, gpt-4o, atau meta-llama/llama-3.3-70b-instruct")
+    ap.add_argument("--judge-model", default="gpt-4o",
+                    help="mis. gpt-4o, gpt-4o-mini, atau meta-llama/llama-3.3-70b-instruct")
+    ap.add_argument("--show-reference", action="store_true",
+                    help="sodorkan jawaban referensi dokter ke penilai (default TIDAK; "
+                         "menyodorkannya bisa memberi keunggulan semu ke fine-tuned)")
+    ap.add_argument("--max-tokens", type=int, default=700,
+                    help="batas token keluaran/panggilan; kecil = hemat biaya output (default 700)")
     ap.add_argument("--n", type=int, default=200)
     ap.add_argument("--limit", type=int, default=None, help="batasi jumlah panggilan (uji coba)")
     args = ap.parse_args()
 
     if args.run:
-        jalankan(args.model_key, args.n, args.limit, args.provider, args.judge_model)
+        jalankan(args.model_key, args.n, args.limit, args.provider, args.judge_model,
+                 args.show_reference, args.max_tokens)
     else:
         ap.print_help()
 
