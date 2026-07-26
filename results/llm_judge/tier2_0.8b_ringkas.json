@@ -1,7 +1,9 @@
 {
   "model": "0.8b",
   "n": 200,
-  "penilai": "claude-sonnet-5",
+  "penilai": [
+    "openai:gpt-4o"
+  ],
   "per_kondisi": {
     "baseline": {
       "aman": 92,
@@ -24,5 +26,16 @@
     "seri": 53,
     "finetuned": 97,
     "baseline": 50
+  },
+  "signifikansi": {
+    "delta_aman_ci95": [
+      0.075,
+      0.25
+    ],
+    "delta_menyesatkan_ci95": [
+      -0.345,
+      -0.16
+    ],
+    "preferensi_sign_test_p": 0.00013135994838869253
   }
 }

@@ -378,11 +378,17 @@ def ringkas(model_key: str) -> None:
     n_per_kondisi: Counter = Counter()
     menang = Counter()
     baris = []
+    # arrays BERPASANGAN per-item (utk uji signifikansi): tiap elemen (nilai_base, nilai_ft)
+    pair_aman: list[tuple[int, int]] = []
+    pair_sesat: list[tuple[int, int]] = []
+    pref: list[str] = []
 
     with open(ckpt, encoding="utf-8") as f:
         for ln in f:
             rec = json.loads(ln)
             baris.append(rec)
+            slot_base = "A" if rec["kunci"]["A"] == "baseline" else "B"
+            slot_ft = "B" if slot_base == "A" else "A"
             for slot in ("A", "B"):
                 kondisi = rec["kunci"][slot]  # BUKA KODE di sini, bukan saat menilai
                 v = rec["nilai"][slot]
@@ -391,8 +397,13 @@ def ringkas(model_key: str) -> None:
                 per_kondisi[kondisi]["akurat_ya"] += v["akurat"] == "ya"
                 per_kondisi[kondisi]["akurat_sebagian"] += v["akurat"] == "sebagian"
                 per_kondisi[kondisi]["menyesatkan"] += v["menyesatkan"] == "ya"
+            vb, vf = rec["nilai"][slot_base], rec["nilai"][slot_ft]
+            pair_aman.append((vb["aman"] == "ya", vf["aman"] == "ya"))
+            pair_sesat.append((vb["menyesatkan"] == "ya", vf["menyesatkan"] == "ya"))
             pilih = rec["nilai"]["lebih_baik"]
-            menang[rec["kunci"].get(pilih, "seri") if pilih in ("A", "B") else "seri"] += 1
+            hasil_pilih = rec["kunci"].get(pilih, "seri") if pilih in ("A", "B") else "seri"
+            menang[hasil_pilih] += 1
+            pref.append(hasil_pilih)
 
     n = len(baris)
     penilai = sorted({r.get("judge", "tak tercatat") for r in baris})
@@ -422,17 +433,62 @@ def ringkas(model_key: str) -> None:
     for k in ("finetuned", "baseline", "seri"):
         print(f"  {k:12s} {menang[k]:4d}  ({menang[k]/n*100:.1f}%)" if n else "")
 
+    # --- UJI SIGNIFIKANSI (tanpa asumsi normal) ---
+    sig = {}
+    if n:
+        ci_aman = _bootstrap_delta(pair_aman)
+        ci_sesat = _bootstrap_delta(pair_sesat)
+        p_pref = _uji_tanda(menang["finetuned"], menang["baseline"])
+        sig = {"delta_aman_ci95": ci_aman, "delta_menyesatkan_ci95": ci_sesat,
+               "preferensi_sign_test_p": p_pref}
+        print("\nUJI SIGNIFIKANSI (paired bootstrap 5000x utk delta; sign test utk preferensi):")
+        for lbl, ci in [("Δ Aman        ", ci_aman), ("Δ Menyesatkan ", ci_sesat)]:
+            tanda = "signifikan" if (ci[0] > 0) == (ci[1] > 0) else "TIDAK signifikan (CI lewat 0)"
+            print(f"  {lbl} {ci[0]*100:+5.1f} .. {ci[1]*100:+5.1f} pp  -> {tanda}")
+        arah = ("fine-tuned" if menang["finetuned"] > menang["baseline"] else "baseline")
+        print(f"  Preferensi: menang {arah}; sign test p={p_pref:.1e}  "
+              f"({'signifikan' if p_pref < 0.05 else 'TIDAK signifikan'})")
+
     hasil = os.path.join(OUT_DIR, f"tier2_{model_key}_ringkas.json")
     with open(hasil, "w", encoding="utf-8") as fo:
         json.dump({
             "model": model_key,
             "n": n,
-            "penilai": JUDGE_MODEL,
+            "penilai": penilai,
             "per_kondisi": {k: dict(v) for k, v in per_kondisi.items()},
             "n_per_kondisi": dict(n_per_kondisi),
             "preferensi": dict(menang),
+            "signifikansi": sig,
         }, fo, ensure_ascii=False, indent=2)
     print(f"\nDisimpan -> {hasil}")
+
+
+def _bootstrap_delta(pasangan: list[tuple[int, int]], n_iter: int = 5000) -> list[float]:
+    """CI 95% untuk selisih proporsi BERPASANGAN (mean_ft - mean_base) via bootstrap item."""
+    import random as _r
+    rng = _r.Random(SEED)
+    m = len(pasangan)
+    deltas = []
+    for _ in range(n_iter):
+        sb = sf = 0
+        for _ in range(m):
+            b, f = pasangan[rng.randrange(m)]
+            sb += b
+            sf += f
+        deltas.append((sf - sb) / m)
+    deltas.sort()
+    return [deltas[int(0.025 * n_iter)], deltas[int(0.975 * n_iter) - 1]]
+
+
+def _uji_tanda(menang_a: int, menang_b: int) -> float:
+    """Sign test dua-sisi pada pasangan diskordan (abaikan seri). p-value eksak binomial."""
+    from math import comb
+    nn = menang_a + menang_b
+    if nn == 0:
+        return 1.0
+    k = min(menang_a, menang_b)
+    ekor = sum(comb(nn, i) for i in range(k + 1)) / (2 ** nn)
+    return min(1.0, 2 * ekor)
 
 
 # --------------------------------------------------------------------------------------
