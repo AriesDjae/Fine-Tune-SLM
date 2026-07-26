@@ -51,18 +51,31 @@ PROVIDER = {
 }
 
 
+def _bersih(v: str) -> str:
+    return v.strip().strip('"').strip("'").strip()
+
+
+def _tampak_kunci(k: str) -> bool:
+    """Cek kasar apakah string ini betul kunci, bukan placeholder/komentar."""
+    return k.startswith("sk-") and len(k) > 20 and " " not in k
+
+
 def _api_key(env_key: str, key_file: str) -> str | None:
-    """Ambil kunci dari env var, atau dari file lokal (ter-gitignore lewat *.key).
+    """Ambil kunci dari env var, atau baris pertama-yang-valid file lokal (*.key, gitignore).
 
     Sengaja TIDAK menerima kunci lewat argumen CLI supaya tak masuk riwayat shell.
+    Baris komentar (#) dan placeholder (tak diawali 'sk-') diabaikan, jadi file boleh
+    berisi petunjuk di atas dan kunci ditempel di baris mana pun.
     """
     v = os.environ.get(env_key)
-    if v:
-        return v.strip()
+    if v and _tampak_kunci(_bersih(v)):
+        return _bersih(v)
     if os.path.exists(key_file):
         with open(key_file, encoding="utf-8") as f:
-            k = f.read().strip()
-            return k or None
+            for baris in f:
+                k = _bersih(baris)
+                if k and not k.startswith("#") and _tampak_kunci(k):
+                    return k
     return None
 
 # Instruksi JSON eksplisit: OpenAI mendukung json_schema ketat, tapi Llama via OpenRouter
