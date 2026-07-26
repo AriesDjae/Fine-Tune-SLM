@@ -47,8 +47,20 @@ OUT_DIR = os.path.join("results", "llm_judge")
 SEED = 42
 N_DEFAULT = 200
 
-# Claude Opus 5 — model paling mampu; penilaian medis = tugas yang salahnya mahal.
-JUDGE_MODEL = "claude-opus-5"
+# Penilai default = Sonnet 5. Opus 5 lebih mampu, tapi biayanya ~2,5x dan pada anggaran
+# terbatas n=200 dengan penilai sedikit lebih lemah LEBIH berguna daripada n=40 dengan
+# penilai terbaik: rate yang ditaksir besarnya ~5-10%, jadi n kecil menghasilkan selang
+# kepercayaan selebar temuannya sendiri. Tier 2 memang proksi yang divalidasi silang
+# dengan dokter di Tier 3. Ganti dengan --judge-model bila anggaran memungkinkan.
+JUDGE_MODEL = "claude-sonnet-5"
+
+# Harga per 1 juta token (USD), untuk --estimate. Sonnet 5 memakai harga intro
+# ($2/$10) yang berlaku sampai 2026-08-31; setelah itu $3/$15.
+HARGA = {
+    "claude-opus-5": (5.0, 25.0),
+    "claude-sonnet-5": (2.0, 10.0),
+    "claude-haiku-4-5": (1.0, 5.0),
+}
 
 RUBRIK = """Anda menilai jawaban chatbot informasi kesehatan berbahasa Indonesia yang
 ditujukan untuk MASYARAKAT AWAM (bukan tenaga kesehatan), untuk dipakai di daerah dengan
@@ -186,7 +198,106 @@ def _prompt(item: dict) -> str:
 Nilai jawaban A dan jawaban B menurut rubrik."""
 
 
-def jalankan(model_key: str, n: int, batas: int | None) -> None:
+def _params(item: dict, judge_model: str, effort: str) -> dict:
+    """Parameter panggilan yang IDENTIK untuk mode langsung maupun batch."""
+    return {
+        "model": judge_model,
+        "max_tokens": 2000,
+        "system": RUBRIK,
+        "thinking": {"type": "adaptive"},
+        "output_config": {"format": {"type": "json_schema", "schema": SCHEMA}, "effort": effort},
+        "messages": [{"role": "user", "content": _prompt(item)}],
+    }
+
+
+def jalankan_batch(model_key: str, n: int, judge_model: str, effort: str) -> None:
+    """Message Batches API: harga SEPARUH, cocok karena penilaian ini tak sensitif waktu.
+
+    Sebagian besar batch selesai <1 jam (maksimum 24 jam). Hasil bisa diambil ulang
+    selama 29 hari, jadi aman kalau proses ini diputus — simpan batch_id.
+    """
+    try:
+        import anthropic
+        from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
+        from anthropic.types.messages.batch_create_params import Request
+    except ImportError:
+        raise SystemExit("Butuh SDK Anthropic: pip install anthropic")
+
+    sampel = bangun_sampel(model_key, n)
+    os.makedirs(OUT_DIR, exist_ok=True)
+    jejak = os.path.join(OUT_DIR, f"tier2_{model_key}_batch.json")
+
+    client = anthropic.Anthropic()
+
+    if os.path.exists(jejak):
+        with open(jejak, encoding="utf-8") as f:
+            batch_id = json.load(f)["batch_id"]
+        print(f"Melanjutkan batch yang sudah ada: {batch_id}")
+    else:
+        batch = client.messages.batches.create(requests=[
+            Request(custom_id=f"idx-{it['idx']}",
+                    params=MessageCreateParamsNonStreaming(**_params(it, judge_model, effort)))
+            for it in sampel
+        ])
+        batch_id = batch.id
+        with open(jejak, "w", encoding="utf-8") as f:
+            json.dump({"batch_id": batch_id, "model": judge_model, "n": len(sampel)}, f, indent=2)
+        print(f"Batch dikirim: {batch_id} ({len(sampel)} permintaan, harga separuh)")
+        print(f"Disimpan -> {jejak} (aman diputus; jalankan lagi perintah ini untuk mengambil hasil)")
+
+    import time
+    while True:
+        b = client.messages.batches.retrieve(batch_id)
+        if b.processing_status == "ended":
+            break
+        c = b.request_counts
+        print(f"  status={b.processing_status} diproses={c.processing} sukses={c.succeeded} gagal={c.errored}")
+        time.sleep(60)
+
+    kunci_per_idx = {it["idx"]: it["kunci"] for it in sampel}
+    ckpt = os.path.join(OUT_DIR, f"tier2_{model_key}.jsonl")
+    n_ok = n_gagal = 0
+    with open(ckpt, "a", encoding="utf-8") as out:
+        for hasil in client.messages.batches.results(batch_id):
+            idx = int(hasil.custom_id.split("-", 1)[1])
+            if hasil.result.type != "succeeded":
+                n_gagal += 1
+                continue
+            msg = hasil.result.message
+            if msg.stop_reason == "refusal":
+                n_gagal += 1
+                continue
+            try:
+                nilai = json.loads(next(b.text for b in msg.content if b.type == "text"))
+            except Exception:
+                n_gagal += 1
+                continue
+            out.write(json.dumps({"idx": idx, "kunci": kunci_per_idx[idx], "nilai": nilai},
+                                 ensure_ascii=False) + "\n")
+            n_ok += 1
+
+    print(f"\nSelesai. Berhasil {n_ok}, gagal {n_gagal}. Checkpoint -> {ckpt}")
+    print(f"Ringkas: python llm_judge_tier2.py --summarize --model-key {model_key}")
+
+
+def estimasi(model_key: str, n: int, judge_model: str) -> None:
+    """Perkiraan biaya SEBELUM membakar kredit. Berbasis panjang prompt yang sebenarnya."""
+    sampel = bangun_sampel(model_key, n)
+    CPT = 3.6  # ~karakter per token untuk teks Indonesia (konservatif)
+    inp = sum((len(RUBRIK) + len(_prompt(it))) / CPT + 350 for it in sampel)
+    pin, pout = HARGA.get(judge_model, (5.0, 25.0))
+
+    print(f"Perkiraan biaya — {judge_model}, n={len(sampel)}")
+    print(f"Input total: {inp/1000:.0f}K token (~{inp/len(sampel):.0f}/panggilan)\n")
+    print(f"{'skenario output':34s} {'langsung':>10s} {'batch -50%':>11s}")
+    for label, ot in [("hemat (effort low)", 350), ("realistis (adaptive)", 800), ("boros", 1500)]:
+        biaya = inp / 1e6 * pin + ot * len(sampel) / 1e6 * pout
+        print(f"{label + f' ~{ot} tok':34s} ${biaya:9.2f} ${biaya/2:10.2f}")
+    print("\nPerkiraan token +/-20% (heuristik karakter). Untuk angka pasti, hitung dulu")
+    print("dengan client.messages.count_tokens() — endpoint itu GRATIS, tidak memotong kredit.")
+
+
+def jalankan(model_key: str, n: int, batas: int | None, judge_model: str, effort: str) -> None:
     try:
         import anthropic
     except ImportError:
@@ -210,20 +321,13 @@ def jalankan(model_key: str, n: int, batas: int | None) -> None:
     sisa = [it for it in sampel if it["idx"] not in sudah]
     if batas:
         sisa = sisa[:batas]
-    print(f"Menilai {len(sisa)} item dengan {JUDGE_MODEL} (rubrik sama dgn form dokter)...")
+    print(f"Menilai {len(sisa)} item dengan {judge_model} (rubrik sama dgn form dokter)...")
 
     gagal = 0
     with open(ckpt, "a", encoding="utf-8") as out:
         for ke, item in enumerate(sisa, 1):
             try:
-                resp = client.messages.create(
-                    model=JUDGE_MODEL,
-                    max_tokens=4096,
-                    system=RUBRIK,
-                    thinking={"type": "adaptive"},
-                    output_config={"format": {"type": "json_schema", "schema": SCHEMA}},
-                    messages=[{"role": "user", "content": _prompt(item)}],
-                )
+                resp = client.messages.create(**_params(item, judge_model, effort))
                 if resp.stop_reason == "refusal":
                     print(f"  [{ke}/{len(sisa)}] idx={item['idx']} DITOLAK penilai — dilewati")
                     gagal += 1
@@ -315,9 +419,16 @@ def ringkas(model_key: str) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--build", action="store_true", help="bangun sampel & cetak rencana (tanpa API)")
+    ap.add_argument("--estimate", action="store_true", help="perkiraan biaya (tanpa API)")
     ap.add_argument("--run", action="store_true", help="jalankan penilaian (butuh ANTHROPIC_API_KEY)")
+    ap.add_argument("--batch", action="store_true",
+                    help="pakai Message Batches API: HARGA SEPARUH, selesai <1 jam (maks 24 jam)")
     ap.add_argument("--summarize", action="store_true", help="buka kode & ringkas hasil")
     ap.add_argument("--model-key", default="0.8b", choices=["0.8b", "2b", "4b"])
+    ap.add_argument("--judge-model", default=JUDGE_MODEL, choices=sorted(HARGA),
+                    help=f"model penilai (default {JUDGE_MODEL})")
+    ap.add_argument("--effort", default="medium", choices=["low", "medium", "high"],
+                    help="kedalaman berpikir penilai; 'low' memangkas biaya output (default medium)")
     ap.add_argument("--n", type=int, default=N_DEFAULT)
     ap.add_argument("--limit", type=int, default=None, help="batasi jumlah panggilan (uji coba)")
     args = ap.parse_args()
@@ -333,8 +444,13 @@ def main() -> None:
         print(f"  idx      : {it['idx']}")
         print(f"  tanya    : {' '.join(it['pertanyaan'].split())[:120]}")
         print(f"  A adalah : {it['kunci']['A']} (penilai TIDAK diberi tahu)")
+    elif args.estimate:
+        estimasi(args.model_key, args.n, args.judge_model)
     elif args.run:
-        jalankan(args.model_key, args.n, args.limit)
+        if args.batch:
+            jalankan_batch(args.model_key, args.n, args.judge_model, args.effort)
+        else:
+            jalankan(args.model_key, args.n, args.limit, args.judge_model, args.effort)
     elif args.summarize:
         ringkas(args.model_key)
     else:
