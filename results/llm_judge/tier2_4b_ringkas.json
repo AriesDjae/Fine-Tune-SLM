@@ -1,5 +1,6 @@
 {
   "model": "4b",
+  "run": "utama",
   "n": 200,
   "penilai": [
     "openai:gpt-4o"

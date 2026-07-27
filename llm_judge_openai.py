@@ -42,7 +42,8 @@ import os
 import sys
 
 # Pakai ulang seluruh bagian ilmiah dari skrip Anthropic supaya SEBANDING.
-from llm_judge_tier2 import OUT_DIR, REF_NOTE, RUBRIK, SCHEMA, _prompt, bangun_sampel
+from llm_judge_tier2 import (OUT_DIR, REF_NOTE, RUBRIK, SCHEMA, _prompt, baca_kunci,
+                             bangun_sampel, ckpt_path)
 
 PROVIDER = {
     # nama: (base_url, env var, nama file kunci)
@@ -51,32 +52,9 @@ PROVIDER = {
 }
 
 
-def _bersih(v: str) -> str:
-    return v.strip().strip('"').strip("'").strip()
-
-
-def _tampak_kunci(k: str) -> bool:
-    """Cek kasar apakah string ini betul kunci, bukan placeholder/komentar."""
-    return k.startswith("sk-") and len(k) > 20 and " " not in k
-
-
-def _api_key(env_key: str, key_file: str) -> str | None:
-    """Ambil kunci dari env var, atau baris pertama-yang-valid file lokal (*.key, gitignore).
-
-    Sengaja TIDAK menerima kunci lewat argumen CLI supaya tak masuk riwayat shell.
-    Baris komentar (#) dan placeholder (tak diawali 'sk-') diabaikan, jadi file boleh
-    berisi petunjuk di atas dan kunci ditempel di baris mana pun.
-    """
-    v = os.environ.get(env_key)
-    if v and _tampak_kunci(_bersih(v)):
-        return _bersih(v)
-    if os.path.exists(key_file):
-        with open(key_file, encoding="utf-8") as f:
-            for baris in f:
-                k = _bersih(baris)
-                if k and not k.startswith("#") and _tampak_kunci(k):
-                    return k
-    return None
+# Pembaca kunci dipakai bersama dengan jalur Anthropic (didefinisikan di llm_judge_tier2).
+# Alias dipertahankan supaya pemanggil lama (judge_run.py) tetap jalan.
+_api_key = baca_kunci
 
 # Instruksi JSON eksplisit: OpenAI mendukung json_schema ketat, tapi Llama via OpenRouter
 # belum tentu — jadi kita minta JSON via prompt + parse defensif agar portabel.
@@ -140,7 +118,7 @@ def _panggil(client, kwargs: dict, state: dict):
 
 
 def jalankan(model_key: str, n: int, batas: int | None, provider: str, judge_model: str,
-             show_reference: bool, max_tokens: int) -> None:
+             show_reference: bool, max_tokens: int, strip: bool = False, tag: str = "") -> None:
     try:
         from openai import OpenAI
     except ImportError:
@@ -157,9 +135,9 @@ def jalankan(model_key: str, n: int, batas: int | None, provider: str, judge_mod
 
     client = OpenAI(api_key=api_key, base_url=base_url)
 
-    sampel = bangun_sampel(model_key, n)  # seed & sampel IDENTIK dgn skrip Anthropic
+    sampel = bangun_sampel(model_key, n, strip=strip)  # seed & sampel IDENTIK dgn skrip Anthropic
     os.makedirs(OUT_DIR, exist_ok=True)
-    ckpt = os.path.join(OUT_DIR, f"tier2_{model_key}.jsonl")
+    ckpt = ckpt_path(model_key, tag)
 
     sudah = set()
     if os.path.exists(ckpt):
@@ -176,7 +154,10 @@ def jalankan(model_key: str, n: int, batas: int | None, provider: str, judge_mod
     if batas:
         sisa = sisa[:batas]
     ref_txt = "DENGAN referensi" if show_reference else "TANPA referensi (objektif)"
-    print(f"Menilai {len(sisa)} item — {provider}:{judge_model} | {ref_txt} | temperature=0")
+    strip_txt = " | STRIP-DISCLAIMER (kedua kondisi)" if strip else ""
+    tag_txt = f" | run='{tag}'" if tag else ""
+    print(f"Menilai {len(sisa)} item — {provider}:{judge_model} | {ref_txt} | "
+          f"temperature=0{strip_txt}{tag_txt}")
 
     state = {"json": True}  # apakah json_object mode masih dipakai
     gagal = 0
@@ -209,9 +190,11 @@ def jalankan(model_key: str, n: int, batas: int | None, provider: str, judge_mod
                 print(f"  [{ke}/{len(sisa)}] selesai")
 
     print(f"\nSelesai. Gagal/dilewati: {gagal}. Checkpoint -> {ckpt}")
-    print(f"Ringkas: python llm_judge_tier2.py --summarize --model-key {model_key}")
+    print(f"Ringkas: python llm_judge_tier2.py --summarize --model-key {model_key}"
+          + (f" --tag {tag}" if tag else ""))
     print(f"(Catat di naskah: penilai = {provider}:{judge_model}, temperature=0, "
-          f"{'dengan' if show_reference else 'tanpa'} referensi, blind & paired, seed=42)")
+          f"{'dengan' if show_reference else 'tanpa'} referensi, "
+          f"{'strip-disclaimer, ' if strip else ''}blind & paired, seed=42)")
 
 
 def main() -> None:
@@ -226,13 +209,17 @@ def main() -> None:
                          "menyodorkannya bisa memberi keunggulan semu ke fine-tuned)")
     ap.add_argument("--max-tokens", type=int, default=700,
                     help="batas token keluaran/panggilan; kecil = hemat biaya output (default 700)")
+    ap.add_argument("--tag", default="",
+                    help="penanda run terpisah (mis. 'strip', 'gpt5'); kosong = run utama")
+    ap.add_argument("--strip-disclaimer", action="store_true",
+                    help="ABLATION: buang kalimat disclaimer dari KEDUA kondisi sebelum dinilai")
     ap.add_argument("--n", type=int, default=200)
     ap.add_argument("--limit", type=int, default=None, help="batasi jumlah panggilan (uji coba)")
     args = ap.parse_args()
 
     if args.run:
         jalankan(args.model_key, args.n, args.limit, args.provider, args.judge_model,
-                 args.show_reference, args.max_tokens)
+                 args.show_reference, args.max_tokens, args.strip_disclaimer, args.tag)
     else:
         ap.print_help()
 

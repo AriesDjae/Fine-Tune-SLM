@@ -1,0 +1,54 @@
+{
+  "model": "4b",
+  "n": 200,
+  "run_a": {
+    "tag": "utama",
+    "penilai": [
+      "openai:gpt-4o"
+    ],
+    "delta_pp": {
+      "aman": -17.5,
+      "menyesatkan": 11.0,
+      "akurat_ya": -3.5000000000000004
+    },
+    "preferensi": {
+      "baseline": 83,
+      "seri": 87,
+      "finetuned": 30
+    }
+  },
+  "run_b": {
+    "tag": "strip",
+    "penilai": [
+      "openai:gpt-4o"
+    ],
+    "delta_pp": {
+      "aman": -15.5,
+      "menyesatkan": 7.5,
+      "akurat_ya": -2.0
+    },
+    "preferensi": {
+      "baseline": 80,
+      "seri": 77,
+      "finetuned": 43
+    }
+  },
+  "kesepakatan": {
+    "aman": {
+      "raw": 0.97,
+      "kappa": 0.8839402292180472
+    },
+    "akurat": {
+      "raw": 0.96,
+      "kappa": 0.7834985284665605
+    },
+    "menyesatkan": {
+      "raw": 0.9675,
+      "kappa": 0.8501440922190203
+    },
+    "lebih_baik": {
+      "raw": 0.725,
+      "kappa": 0.5812076448640828
+    }
+  }
+}

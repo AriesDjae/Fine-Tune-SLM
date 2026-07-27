@@ -22,7 +22,7 @@ import os
 import sys
 
 from llm_judge_openai import PROVIDER, _api_key, jalankan
-from llm_judge_tier2 import OUT_DIR, bangun_sampel, ringkas
+from llm_judge_tier2 import OUT_DIR, bangun_sampel, ckpt_path, ringkas
 
 
 def _cek_kunci(provider: str) -> None:
@@ -37,9 +37,9 @@ def _cek_kunci(provider: str) -> None:
         sys.exit(1)
 
 
-def _readout(model_key: str, n: int, batas: int) -> None:
+def _readout(model_key: str, n: int, batas: int, strip: bool = False, tag: str = "") -> None:
     """Cetak beberapa contoh hasil pilot agar mutu penilaian bisa dilihat mata."""
-    ckpt = os.path.join(OUT_DIR, f"tier2_{model_key}.jsonl")
+    ckpt = ckpt_path(model_key, tag)
     if not os.path.exists(ckpt):
         return
     hasil = {}
@@ -50,7 +50,7 @@ def _readout(model_key: str, n: int, batas: int) -> None:
                 hasil[r["idx"]] = r
             except Exception:
                 pass
-    sampel = {it["idx"]: it for it in bangun_sampel(model_key, n)}
+    sampel = {it["idx"]: it for it in bangun_sampel(model_key, n, strip=strip)}
 
     print(f"\n{'='*68}\nCONTOH HASIL PILOT (untuk cek mutu — kode baseline/ft dibuka di sini saja):\n")
     ditampilkan = 0
@@ -84,26 +84,42 @@ def main() -> None:
     ap.add_argument("--show-reference", action="store_true",
                     help="sodorkan referensi dokter (default TIDAK; lihat catatan objektivitas)")
     ap.add_argument("--max-tokens", type=int, default=700)
+    ap.add_argument("--tag", default="",
+                    help="penanda run terpisah (mis. 'strip', 'gpt5'); kosong = run utama")
+    ap.add_argument("--strip-disclaimer", action="store_true",
+                    help="ABLATION: buang kalimat disclaimer dari KEDUA kondisi sebelum dinilai")
     args = ap.parse_args()
 
     _cek_kunci(args.provider)
 
+    # Jaga-jaga: run non-utama WAJIB bertag, supaya tak mencemari checkpoint run utama
+    # yang hasilnya sudah dipakai (results/llm_judge/tier2_<key>.jsonl).
+    if (args.strip_disclaimer or args.judge_model != ap.get_default("judge_model")) and not args.tag:
+        raise SystemExit(
+            "Run ini beda kondisi dari run utama (strip-disclaimer dan/atau penilai lain).\n"
+            "Beri --tag agar hasilnya masuk berkas terpisah, mis. --tag strip / --tag gpt5."
+        )
+
+    ekstra = dict(strip=args.strip_disclaimer, tag=args.tag)
     if not args.full:
         print(f">> PILOT {args.pilot} item dengan {args.provider}:{args.judge_model}...")
         jalankan(args.model_key, args.n, args.pilot, args.provider, args.judge_model,
-                 args.show_reference, args.max_tokens)
-        _readout(args.model_key, args.n, args.pilot)
+                 args.show_reference, args.max_tokens, **ekstra)
+        _readout(args.model_key, args.n, args.pilot, args.strip_disclaimer, args.tag)
         print(f"{'='*68}")
         print("PILOT SELESAI. Kalau hasil di atas masuk akal, jalankan penuh:")
-        print(f"   python judge_run.py --full --model-key {args.model_key} --judge-model {args.judge_model}")
-        print("(20 item pilot tak akan diulang — resume otomatis.)")
+        tambahan = (" --strip-disclaimer" if args.strip_disclaimer else "") + \
+                   (f" --tag {args.tag}" if args.tag else "")
+        print(f"   python judge_run.py --full --model-key {args.model_key} "
+              f"--judge-model {args.judge_model}{tambahan}")
+        print(f"({args.pilot} item pilot tak akan diulang — resume otomatis.)")
         return
 
     print(f">> RUN PENUH s/d {args.n} item dengan {args.provider}:{args.judge_model}...")
     jalankan(args.model_key, args.n, None, args.provider, args.judge_model,
-             args.show_reference, args.max_tokens)
+             args.show_reference, args.max_tokens, **ekstra)
     print(f"\n{'='*68}\nRINGKASAN:\n")
-    ringkas(args.model_key)
+    ringkas(args.model_key, args.tag)
 
 
 if __name__ == "__main__":

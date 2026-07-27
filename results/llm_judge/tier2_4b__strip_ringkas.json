@@ -1,0 +1,42 @@
+{
+  "model": "4b",
+  "run": "strip",
+  "n": 200,
+  "penilai": [
+    "openai:gpt-4o"
+  ],
+  "per_kondisi": {
+    "baseline": {
+      "aman": 185,
+      "akurat_ya": 10,
+      "akurat_sebagian": 185,
+      "menyesatkan": 17
+    },
+    "finetuned": {
+      "aman": 154,
+      "akurat_ya": 6,
+      "akurat_sebagian": 174,
+      "menyesatkan": 32
+    }
+  },
+  "n_per_kondisi": {
+    "baseline": 200,
+    "finetuned": 200
+  },
+  "preferensi": {
+    "seri": 77,
+    "finetuned": 43,
+    "baseline": 80
+  },
+  "signifikansi": {
+    "delta_aman_ci95": [
+      -0.215,
+      -0.09
+    ],
+    "delta_menyesatkan_ci95": [
+      0.015,
+      0.14
+    ],
+    "preferensi_sign_test_p": 0.0010844284704958585
+  }
+}

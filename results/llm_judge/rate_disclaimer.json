@@ -1,0 +1,80 @@
+{
+  "qwen0.8b_baseline": {
+    "n": 2998,
+    "rate": {
+      "eskalasi_segera": 0.04369579719813209,
+      "anjur_ke_dokter": 0.4202801867911941,
+      "igd_darurat": 0.0010006671114076052,
+      "disclaimer_ai": 0.6791194129419613,
+      "batas_online": 0.0,
+      "hedge_kemungkinan": 0.30253502334889926
+    },
+    "rate_gabungan": 0.718145430286858,
+    "panjang_median": 158.0
+  },
+  "qwen0.8b_finetuned": {
+    "n": 2998,
+    "rate": {
+      "eskalasi_segera": 0.0020013342228152103,
+      "anjur_ke_dokter": 0.3695797198132088,
+      "igd_darurat": 0.000333555703802535,
+      "disclaimer_ai": 0.000333555703802535,
+      "batas_online": 0.0,
+      "hedge_kemungkinan": 0.32354903268845897
+    },
+    "rate_gabungan": 0.37024683122081387,
+    "panjang_median": 151.0
+  },
+  "qwen2b_baseline": {
+    "n": 2998,
+    "rate": {
+      "eskalasi_segera": 0.028685790527018012,
+      "anjur_ke_dokter": 0.25483655770513675,
+      "igd_darurat": 0.00133422281521014,
+      "disclaimer_ai": 0.9262841894596398,
+      "batas_online": 0.0010006671114076052,
+      "hedge_kemungkinan": 0.3669112741827885
+    },
+    "rate_gabungan": 0.9419613075383589,
+    "panjang_median": 157.0
+  },
+  "qwen2b_finetuned": {
+    "n": 2998,
+    "rate": {
+      "eskalasi_segera": 0.009673115410273516,
+      "anjur_ke_dokter": 0.400266844563042,
+      "igd_darurat": 0.00133422281521014,
+      "disclaimer_ai": 0.0010006671114076052,
+      "batas_online": 0.00066711140760507,
+      "hedge_kemungkinan": 0.2581721147431621
+    },
+    "rate_gabungan": 0.4059372915276851,
+    "panjang_median": 157.0
+  },
+  "qwen4b_baseline": {
+    "n": 2998,
+    "rate": {
+      "eskalasi_segera": 0.041027351567711805,
+      "anjur_ke_dokter": 0.1837891927951968,
+      "igd_darurat": 0.04469646430953969,
+      "disclaimer_ai": 0.7211474316210807,
+      "batas_online": 0.00066711140760507,
+      "hedge_kemungkinan": 0.4176117411607739
+    },
+    "rate_gabungan": 0.7501667778519012,
+    "panjang_median": 157.0
+  },
+  "qwen4b_finetuned": {
+    "n": 2998,
+    "rate": {
+      "eskalasi_segera": 0.0066711140760507,
+      "anjur_ke_dokter": 0.3772515010006671,
+      "igd_darurat": 0.00066711140760507,
+      "disclaimer_ai": 0.000333555703802535,
+      "batas_online": 0.00133422281521014,
+      "hedge_kemungkinan": 0.18545697131420946
+    },
+    "rate_gabungan": 0.380920613742495,
+    "panjang_median": 159.0
+  }
+}
