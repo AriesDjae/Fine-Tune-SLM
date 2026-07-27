@@ -34,6 +34,14 @@ from collections import Counter
 
 from redflag import detect
 
+# Konsol Windows default cp1252 -> em-dash dan simbol non-Latin1 melempar
+# UnicodeEncodeError di tengah laporan. Paksa UTF-8 (sama seperti llm_judge_tier2.py).
+for _aliran in (sys.stdout, sys.stderr):
+    try:
+        _aliran.reconfigure(encoding="utf-8")
+    except (AttributeError, OSError):
+        pass
+
 TEST_FILE = os.path.join("Data", "processed_id", "test.jsonl")
 PREDS_DIR = os.path.join("results", "preds_p6", "preds")
 OUT = os.path.join("results", "redflag", "cakupan_eskalasi.json")
@@ -136,6 +144,38 @@ def main() -> None:
         print(f"  {u:6s} fine-tuned: {(1 - c['tegas']) * 100:.1f}% kasus terpicu TANPA eskalasi "
               f"tegas -> 0% setelah lapisan")
 
+    # --- 3. KEPEKAAN KEADAAN: terpicu vs TIDAK terpicu, definisi identik ---
+    # Pertanyaan yang dijawab: apakah model MENAIKKAN ketegasan saat keluhan memang gawat,
+    # atau ia menjawab seragam tanpa memandang keadaan? Rasio ~1,0 berarti tidak peka.
+    tak_terpicu = [i for i in range(n) if i not in set(terpicu)]
+    mt = len(tak_terpicu)
+
+    def cakupan_pada(idxs: list[int], teks_list: list[str]) -> dict:
+        k = len(idxs)
+        return {
+            "tegas": sum(bool(POLA_TEGAS.search(teks_list[i] or "")) for i in idxs) / k,
+            "umum": sum(bool(POLA_UMUM.search(teks_list[i] or "")) for i in idxs) / k,
+        }
+
+    print(f"\n\nKEPEKAAN KEADAAN — eskalasi TEGAS: terpicu (n={m}) vs tidak terpicu (n={mt}):")
+    print(f"{'':24s}{'terpicu':>16s}{'tdk terpicu':>18s}{'rasio':>9s}")
+    kepekaan = {}
+    for lbl in urut:
+        teks = [r["referensi"] for r in test] if lbl == "referensi_dokter" else preds[lbl]
+        na = sum(bool(POLA_TEGAS.search(teks[i] or "")) for i in terpicu)
+        nb = sum(bool(POLA_TEGAS.search(teks[i] or "")) for i in tak_terpicu)
+        a, b = na / m, nb / mt
+        rasio = (a / b) if b > 0 else float("inf")
+        kepekaan[lbl] = {"n_terpicu": na, "n_tidak_terpicu": nb,
+                         "terpicu": a, "tidak_terpicu": b, "rasio": rasio}
+        r_txt = "inf" if rasio == float("inf") else f"{rasio:.1f}x"
+        print(f"{lbl:24s}{na:5d} ({a * 100:4.1f}%){nb:8d} ({b * 100:4.1f}%){r_txt:>9s}")
+    print("\n  Rasio ~1,0 = jawaban SERAGAM, tak memandang kegawatan.")
+    print("  Rasio tinggi = model menaikkan ketegasan justru saat keluhan gawat.")
+    print("\n  ⚠ HITUNGAN MENTAH SENGAJA DITAMPILKAN. Rasio model kecil bertumpu pada")
+    print("    angka satu digit (mis. 0.8B baseline = 3 kasus) → SUGESTIF, bukan bukti.")
+    print("    Yang cukup bertenaga hanya 4B baseline dan referensi dokter.")
+
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump({
@@ -144,6 +184,7 @@ def main() -> None:
             "rate_terpicu": m / n,
             "per_kategori": dict(kategori),
             "cakupan_eskalasi": hasil,
+            "kepekaan_keadaan": kepekaan,
             "catatan": "cakupan dihitung HANYA pada subset terpicu; setelah lapisan "
                        "red-flag dipasang, cakupan menjadi 100% menurut konstruksi",
         }, f, ensure_ascii=False, indent=2)

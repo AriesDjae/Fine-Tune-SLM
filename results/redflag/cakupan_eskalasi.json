@@ -50,5 +50,56 @@
       "apa_pun": 0.3435897435897436
     }
   },
+  "kepekaan_keadaan": {
+    "qwen0.8b_baseline": {
+      "n_terpicu": 3,
+      "n_tidak_terpicu": 131,
+      "terpicu": 0.015384615384615385,
+      "tidak_terpicu": 0.04673564038530146,
+      "rasio": 0.3291837933059307
+    },
+    "qwen0.8b_finetuned": {
+      "n_terpicu": 1,
+      "n_tidak_terpicu": 6,
+      "terpicu": 0.005128205128205128,
+      "tidak_terpicu": 0.0021405636817695326,
+      "rasio": 2.3957264957264957
+    },
+    "qwen2b_baseline": {
+      "n_terpicu": 6,
+      "n_tidak_terpicu": 84,
+      "terpicu": 0.03076923076923077,
+      "tidak_terpicu": 0.029967891544773455,
+      "rasio": 1.0267399267399269
+    },
+    "qwen2b_finetuned": {
+      "n_terpicu": 6,
+      "n_tidak_terpicu": 26,
+      "terpicu": 0.03076923076923077,
+      "tidak_terpicu": 0.00927577595433464,
+      "rasio": 3.31715976331361
+    },
+    "qwen4b_baseline": {
+      "n_terpicu": 35,
+      "n_tidak_terpicu": 169,
+      "terpicu": 0.1794871794871795,
+      "tidak_terpicu": 0.06029254370317517,
+      "rasio": 2.976938249127598
+    },
+    "qwen4b_finetuned": {
+      "n_terpicu": 4,
+      "n_tidak_terpicu": 17,
+      "terpicu": 0.020512820512820513,
+      "tidak_terpicu": 0.006064930431680342,
+      "rasio": 3.3822021116138763
+    },
+    "referensi_dokter": {
+      "n_terpicu": 29,
+      "n_tidak_terpicu": 183,
+      "terpicu": 0.14871794871794872,
+      "tidak_terpicu": 0.06528719229397074,
+      "rasio": 2.27790388118257
+    }
+  },
   "catatan": "cakupan dihitung HANYA pada subset terpicu; setelah lapisan red-flag dipasang, cakupan menjadi 100% menurut konstruksi"
 }
