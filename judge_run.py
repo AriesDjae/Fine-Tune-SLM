@@ -83,7 +83,9 @@ def main() -> None:
     ap.add_argument("--n", type=int, default=200)
     ap.add_argument("--show-reference", action="store_true",
                     help="sodorkan referensi dokter (default TIDAK; lihat catatan objektivitas)")
-    ap.add_argument("--max-tokens", type=int, default=700)
+    ap.add_argument("--max-tokens", type=int, default=None,
+                    help="batas token keluaran; default per-penyedia (700, 3000 utk gemini "
+                         "yang model penalarannya ikut memakai anggaran ini)")
     ap.add_argument("--tag", default="",
                     help="penanda run terpisah (mis. 'strip', 'gpt5'); kosong = run utama")
     ap.add_argument("--strip-disclaimer", action="store_true",

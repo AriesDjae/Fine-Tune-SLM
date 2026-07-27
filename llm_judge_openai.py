@@ -56,13 +56,20 @@ PROVIDER = {
     # KENAPA GEMINI: model yang dievaluasi = Qwen, penilai utama = GPT-4o. Gemini berasal
     # dari lab KETIGA, sehingga kesepakatan Gemini<->GPT-4o adalah bukti lintas-galur —
     # jauh lebih sulit dibantah daripada dua model satu keluarga.
+    # Google memakai dua format kunci: lama 'AIza...' dan baru 'AQ....' — terima keduanya.
     "gemini": ("https://generativelanguage.googleapis.com/v1beta/openai/",
-               "GEMINI_API_KEY", "gemini.key", ("AIza",)),
+               "GEMINI_API_KEY", "gemini.key", ("AIza", "AQ.")),
 }
 
 # Tier gratis Gemini membatasi permintaan per menit; beri jeda default agar tak terus
 # menabrak 429. Penyedia berbayar tidak perlu jeda.
 JEDA_DEFAULT = {"gemini": 4.0}
+
+# Model penalaran (mis. gemini-3-flash) memakai sebagian anggaran keluaran untuk BERPIKIR
+# sebelum menulis jawaban. Dengan 700 token, JSON rubrik terpotong di tengah dan muncul
+# sebagai "tak ada JSON di balasan" — kelihatan seperti model gagal menurut format,
+# padahal cuma kehabisan ruang. Beri plafon lebih longgar untuk penyedia semacam itu.
+MAX_TOKENS_DEFAULT = {"gemini": 3000}
 
 
 # Pembaca kunci dipakai bersama dengan jalur Anthropic (didefinisikan di llm_judge_tier2).
@@ -131,20 +138,38 @@ def _panggil(client, kwargs: dict, state: dict):
 
 
 def _kuota_habis(e: Exception) -> bool:
-    """Bedakan 429 SEMENTARA (rate limit, layak diulang) dari 429 PERMANEN (kuota habis).
+    """429 PERMANEN — mengulanginya tak akan pernah berhasil, jadi run harus berhenti.
 
-    Ini bukan detail kosmetik: mengulang-ulang 'insufficient_quota' dengan backoff akan
-    menggantung run berjam-jam tanpa hasil — persis jebakan yang menghabiskan waktu saat
-    kredit OpenAI habis di tengah ablation.
+    Bukan detail kosmetik: backoff atas kondisi permanen menggantung run berjam-jam tanpa
+    hasil (persis yang terjadi saat kredit OpenAI habis di tengah ablation).
+
+    JANGAN pakai kata 'billing' sebagai penanda: pesan rate-limit Gemini yang SEMENTARA
+    pun berbunyi "check your plan and billing details", sehingga batas per-menit akan
+    salah dibaca sebagai permanen dan menghentikan run yang sebenarnya bisa lanjut.
+    Penanda yang benar-benar membedakan:
+      - OpenAI : 'insufficient_quota'
+      - Gemini : 'limit: 0' -> model itu memang tidak disediakan di tier ini
     """
     m = str(e).lower()
-    return "insufficient_quota" in m or "exceeded your current quota" in m or "billing" in m
+    return (
+        "insufficient_quota" in m          # OpenAI: kredit habis
+        or "limit: 0" in m                 # Gemini: model tak disediakan di tier ini
+        or "no longer available" in m      # Gemini: model ditutup untuk akun baru
+        or ("404" in m and "not_found" in m)  # nama model salah/tak tersedia
+    )
 
 
 def _batas_laju(e: Exception) -> bool:
+    """429 SEMENTARA — layak diulang setelah menunggu.
+
+    'retrydelay' (Gemini melampirkan RetryInfo) adalah sinyal paling tegas bahwa server
+    sendiri menyatakan permintaan ini boleh diulang.
+    """
+    if _kuota_habis(e):
+        return False
     m = str(e).lower()
-    return ("rate limit" in m or "rate_limit" in m or "429" in m
-            or "resource_exhausted" in m) and not _kuota_habis(e)
+    return ("retrydelay" in m or "resource_exhausted" in m
+            or "rate limit" in m or "rate_limit" in m or "429" in m)
 
 
 def jalankan(model_key: str, n: int, batas: int | None, provider: str, judge_model: str,
@@ -166,6 +191,8 @@ def jalankan(model_key: str, n: int, batas: int | None, provider: str, judge_mod
         )
     if jeda is None:
         jeda = JEDA_DEFAULT.get(provider, 0.0)
+    if max_tokens is None:
+        max_tokens = MAX_TOKENS_DEFAULT.get(provider, 700)
 
     client = OpenAI(api_key=api_key, base_url=base_url)
 
@@ -213,7 +240,15 @@ def jalankan(model_key: str, n: int, batas: int | None, provider: str, judge_mod
             for percobaan in range(5):
                 try:
                     resp = _panggil(client, kwargs, state)
-                    nilai = _ekstrak_json(resp.choices[0].message.content)
+                    pilihan = resp.choices[0]
+                    if pilihan.finish_reason == "length":
+                        # Sebutkan sebabnya terang-terangan; kalau tidak, ini menyamar
+                        # sebagai "model tak patuh format" padahal cuma kurang ruang.
+                        raise ValueError(
+                            f"balasan terpotong (max_tokens={max_tokens} habis, sebagian "
+                            f"terpakai untuk penalaran) — naikkan dengan --max-tokens"
+                        )
+                    nilai = _ekstrak_json(pilihan.message.content)
                     if not _valid(nilai):
                         raise ValueError("nilai di luar enum rubrik")
                     break
@@ -262,7 +297,7 @@ def main() -> None:
     ap.add_argument("--show-reference", action="store_true",
                     help="sodorkan jawaban referensi dokter ke penilai (default TIDAK; "
                          "menyodorkannya bisa memberi keunggulan semu ke fine-tuned)")
-    ap.add_argument("--max-tokens", type=int, default=700,
+    ap.add_argument("--max-tokens", type=int, default=None,
                     help="batas token keluaran/panggilan; kecil = hemat biaya output (default 700)")
     ap.add_argument("--tag", default="",
                     help="penanda run terpisah (mis. 'strip', 'gpt5'); kosong = run utama")
