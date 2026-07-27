@@ -1,67 +1,96 @@
 """
-benchmark_ondevice.py  —  BAGIAN 5 (MASTER NOTE FINAL): pengukuran on-device (CPU-only).
+benchmark_ondevice.py — RQ3: kelayakan deploy offline di HP kelas bawah (CPU-only).
 
-Menguji HIPOTESIS arsitektur (5.2): "Gemma 4 E2B (PLE effective-param dense, ~2.3B aktif)
-butuh RAM LEBIH BESAR dari Qwen3.5-2B standard dense karena tabel Per-Layer Embeddings
-(total ~5.1B) tetap dimuat ke memori — kecuali caching PLE meredamnya." Ukur:
-  - PEAK RAM saat LOADING model            (apakah Gemma 4 memuat ~5.1B embedding?)
-  - PEAK RAM saat INFERENSI (dengan KV cache)
-  - INFERENCE TIME / throughput (token/detik), mean +- std  (5.3)
-  - ukuran file GGUF + dokumentasi arsitektur (total vs active params)  (5.1)
+PERTANYAAN YANG DIJAWAB. RQ2 menunjukkan 0.8B meraih ~96% mutu 4B dengan 1/5 parameter.
+Itu baru bermakna bila disertai angka perangkat: **apakah 4B benar-benar tidak muat, dan
+apakah 0.8B benar-benar muat, di HP dengan RAM 3-4 GB?** Skrip ini mengukurnya.
 
-Dijalankan pada model GGUF Q4_K_M via llama.cpp (CPU murni, n_gpu_layers=0) -> paling
-mendekati deployment Termux di HP. Sebutkan spesifikasi perangkat uji di metodologi.
+YANG DIUKUR (per model, GGUF Q4_K_M, llama.cpp murni CPU, n_gpu_layers=0):
+  - PUNCAK RAM saat MEMUAT bobot          -> menentukan lolos/tidak gerbang RAM
+  - PUNCAK RAM saat INFERENSI (KV cache)  -> puncak sebenarnya saat dipakai
+  - latensi & throughput (token/detik), mean +- std
+  - ukuran berkas GGUF
+  - overhead lapisan red-flag (klaim '~0 ms' DIBUKTIKAN, bukan diasumsikan)
 
-    python benchmark_ondevice.py --gguf outputs/gguf/qwen35-2b-medical-Q4_K_M.gguf  --model_type qwen  --label qwen_q4
-    python benchmark_ondevice.py --gguf outputs/gguf/gemma4-e2b-medical-Q4_K_M.gguf --model_type gemma --label gemma_q4
+GERBANG RAM. Sasaran deploy = HP masyarakat umum, bukan flagship. Anggaran default 3 GB
+dan 4 GB TOTAL, dengan asumsi konservatif bahwa sistem operasi + aplikasi lain memakai
+sebagian (lihat `SISA_UNTUK_APP`). Perangkat uji WAJIB disebut di metodologi; angka dari
+laptop hanya PROKSI — ulangi di HP nyata via Termux bila memungkinkan.
+
+PERTANYAAN UJI diambil dari test set NYATA (keluhan pasien berbahasa Indonesia), bukan
+kalimat karangan, supaya panjang prompt dan perilaku generasi mewakili pemakaian
+sesungguhnya. Sekitar sepertiga sengaja dipilih dari kasus yang memicu red-flag.
+
+Pemakaian:
+
+    python benchmark_ondevice.py --gguf outputs/gguf/Qwen3.5-0.8B.Q4_K_M.gguf --label 0.8b
+    python benchmark_ondevice.py --gguf outputs/gguf/Qwen3.5-2B.Q4_K_M.gguf   --label 2b
+    python benchmark_ondevice.py --gguf outputs/gguf/Qwen3.5-4B.Q4_K_M.gguf   --label 4b
     python benchmark_ondevice.py --summarize results_bench
+
+Riwayat: versi Pivot-3 skrip ini menguji hipotesis Gemma 4 PLE vs Qwen-2B dan sudah tidak
+berlaku; ditulis ulang penuh untuk studi scaling satu keluarga (Pivot 6).
 """
+from __future__ import annotations
+
 import argparse
 import glob
 import json
 import os
+import platform
+import random
 import statistics
+import sys
 import threading
 import time
 
 import psutil
 
-# Dokumentasi arsitektur (dari model card; "active" tak bisa diintrospeksi otomatis).
+for _aliran in (sys.stdout, sys.stderr):
+    try:
+        _aliran.reconfigure(encoding="utf-8")
+    except (AttributeError, OSError):
+        pass
+
+TEST_FILE = os.path.join("Data", "processed_id", "test.jsonl")
+SEED = 42
+
+# Arsitektur — semua dense, semua parameter aktif tiap inferensi (studi scaling satu
+# keluarga; tak ada MoE/PLE seperti pivot sebelumnya).
 ARCH = {
-    # Pivot 5: SATU model Qwen3.5-0.8B (baseline vs fine-tuned QLoRA), model TEKS dense.
-    "qwen":  {"family": "Qwen3.5-0.8B", "type": "dense",
-              "total_params_B": 0.8, "active_params_B": 0.8,
-              "note": "standard dense; semua parameter aktif tiap inferensi"},
-    "gemma": {"family": "Gemma 4 E2B", "type": "PLE effective-param dense",
-              "total_params_B": 5.1, "active_params_B": 2.3,
-              "note": "dense + Per-Layer Embeddings; total ~5.1B dimuat, ~2.3B aktif (compute)"},
+    "0.8b": {"family": "Qwen3.5-0.8B", "total_params_B": 0.8},
+    "2b": {"family": "Qwen3.5-2B", "total_params_B": 2.0},
+    "4b": {"family": "Qwen3.5-4B", "total_params_B": 4.0},
 }
 
-QUERIES = [
-    "Apa penyebab umum demam pada anak dan kapan harus dibawa ke dokter?",
-    "Jelaskan gejala dan penanganan awal diare pada balita.",
-    "Apa perbedaan antara hipertensi primer dan sekunder?",
-    "Bagaimana cara mengelola gula darah pada penderita diabetes tipe 2?",
-    "What are the warning signs of a stroke that require emergency care?",
-    "Explain the difference between bacterial and viral pneumonia.",
-    "Apa saja efek samping umum dari obat antibiotik dan cara menghindarinya?",
-    "When should a persistent cough be evaluated by a physician?",
-]
+# Anggaran RAM perangkat sasaran. SISA_UNTUK_APP = taksiran konservatif berapa yang
+# benar-benar tersedia untuk satu aplikasi setelah OS Android + aplikasi latar.
+GERBANG = {"HP 3 GB": 3.0, "HP 4 GB": 4.0}
+SISA_UNTUK_APP = 0.55
+
+# System prompt PERSIS seperti di data latih/uji (seragam untuk seluruh 2998 baris).
+# Wajib sama: panjangnya (~50 token) ikut menentukan waktu prefill, jadi memakai kalimat
+# karangan sendiri akan membuat latensi yang dilaporkan tidak mewakili pemakaian nyata.
+#
+# Catatan temuan: prompt ini secara EKSPLISIT meminta disclaimer ("Selalu ingatkan..."),
+# dan baseline mematuhinya (disclaimer 68-93%) sementara model fine-tuned 0,0% —
+# fine-tuning mengikis kepatuhan pada instruksi sistem, bukan sekadar mengubah gaya.
+SYSTEM_PROMPT = (
+    "Anda adalah asisten informasi kesehatan berbahasa Indonesia. Berikan penjelasan "
+    "yang jelas, akurat, dan hati-hati berdasarkan pengetahuan klinis yang mapan. "
+    "Selalu ingatkan bahwa informasi ini bukan pengganti konsultasi langsung dengan dokter."
+)
 
 
-class PeakRSS:
-    """Sampler RSS latar belakang -> menangkap PUNCAK memori (mis. saat KV cache tumbuh)."""
-    def __init__(self, interval=0.05):
+class PuncakRSS:
+    """Sampler RSS latar -> menangkap PUNCAK memori (mis. saat KV cache tumbuh)."""
+
+    def __init__(self, interval: float = 0.05):
         self.proc = psutil.Process(os.getpid())
         self.interval = interval
         self.peak = self.proc.memory_info().rss
         self._run = False
         self._t = None
-
-    def _loop(self):
-        while self._run:
-            self.peak = max(self.peak, self.proc.memory_info().rss)
-            time.sleep(self.interval)
 
     def reset(self):
         self.peak = self.proc.memory_info().rss
@@ -71,153 +100,239 @@ class PeakRSS:
         self._t = threading.Thread(target=self._loop, daemon=True)
         self._t.start()
 
-    def stop(self):
+    def _loop(self):
+        while self._run:
+            try:
+                self.peak = max(self.peak, self.proc.memory_info().rss)
+            except Exception:
+                pass
+            time.sleep(self.interval)
+
+    def stop(self) -> float:
         self._run = False
         if self._t:
             self._t.join()
-        return self.peak / 1e6  # MB
+        return self.peak / 1e9  # GB
 
 
-def build_prompt(model_type, q):
-    _sys = "You are a helpful medical assistant."
-    if model_type == "gemma":   # Gemma 4 turn-token format (system native)
-        return (f"<|turn>system\n{_sys}<turn|>\n<|turn>user\n{q}<turn|>\n<|turn>model\n")
-    return ("<|im_start|>system\nYou are a helpful medical assistant.<|im_end|>\n"
-            f"<|im_start|>user\n{q}<|im_end|>\n<|im_start|>assistant\n")
+def ambil_pertanyaan(n: int) -> list[str]:
+    """Keluhan pasien NYATA dari test set; ~1/3 dari kasus yang memicu red-flag."""
+    if not os.path.exists(TEST_FILE):
+        raise SystemExit(f"Tidak ada {TEST_FILE} — dibutuhkan agar prompt mewakili pemakaian nyata.")
+    semua = []
+    with open(TEST_FILE, encoding="utf-8") as f:
+        for baris in f:
+            baris = baris.strip()
+            if not baris:
+                continue
+            msg = json.loads(baris)["messages"]
+            semua.append(next(m["content"] for m in msg if m["role"] == "user"))
+
+    try:
+        from redflag import detect
+        gawat = [q for q in semua if detect(q).terpicu]
+    except Exception:
+        gawat = []
+
+    rng = random.Random(SEED)
+    n_gawat = min(len(gawat), max(1, n // 3))
+    pilih = rng.sample(gawat, n_gawat) if gawat else []
+    sisa = [q for q in semua if q not in set(pilih)]
+    pilih += rng.sample(sisa, max(0, n - len(pilih)))
+    rng.shuffle(pilih)
+    return pilih
 
 
-def benchmark(args):
+def bangun_prompt(q: str) -> str:
+    """ChatML Qwen3.5 dengan blok <think> KOSONG — sama persis seperti saat training.
+
+    Template Qwen3.5 menyisipkan <think></think> walau enable_thinking=False; menyamakan
+    prefix ini membuat train == inferensi, sehingga latensi dan keluaran mewakili model
+    yang sebenarnya dilatih.
+    """
+    return (
+        f"<|im_start|>system\n{SYSTEM_PROMPT}<|im_end|>\n"
+        f"<|im_start|>user\n{q}<|im_end|>\n"
+        f"<|im_start|>assistant\n<think>\n\n</think>\n\n"
+    )
+
+
+def _cpu() -> str:
+    return platform.processor() or platform.machine() or "tak diketahui"
+
+
+def benchmark(args) -> None:
     from llama_cpp import Llama
 
     proc = psutil.Process(os.getpid())
-    rss0 = proc.memory_info().rss / 1e6
-    sampler = PeakRSS()
+    rss0 = proc.memory_info().rss / 1e9
+    sampler = PuncakRSS()
+    pertanyaan = ambil_pertanyaan(args.n_queries)
 
-    # ---- LOAD (CPU-only) + peak RAM saat loading ----
-    sampler.reset(); sampler.start()
+    # ---- MEMUAT (CPU murni) ----
+    sampler.reset()
+    sampler.start()
     t0 = time.time()
     llm = Llama(model_path=args.gguf, n_ctx=args.n_ctx, n_gpu_layers=0,
                 n_threads=args.threads, verbose=False)
-    load_time = time.time() - t0
-    peak_load = sampler.stop()
-    rss_after_load = proc.memory_info().rss / 1e6
+    waktu_muat = time.time() - t0
+    puncak_muat = sampler.stop()
+    rss_setelah_muat = proc.memory_info().rss / 1e9
 
-    n_params = None
-    try:
-        n_params = int(llm.metadata.get("general.parameter_count"))
-    except Exception:
-        pass
+    # ---- pemanasan (tak diukur) ----
+    llm.create_completion(bangun_prompt(pertanyaan[0]), max_tokens=8, temperature=0.0)
 
-    # ---- warmup ----
-    llm.create_completion(build_prompt(args.model_type, QUERIES[0]),
-                          max_tokens=16, temperature=0.0)
-
-    # ---- INFERENSI + peak RAM (KV cache) + waktu ----
-    sampler.reset(); sampler.start()
-    lat, tps = [], []
-    for i in range(args.n_queries):
-        q = QUERIES[i % len(QUERIES)]
+    # ---- INFERENSI ----
+    sampler.reset()
+    sampler.start()
+    lat, tps, n_tok = [], [], []
+    for i, q in enumerate(pertanyaan, 1):
         t = time.time()
-        o = llm.create_completion(build_prompt(args.model_type, q),
-                                  max_tokens=args.max_new_tokens, temperature=0.0, top_k=1)
+        o = llm.create_completion(bangun_prompt(q), max_tokens=args.max_new_tokens,
+                                  temperature=0.0, top_k=1)
         dt = time.time() - t
         ntok = o.get("usage", {}).get("completion_tokens") or args.max_new_tokens
         lat.append(dt)
-        tps.append(ntok / dt if dt > 0 else 0)
-        print(f"  query {i+1}/{args.n_queries}  {dt:5.2f}s  {tps[-1]:5.1f} tok/s", end="\r")
+        n_tok.append(ntok)
+        tps.append(ntok / dt if dt > 0 else 0.0)
+        print(f"  {i}/{len(pertanyaan)}  {dt:6.2f}s  {tps[-1]:5.1f} tok/s   ", end="\r")
     print()
-    peak_infer = sampler.stop()
+    puncak_infer = sampler.stop()
 
-    arch = ARCH[args.model_type]
+    # ---- overhead lapisan red-flag ----
+    overhead_ms = None
+    try:
+        from redflag import detect
+        t = time.time()
+        for q in pertanyaan:
+            detect(q)
+        overhead_ms = (time.time() - t) / len(pertanyaan) * 1000
+    except Exception:
+        pass
+
+    gerbang = {}
+    for nama, total in GERBANG.items():
+        tersedia = total * SISA_UNTUK_APP
+        gerbang[nama] = {
+            "ram_total_GB": total,
+            "diasumsikan_tersedia_GB": round(tersedia, 2),
+            "puncak_infer_GB": round(puncak_infer, 2),
+            "lolos": bool(puncak_infer <= tersedia),
+        }
+
     out = {
-        "label": args.label, "gguf": args.gguf, "model_type": args.model_type,
-        "device": {"cpu": _cpu_name(), "threads": args.threads,
-                   "total_ram_GB": round(psutil.virtual_memory().total / 1e9, 1),
-                   "os": _os_name()},
-        "architecture": {**arch, "gguf_n_params_meta": n_params},
-        "file_size_GB": round(os.path.getsize(args.gguf) / 1e9, 3),
-        "ram_MB": {
-            "baseline": round(rss0, 1),
-            "after_load": round(rss_after_load, 1),
-            "peak_load": round(peak_load, 1),
-            "peak_infer": round(peak_infer, 1),
-            "load_weight_only": round(rss_after_load - rss0, 1),
+        "label": args.label,
+        "gguf": os.path.basename(args.gguf),
+        "kuantisasi": "Q4_K_M",
+        "arsitektur": ARCH.get(args.label, {}),
+        "perangkat": {
+            "cpu": _cpu(), "threads": args.threads,
+            "ram_total_GB": round(psutil.virtual_memory().total / 1e9, 1),
+            "os": f"{platform.system()} {platform.release()}",
+            "CATATAN": "angka dari mesin ini PROKSI; ulangi di HP nyata via Termux",
         },
-        "timing": {
-            "load_time_s": round(load_time, 2),
-            "latency_s_mean": round(statistics.mean(lat), 3),
-            "latency_s_std": round(statistics.pstdev(lat), 3),
+        "ukuran_berkas_GB": round(os.path.getsize(args.gguf) / 1e9, 3),
+        "ram_GB": {
+            "dasar": round(rss0, 3),
+            "setelah_muat": round(rss_setelah_muat, 3),
+            "puncak_muat": round(puncak_muat, 3),
+            "puncak_infer": round(puncak_infer, 3),
+            "bobot_saja": round(rss_setelah_muat - rss0, 3),
+        },
+        "waktu": {
+            "muat_s": round(waktu_muat, 2),
+            "latensi_s_mean": round(statistics.mean(lat), 2),
+            "latensi_s_std": round(statistics.pstdev(lat), 2),
             "tok_per_s_mean": round(statistics.mean(tps), 2),
             "tok_per_s_std": round(statistics.pstdev(tps), 2),
-            "n_queries": args.n_queries, "max_new_tokens": args.max_new_tokens,
+            "token_keluaran_mean": round(statistics.mean(n_tok), 1),
+            "n_queries": len(pertanyaan),
+            "max_new_tokens": args.max_new_tokens,
             "n_ctx": args.n_ctx,
         },
+        "redflag_overhead_ms_per_pertanyaan": (
+            round(overhead_ms, 3) if overhead_ms is not None else None
+        ),
+        "gerbang_ram": gerbang,
     }
-    os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
-    json.dump(out, open(args.out, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    print(f"\nSaved -> {args.out}")
-    _print_one(out)
+
+    os.makedirs(args.out_dir, exist_ok=True)
+    path = os.path.join(args.out_dir, f"bench_{args.label}.json")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, indent=2)
+    _cetak_satu(out)
+    print(f"\nDisimpan -> {path}")
 
 
-def _cpu_name():
-    try:
-        import platform
-        return platform.processor() or platform.machine()
-    except Exception:
-        return "unknown"
+def _cetak_satu(o: dict) -> None:
+    print(f"\n=== {o['label']}  ({o['arsitektur'].get('family', '?')}, {o['kuantisasi']}) ===")
+    print(f"  berkas GGUF        : {o['ukuran_berkas_GB']:.2f} GB")
+    r = o["ram_GB"]
+    print(f"  RAM bobot saja     : {r['bobot_saja']:.2f} GB")
+    print(f"  RAM puncak (muat)  : {r['puncak_muat']:.2f} GB")
+    print(f"  RAM puncak (infer) : {r['puncak_infer']:.2f} GB   <- penentu gerbang")
+    w = o["waktu"]
+    print(f"  waktu muat         : {w['muat_s']:.2f} s")
+    print(f"  latensi/pertanyaan : {w['latensi_s_mean']:.2f} +- {w['latensi_s_std']:.2f} s")
+    print(f"  throughput         : {w['tok_per_s_mean']:.1f} +- {w['tok_per_s_std']:.1f} tok/s")
+    if o.get("redflag_overhead_ms_per_pertanyaan") is not None:
+        print(f"  overhead red-flag  : {o['redflag_overhead_ms_per_pertanyaan']:.3f} ms/pertanyaan")
+    print("  GERBANG RAM:")
+    for nama, g in o["gerbang_ram"].items():
+        print(f"    {nama:8s} (tersedia ~{g['diasumsikan_tersedia_GB']:.2f} GB) -> "
+              f"{'LOLOS' if g['lolos'] else 'GAGAL'}")
 
 
-def _os_name():
-    import platform
-    return f"{platform.system()} {platform.release()}"
+def ringkas(dir_hasil: str) -> None:
+    berkas = sorted(glob.glob(os.path.join(dir_hasil, "bench_*.json")))
+    if not berkas:
+        raise SystemExit(f"Tak ada bench_*.json di {dir_hasil}")
+    data = [json.load(open(b, encoding="utf-8")) for b in berkas]
+    urut = {"0.8b": 0, "2b": 1, "4b": 2}
+    data.sort(key=lambda d: urut.get(d["label"], 9))
+    d0 = data[0]
+
+    print(f"\nRQ3 — TRADE-OFF ON-DEVICE (CPU, Q4_K_M, n={d0['waktu']['n_queries']} pertanyaan)")
+    print(f"Perangkat: {d0['perangkat']['cpu']} | {d0['perangkat']['threads']} thread "
+          f"| RAM {d0['perangkat']['ram_total_GB']} GB | {d0['perangkat']['os']}\n")
+    print(f"{'model':8s}{'GGUF':>9s}{'RAM infer':>12s}{'muat':>9s}"
+          f"{'latensi':>11s}{'tok/s':>9s}{'3 GB':>8s}{'4 GB':>8s}")
+    for d in data:
+        g3 = "ya" if d["gerbang_ram"]["HP 3 GB"]["lolos"] else "TIDAK"
+        g4 = "ya" if d["gerbang_ram"]["HP 4 GB"]["lolos"] else "TIDAK"
+        print(f"{d['label']:8s}{d['ukuran_berkas_GB']:8.2f}G{d['ram_GB']['puncak_infer']:11.2f}G"
+              f"{d['waktu']['muat_s']:8.1f}s{d['waktu']['latensi_s_mean']:10.1f}s"
+              f"{d['waktu']['tok_per_s_mean']:9.1f}{g3:>8s}{g4:>8s}")
+    ov = [d.get("redflag_overhead_ms_per_pertanyaan") for d in data if d.get("redflag_overhead_ms_per_pertanyaan")]
+    if ov:
+        print(f"\nOverhead lapisan red-flag: {statistics.mean(ov):.3f} ms/pertanyaan "
+              f"(dibanding latensi model dalam DETIK -> praktis nol, terbukti bukan diasumsikan)")
+    print("\nCATATAN: angka dari perangkat di atas adalah PROKSI untuk HP kelas bawah.")
+    print("Sebutkan spesifikasi perangkat uji di metodologi; ulangi via Termux bila bisa.")
 
 
-def _print_one(o):
-    print(f"\n=== {o['label']} ({o['architecture']['family']}, {o['architecture']['type']}) ===")
-    print(f"  file size      : {o['file_size_GB']} GB")
-    print(f"  peak RAM load  : {o['ram_MB']['peak_load']} MB")
-    print(f"  peak RAM infer : {o['ram_MB']['peak_infer']} MB")
-    print(f"  throughput     : {o['timing']['tok_per_s_mean']} +- "
-          f"{o['timing']['tok_per_s_std']} tok/s")
-    print(f"  latency/query  : {o['timing']['latency_s_mean']} +- "
-          f"{o['timing']['latency_s_std']} s")
-
-
-def summarize(folder):
-    rows = [json.load(open(f, encoding="utf-8")) for f in sorted(glob.glob(f"{folder}/*.json"))]
-    if not rows:
-        print("Tak ada hasil di", folder); return
-    hdr = ["label", "arch", "size_GB", "RAM_load", "RAM_infer", "tok/s", "lat_s"]
-    print("\nTABEL TRADE-OFF ON-DEVICE (BAB IV)")
-    print(f"{hdr[0]:14s} {hdr[1]:10s} {hdr[2]:>8s} {hdr[3]:>9s} {hdr[4]:>10s} {hdr[5]:>8s} {hdr[6]:>7s}")
-    print("-" * 74)
-    for o in rows:
-        print(f"{o['label']:14s} {o['architecture']['type'][:10]:10s} "
-              f"{o['file_size_GB']:8.3f} {o['ram_MB']['peak_load']:9.0f} "
-              f"{o['ram_MB']['peak_infer']:10.0f} {o['timing']['tok_per_s_mean']:8.2f} "
-              f"{o['timing']['latency_s_mean']:7.2f}")
-
-
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--summarize", metavar="FOLDER")
-    ap.add_argument("--gguf")
-    ap.add_argument("--model_type", choices=["qwen", "gemma"])
-    ap.add_argument("--label", default="run")
-    ap.add_argument("--n_queries", type=int, default=20)
-    ap.add_argument("--max_new_tokens", type=int, default=128)
-    ap.add_argument("--n_ctx", type=int, default=2048)
-    ap.add_argument("--threads", type=int, default=os.cpu_count())
-    ap.add_argument("--out", default=None)
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--gguf", help="path berkas GGUF Q4_K_M")
+    ap.add_argument("--label", choices=sorted(ARCH), help="ukuran model")
+    ap.add_argument("--n_queries", type=int, default=12)
+    ap.add_argument("--max_new_tokens", type=int, default=256)
+    ap.add_argument("--n_ctx", type=int, default=1024)
+    ap.add_argument("--threads", type=int, default=max(1, (os.cpu_count() or 4) // 2))
+    ap.add_argument("--out_dir", default="results_bench")
+    ap.add_argument("--summarize", metavar="DIR", help="ringkas semua bench_*.json di DIR")
     args = ap.parse_args()
 
     if args.summarize:
-        summarize(args.summarize); return
-    assert args.gguf and args.model_type, "--gguf dan --model_type wajib"
-    if args.out is None:
-        args.out = f"results_bench/bench_{args.label}.json"
-    benchmark(args)
+        ringkas(args.summarize)
+    elif args.gguf and args.label:
+        if not os.path.exists(args.gguf):
+            raise SystemExit(f"Tak ada {args.gguf}")
+        benchmark(args)
+    else:
+        ap.print_help()
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
