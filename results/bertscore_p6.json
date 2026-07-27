@@ -1,0 +1,103 @@
+{
+ "sumber": "dihitung ulang dari results/preds_p6/preds/ (prediksi tersimpan)",
+ "test_file": "Data/processed_id/test.jsonl",
+ "n": 2998,
+ "bertscore_model": "bert-base-multilingual-cased",
+ "postclean": "clean_greeting diterapkan (sama seperti eval.py)",
+ "gerbang_keselarasan": [
+  {
+   "label": "qwen0.8b_baseline",
+   "status": "OK",
+   "token_f1": 0.2605,
+   "token_f1_acuan": 0.2593,
+   "rougeL": 0.1169,
+   "rougeL_acuan": 0.1162,
+   "selisih_f1": 0.0012,
+   "selisih_rougeL": 0.00078
+  },
+  {
+   "label": "qwen0.8b_finetuned",
+   "status": "OK",
+   "token_f1": 0.2965,
+   "token_f1_acuan": 0.2965,
+   "rougeL": 0.1554,
+   "rougeL_acuan": 0.1554,
+   "selisih_f1": 0.0,
+   "selisih_rougeL": 0.0
+  },
+  {
+   "label": "qwen2b_baseline",
+   "status": "OK",
+   "token_f1": 0.2726,
+   "token_f1_acuan": 0.2716,
+   "rougeL": 0.1188,
+   "rougeL_acuan": 0.1182,
+   "selisih_f1": 0.00092,
+   "selisih_rougeL": 0.00065
+  },
+  {
+   "label": "qwen2b_finetuned",
+   "status": "OK",
+   "token_f1": 0.2956,
+   "token_f1_acuan": 0.2956,
+   "rougeL": 0.1522,
+   "rougeL_acuan": 0.1522,
+   "selisih_f1": 0.0,
+   "selisih_rougeL": 0.0
+  },
+  {
+   "label": "qwen4b_baseline",
+   "status": "OK",
+   "token_f1": 0.2767,
+   "token_f1_acuan": 0.276,
+   "rougeL": 0.1214,
+   "rougeL_acuan": 0.1209,
+   "selisih_f1": 0.0007,
+   "selisih_rougeL": 0.0005
+  },
+  {
+   "label": "qwen4b_finetuned",
+   "status": "OK",
+   "token_f1": 0.3096,
+   "token_f1_acuan": 0.3096,
+   "rougeL": 0.163,
+   "rougeL_acuan": 0.163,
+   "selisih_f1": 0.0,
+   "selisih_rougeL": 0.0
+  }
+ ],
+ "bertscore_f1": {
+  "qwen0.8b_baseline": 0.6585,
+  "qwen0.8b_finetuned": 0.694,
+  "qwen2b_baseline": 0.6628,
+  "qwen2b_finetuned": 0.691,
+  "qwen4b_baseline": 0.6655,
+  "qwen4b_finetuned": 0.6992
+ },
+ "delta_finetuned_minus_baseline": {
+  "0.8b": {
+   "delta": 0.0355,
+   "ci95": [
+    0.0347,
+    0.0364
+   ],
+   "signifikan": true
+  },
+  "2b": {
+   "delta": 0.0283,
+   "ci95": [
+    0.0274,
+    0.0291
+   ],
+   "signifikan": true
+  },
+  "4b": {
+   "delta": 0.0337,
+   "ci95": [
+    0.0328,
+    0.0347
+   ],
+   "signifikan": true
+  }
+ }
+}
