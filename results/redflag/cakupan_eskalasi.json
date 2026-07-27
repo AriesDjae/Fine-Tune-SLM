@@ -101,5 +101,13 @@
       "rasio": 2.27790388118257
     }
   },
+  "data_latih": {
+    "n": 20000,
+    "n_terpicu": 1187,
+    "rate_terpicu": 0.05935,
+    "tegas_terpicu": 0.12384161752316765,
+    "tegas_tidak_terpicu": 0.05565300590017541,
+    "rasio": 2.2252457979592672
+  },
   "catatan": "cakupan dihitung HANYA pada subset terpicu; setelah lapisan red-flag dipasang, cakupan menjadi 100% menurut konstruksi"
 }

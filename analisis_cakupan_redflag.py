@@ -176,6 +176,47 @@ def main() -> None:
     print("    angka satu digit (mis. 0.8B baseline = 3 kasus) → SUGESTIF, bukan bukti.")
     print("    Yang cukup bertenaga hanya 4B baseline dan referensi dokter.")
 
+    # --- 4. RANTAI SEBAB: apakah DATA LATIH sendiri mengajarkan eskalasi? ---
+    # Kalau data latih pun jarang mengeskalasi pada kasus gawat, perilaku itu adalah
+    # MINORITAS di sinyal pelatihan — dan pola minoritas cenderung tergerus mendekati nol
+    # oleh decoding greedy yang mengejar modus. Itu penjelasan yang jauh lebih spesifik
+    # daripada "model belajar dari data yang kurang baik".
+    latih = os.path.join("Data", "processed_id_final", "train.jsonl")
+    data_latih = None
+    if os.path.exists(latih):
+        ntp = ntt = tp = tt = 0
+        with open(latih, encoding="utf-8") as f:
+            for baris in f:
+                baris = baris.strip()
+                if not baris:
+                    continue
+                msg = json.loads(baris)["messages"]
+                q = next(x["content"] for x in msg if x["role"] == "user")
+                a = next(x["content"] for x in msg if x["role"] == "assistant")
+                if detect(q).terpicu:
+                    ntp += 1
+                    tp += bool(POLA_TEGAS.search(a))
+                else:
+                    ntt += 1
+                    tt += bool(POLA_TEGAS.search(a))
+        data_latih = {
+            "n": ntp + ntt, "n_terpicu": ntp, "rate_terpicu": ntp / (ntp + ntt),
+            "tegas_terpicu": tp / ntp, "tegas_tidak_terpicu": tt / ntt,
+            "rasio": (tp / ntp) / (tt / ntt),
+        }
+        print(f"\n\nRANTAI SEBAB — eskalasi tegas di JAWABAN REFERENSI data latih (20k):")
+        print(f"  memicu red-flag        : {ntp}/{ntp + ntt} ({ntp / (ntp + ntt) * 100:.1f}%)")
+        print(f"  tegas pada TERPICU     : {tp}/{ntp} = {tp / ntp * 100:.1f}%")
+        print(f"  tegas pada tak terpicu : {tt}/{ntt} = {tt / ntt * 100:.1f}%   "
+              f"(rasio {(tp / ntp) / (tt / ntt):.1f}x)")
+        ft4 = hasil["qwen4b_finetuned"]["tegas"]
+        print(f"\n  Data mengajarkan {tp / ntp * 100:.1f}%; 4B fine-tuned menghasilkan "
+              f"{ft4 * 100:.1f}% — {(tp / ntp) / ft4:.0f}x DI BAWAH datanya sendiri.")
+        print("  Jadi bukan sekadar 'meniru data': perilaku MINORITAS (12%) tergerus mendekati")
+        print("  nol oleh decoding greedy yang mengejar modus. Menambah data sejenis tak akan")
+        print("  menolong — masalahnya kelangkaan relatif, bukan jumlah. Prediksi yang bisa")
+        print("  diuji: sampling (temperature>0) mestinya memulihkan sebagian eskalasi.")
+
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump({
@@ -185,6 +226,7 @@ def main() -> None:
             "per_kategori": dict(kategori),
             "cakupan_eskalasi": hasil,
             "kepekaan_keadaan": kepekaan,
+            "data_latih": data_latih,
             "catatan": "cakupan dihitung HANYA pada subset terpicu; setelah lapisan "
                        "red-flag dipasang, cakupan menjadi 100% menurut konstruksi",
         }, f, ensure_ascii=False, indent=2)
