@@ -1,0 +1,54 @@
+{
+  "n_test": 2998,
+  "n_terpicu": 195,
+  "rate_terpicu": 0.06504336224149433,
+  "per_kategori": {
+    "neurologis": 23,
+    "kesadaran": 33,
+    "perdarahan": 22,
+    "kardiovaskular": 35,
+    "trauma_keracunan": 76,
+    "anafilaksis": 2,
+    "pernapasan": 4,
+    "obstetri": 5,
+    "anak": 3
+  },
+  "cakupan_eskalasi": {
+    "qwen0.8b_baseline": {
+      "tegas": 0.015384615384615385,
+      "umum": 0.4564102564102564,
+      "apa_pun": 0.4666666666666667
+    },
+    "qwen0.8b_finetuned": {
+      "tegas": 0.005128205128205128,
+      "umum": 0.40512820512820513,
+      "apa_pun": 0.40512820512820513
+    },
+    "qwen2b_baseline": {
+      "tegas": 0.03076923076923077,
+      "umum": 0.21025641025641026,
+      "apa_pun": 0.22564102564102564
+    },
+    "qwen2b_finetuned": {
+      "tegas": 0.03076923076923077,
+      "umum": 0.38461538461538464,
+      "apa_pun": 0.40512820512820513
+    },
+    "qwen4b_baseline": {
+      "tegas": 0.1794871794871795,
+      "umum": 0.14871794871794872,
+      "apa_pun": 0.28205128205128205
+    },
+    "qwen4b_finetuned": {
+      "tegas": 0.020512820512820513,
+      "umum": 0.358974358974359,
+      "apa_pun": 0.358974358974359
+    },
+    "referensi_dokter": {
+      "tegas": 0.14871794871794872,
+      "umum": 0.23076923076923078,
+      "apa_pun": 0.3435897435897436
+    }
+  },
+  "catatan": "cakupan dihitung HANYA pada subset terpicu; setelah lapisan red-flag dipasang, cakupan menjadi 100% menurut konstruksi"
+}
