@@ -61,12 +61,16 @@ def _bersih(v: str) -> str:
     return v.strip().strip('"').strip("'").strip()
 
 
-def _tampak_kunci(k: str) -> bool:
-    """Cek kasar apakah string ini betul kunci, bukan placeholder/komentar."""
-    return k.startswith("sk-") and len(k) > 20 and " " not in k
+def _tampak_kunci(k: str, prefiks: tuple[str, ...] = ("sk-",)) -> bool:
+    """Cek kasar apakah string ini betul kunci, bukan placeholder/komentar.
+
+    `prefiks` beda per penyedia: OpenAI/Anthropic/OpenRouter memakai 'sk-',
+    Google AI Studio (Gemini) memakai 'AIza'.
+    """
+    return k.startswith(prefiks) and len(k) > 20 and " " not in k
 
 
-def baca_kunci(env_key: str, key_file: str) -> str | None:
+def baca_kunci(env_key: str, key_file: str, prefiks: tuple[str, ...] = ("sk-",)) -> str | None:
     """Ambil kunci dari env var, atau baris pertama-yang-valid file lokal (*.key, gitignore).
 
     Sengaja TIDAK menerima kunci lewat argumen CLI supaya tak masuk riwayat shell.
@@ -74,13 +78,13 @@ def baca_kunci(env_key: str, key_file: str) -> str | None:
     berisi petunjuk di atas dan kunci ditempel di baris mana pun.
     """
     v = os.environ.get(env_key)
-    if v and _tampak_kunci(_bersih(v)):
+    if v and _tampak_kunci(_bersih(v), prefiks):
         return _bersih(v)
     if os.path.exists(key_file):
         with open(key_file, encoding="utf-8") as f:
             for baris in f:
                 k = _bersih(baris)
-                if k and not k.startswith("#") and _tampak_kunci(k):
+                if k and not k.startswith("#") and _tampak_kunci(k, prefiks):
                     return k
     return None
 

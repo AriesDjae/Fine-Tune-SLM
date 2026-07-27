@@ -26,12 +26,12 @@ from llm_judge_tier2 import OUT_DIR, bangun_sampel, ckpt_path, ringkas
 
 
 def _cek_kunci(provider: str) -> None:
-    _, env_key, key_file = PROVIDER[provider]
-    if _api_key(env_key, key_file) is None:
+    _, env_key, key_file, prefiks = PROVIDER[provider]
+    if _api_key(env_key, key_file, prefiks) is None:
         print("=" * 68)
         print(f"  KUNCI API BELUM ADA untuk provider '{provider}'.")
         print(f"  Buka file '{key_file}', ganti baris placeholder dengan API key Anda")
-        print(f"  (diawali 'sk-'), simpan, lalu jalankan perintah ini lagi.")
+        print(f"  (diawali {' / '.join(prefiks)}), simpan, lalu jalankan perintah ini lagi.")
         print(f"  Alternatif: set variabel lingkungan {env_key}.")
         print("=" * 68)
         sys.exit(1)

@@ -40,16 +40,29 @@ import argparse
 import json
 import os
 import sys
+import time
 
 # Pakai ulang seluruh bagian ilmiah dari skrip Anthropic supaya SEBANDING.
 from llm_judge_tier2 import (OUT_DIR, REF_NOTE, RUBRIK, SCHEMA, _prompt, baca_kunci,
                              bangun_sampel, ckpt_path)
 
 PROVIDER = {
-    # nama: (base_url, env var, nama file kunci)
-    "openai": (None, "OPENAI_API_KEY", "openai.key"),  # base_url default SDK
-    "openrouter": ("https://openrouter.ai/api/v1", "OPENROUTER_API_KEY", "openrouter.key"),
+    # nama: (base_url, env var, nama file kunci, prefiks kunci yang sah)
+    "openai": (None, "OPENAI_API_KEY", "openai.key", ("sk-",)),  # base_url default SDK
+    "openrouter": ("https://openrouter.ai/api/v1", "OPENROUTER_API_KEY", "openrouter.key", ("sk-",)),
+    # Google AI Studio menyediakan endpoint OpenAI-compatible, jadi seluruh logika di
+    # bawah dipakai apa adanya. Kunci gratisnya dari aistudio.google.com/apikey (tanpa
+    # billing, tanpa Google Cloud) dan berawalan 'AIza', bukan 'sk-'.
+    # KENAPA GEMINI: model yang dievaluasi = Qwen, penilai utama = GPT-4o. Gemini berasal
+    # dari lab KETIGA, sehingga kesepakatan Gemini<->GPT-4o adalah bukti lintas-galur —
+    # jauh lebih sulit dibantah daripada dua model satu keluarga.
+    "gemini": ("https://generativelanguage.googleapis.com/v1beta/openai/",
+               "GEMINI_API_KEY", "gemini.key", ("AIza",)),
 }
+
+# Tier gratis Gemini membatasi permintaan per menit; beri jeda default agar tak terus
+# menabrak 429. Penyedia berbayar tidak perlu jeda.
+JEDA_DEFAULT = {"gemini": 4.0}
 
 
 # Pembaca kunci dipakai bersama dengan jalur Anthropic (didefinisikan di llm_judge_tier2).
@@ -117,21 +130,42 @@ def _panggil(client, kwargs: dict, state: dict):
     return client.chat.completions.create(**kwargs)
 
 
+def _kuota_habis(e: Exception) -> bool:
+    """Bedakan 429 SEMENTARA (rate limit, layak diulang) dari 429 PERMANEN (kuota habis).
+
+    Ini bukan detail kosmetik: mengulang-ulang 'insufficient_quota' dengan backoff akan
+    menggantung run berjam-jam tanpa hasil — persis jebakan yang menghabiskan waktu saat
+    kredit OpenAI habis di tengah ablation.
+    """
+    m = str(e).lower()
+    return "insufficient_quota" in m or "exceeded your current quota" in m or "billing" in m
+
+
+def _batas_laju(e: Exception) -> bool:
+    m = str(e).lower()
+    return ("rate limit" in m or "rate_limit" in m or "429" in m
+            or "resource_exhausted" in m) and not _kuota_habis(e)
+
+
 def jalankan(model_key: str, n: int, batas: int | None, provider: str, judge_model: str,
-             show_reference: bool, max_tokens: int, strip: bool = False, tag: str = "") -> None:
+             show_reference: bool, max_tokens: int, strip: bool = False, tag: str = "",
+             jeda: float | None = None) -> None:
     try:
         from openai import OpenAI
     except ImportError:
         raise SystemExit("Butuh SDK OpenAI: pip install openai")
 
-    base_url, env_key, key_file = PROVIDER[provider]
-    api_key = _api_key(env_key, key_file)
+    base_url, env_key, key_file, prefiks = PROVIDER[provider]
+    api_key = _api_key(env_key, key_file, prefiks)
     if not api_key:
         raise SystemExit(
             f"Kunci {provider} tak ditemukan.\n"
             f"Simpan kunci di file '{key_file}' (ter-gitignore), atau set env {env_key}.\n"
+            f"Kunci {provider} berawalan {' / '.join(prefiks)}.\n"
             f"JANGAN tempel kunci di perintah/chat."
         )
+    if jeda is None:
+        jeda = JEDA_DEFAULT.get(provider, 0.0)
 
     client = OpenAI(api_key=api_key, base_url=base_url)
 
@@ -156,8 +190,9 @@ def jalankan(model_key: str, n: int, batas: int | None, provider: str, judge_mod
     ref_txt = "DENGAN referensi" if show_reference else "TANPA referensi (objektif)"
     strip_txt = " | STRIP-DISCLAIMER (kedua kondisi)" if strip else ""
     tag_txt = f" | run='{tag}'" if tag else ""
+    jeda_txt = f" | jeda {jeda:.1f}s/panggilan" if jeda else ""
     print(f"Menilai {len(sisa)} item — {provider}:{judge_model} | {ref_txt} | "
-          f"temperature=0{strip_txt}{tag_txt}")
+          f"temperature=0{strip_txt}{tag_txt}{jeda_txt}")
 
     state = {"json": True}  # apakah json_object mode masih dipakai
     gagal = 0
@@ -172,13 +207,33 @@ def jalankan(model_key: str, n: int, batas: int | None, provider: str, judge_mod
                 temperature=0,
                 max_tokens=max_tokens,
             )
-            try:
-                resp = _panggil(client, kwargs, state)
-                nilai = _ekstrak_json(resp.choices[0].message.content)
-                if not _valid(nilai):
-                    raise ValueError("nilai di luar enum rubrik")
-            except Exception as e:
-                print(f"  [{ke}/{len(sisa)}] idx={item['idx']} ERROR: {type(e).__name__}: {e}")
+            if jeda and ke > 1:
+                time.sleep(jeda)
+            nilai = None
+            for percobaan in range(5):
+                try:
+                    resp = _panggil(client, kwargs, state)
+                    nilai = _ekstrak_json(resp.choices[0].message.content)
+                    if not _valid(nilai):
+                        raise ValueError("nilai di luar enum rubrik")
+                    break
+                except Exception as e:
+                    if _kuota_habis(e):
+                        # Permanen — jangan diulang, dan jangan bakar sisa daftar.
+                        print(f"  [{ke}/{len(sisa)}] KUOTA HABIS: {e}")
+                        print(f"\nDIHENTIKAN di item ke-{ke}. Isi ulang kredit lalu jalankan "
+                              f"perintah yang sama — {len(sudah)} item yang sudah dinilai "
+                              f"TIDAK akan diulang.")
+                        raise SystemExit(1)
+                    if _batas_laju(e) and percobaan < 4:
+                        tunggu = 10 * (percobaan + 1)  # 10s, 20s, 30s, 40s
+                        print(f"  [{ke}/{len(sisa)}] kena batas laju, tunggu {tunggu}s "
+                              f"(percobaan {percobaan + 1}/4)")
+                        time.sleep(tunggu)
+                        continue
+                    print(f"  [{ke}/{len(sisa)}] idx={item['idx']} ERROR: {type(e).__name__}: {e}")
+                    break
+            if nilai is None:
                 gagal += 1
                 continue
 
@@ -213,13 +268,17 @@ def main() -> None:
                     help="penanda run terpisah (mis. 'strip', 'gpt5'); kosong = run utama")
     ap.add_argument("--strip-disclaimer", action="store_true",
                     help="ABLATION: buang kalimat disclaimer dari KEDUA kondisi sebelum dinilai")
+    ap.add_argument("--jeda", type=float, default=None,
+                    help="jeda detik antar panggilan; default 4s utk gemini (tier gratis "
+                         "dibatasi per menit), 0 utk penyedia berbayar")
     ap.add_argument("--n", type=int, default=200)
     ap.add_argument("--limit", type=int, default=None, help="batasi jumlah panggilan (uji coba)")
     args = ap.parse_args()
 
     if args.run:
         jalankan(args.model_key, args.n, args.limit, args.provider, args.judge_model,
-                 args.show_reference, args.max_tokens, args.strip_disclaimer, args.tag)
+                 args.show_reference, args.max_tokens, args.strip_disclaimer, args.tag,
+                 args.jeda)
     else:
         ap.print_help()
 
