@@ -73,6 +73,10 @@ pilot_generations.txt
 # --- Bundle unggah Overleaf (dibuat ulang dari artikel/) -------------------
 /artikel*.zip
 
+# --- Log runtime aplikasi penilaian dokter (hf_space/app.py) ---------------
+#     Jejak sesi yang sesungguhnya diarsipkan ke logs/ di HF Dataset.
+evaluasi_app.log
+
 # --- Draf skripsi: repo PUBLIK -> jangan publikasikan sebelum sidang. ------
 #     (Hapus baris ini bila memang ingin skripsi ikut ter-push.)
 skripsi/
