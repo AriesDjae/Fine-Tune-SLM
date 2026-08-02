@@ -1,0 +1,39 @@
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+kasus memicu red-flag: 195
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+  [greedy] 1/195
+  [greedy] 2/195
+  [greedy] 3/195
+  [greedy] 4/195
+  [greedy] 5/195
+  [greedy] 6/195
+  [greedy] 7/195
+  [greedy] 8/195
+  [greedy] 9/195
+  [greedy] 10/195
+  [greedy] 11/195
+  [greedy] 12/195
+  [greedy] 13/195
+  [greedy] 14/195
+  [greedy] 15/195
+  [greedy] 16/195
+  [greedy] 17/195
+  [greedy] 18/195
+  [greedy] 19/195
+  [greedy] 20/195
+  [greedy] 21/195
+  [greedy] 22/195
+  [greedy] 23/195
+  [greedy] 24/195
+  [greedy] 25/195
+  [greedy] 26/195
+  [greedy] 27/195
+  [greedy] 28/195
+  [greedy] 29/195
+  [greedy] 30/195
+  [greedy] 31/195
+  [greedy] 32/195
+  [greedy] 33/195
+  [greedy] 34/195
+  [greedy] 35/195
+  [greedy] 36/195

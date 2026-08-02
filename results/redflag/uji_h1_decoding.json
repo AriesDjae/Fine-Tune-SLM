@@ -1,0 +1,64 @@
+{
+  "hipotesis": "H1 — eskalasi tegas runtuh karena penyempitan distribusi + greedy decoding",
+  "model": "AriesDjaenuri/qwen35-4b-medical-id-GGUF",
+  "kuantisasi": "Q4_K_M",
+  "n_kasus_terpicu": 3,
+  "max_tokens": 256,
+  "seed": 42,
+  "acuan_bf16_greedy": 0.0205,
+  "acuan_data_latih_terpicu": 0.124,
+  "kondisi": {
+    "greedy": {
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "top_k": 1,
+      "n": 3,
+      "tegas": 0.0,
+      "n_tegas": 0,
+      "umum": 0.0,
+      "detik": 105.7
+    },
+    "sampling_t0.7": {
+      "temperature": 0.7,
+      "top_p": 0.9,
+      "top_k": 40,
+      "n": 3,
+      "tegas": 0.0,
+      "n_tegas": 0,
+      "umum": 0.3333333333333333,
+      "detik": 96.4
+    },
+    "sampling_t1.0": {
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 40,
+      "n": 3,
+      "tegas": 0.3333333333333333,
+      "n_tegas": 1,
+      "umum": 0.3333333333333333,
+      "detik": 84.5
+    }
+  },
+  "banding_vs_greedy": {
+    "sampling_t0.7": {
+      "delta_tegas": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "p_mcnemar": 1.0,
+      "hanya_sampling": 0,
+      "hanya_greedy": 0
+    },
+    "sampling_t1.0": {
+      "delta_tegas": 0.3333333333333333,
+      "ci95": [
+        0.0,
+        1.0
+      ],
+      "p_mcnemar": 1.0,
+      "hanya_sampling": 1,
+      "hanya_greedy": 0
+    }
+  }
+}
