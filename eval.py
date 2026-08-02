@@ -226,13 +226,47 @@ def load_model(args):
 # --------------------------------------------------------------------------- #
 # Generate (greedy, identik antar model utk fair comparison)
 # --------------------------------------------------------------------------- #
+NO_REPEAT_NGRAM = 3   # satu-satunya sumber angka ini; hf_space/config.py mengikutinya
+
+
+def _ngram_blocker(n):
+    """Padanan `no_repeat_ngram_size` untuk llama.cpp.
+
+    llama.cpp TIDAK punya parameter ini — hanya repeat_penalty, yang cuma menghukum
+    lunak. Tanpa padanan ini jalur GGUF menghasilkan keluaran yang TIDAK sebanding
+    dengan jalur HF: model kecil terkunci mengulang kalimat sampai jatah token habis
+    (teramati nyata pada 0.8B & 2B fine-tuned di 1024 token). Semantiknya disamakan
+    dengan HuggingFace: token yang melengkapi n-gram yang sudah pernah muncul
+    diberi probabilitas nol.
+    """
+    import numpy as np
+
+    def proses(input_ids, scores):
+        ids = np.asarray(input_ids)
+        if ids.size < n:
+            return scores
+        batas = ids.size - n + 1
+        cocok = np.ones(batas, dtype=bool)
+        awalan = ids[-(n - 1):]
+        for j in range(n - 1):
+            cocok &= ids[j:j + batas] == awalan[j]
+        terlarang = ids[np.flatnonzero(cocok) + (n - 1)]
+        if terlarang.size:
+            scores[terlarang] = -np.inf
+        return scores
+
+    return proses
+
+
 def generate_all(kind, handle, tok, prompts, batch_size, max_new_tokens):
     preds = []
     if kind == "gguf":
+        from llama_cpp import LogitsProcessorList
+        proc = LogitsProcessorList([_ngram_blocker(NO_REPEAT_NGRAM)])
         for i, p in enumerate(prompts):
             o = handle.create_completion(
                 p, max_tokens=max_new_tokens, temperature=0.0,  # greedy
-                repeat_penalty=1.0, top_k=1)
+                repeat_penalty=1.0, top_k=1, logits_processor=proc)
             preds.append(o["choices"][0]["text"])
             print(f"  generated {i + 1}/{len(prompts)}", end="\r")
         print()
@@ -250,7 +284,7 @@ def generate_all(kind, handle, tok, prompts, batch_size, max_new_tokens):
         with torch.no_grad():
             out = handle.generate(
                 **enc, max_new_tokens=max_new_tokens, do_sample=False, num_beams=1,
-                no_repeat_ngram_size=3, pad_token_id=tok.pad_token_id)
+                no_repeat_ngram_size=NO_REPEAT_NGRAM, pad_token_id=tok.pad_token_id)
         gen = out[:, enc["input_ids"].shape[1]:]
         preds.extend(tok.batch_decode(gen, skip_special_tokens=True))
         print(f"  generated {min(i + batch_size, len(prompts))}/{len(prompts)}", end="\r")
@@ -331,7 +365,8 @@ def evaluate(args):
         "model_type": args.model_type,
         "config": {
             "n_eval": len(samples), "max_new_tokens": args.max_new_tokens,
-            "do_sample": False, "no_repeat_ngram_size": 3, "batch_size": args.batch_size,
+            "do_sample": False, "no_repeat_ngram_size": NO_REPEAT_NGRAM,
+            "batch_size": args.batch_size,
             "quant": "Q4_K_M(gguf)" if args.gguf else ("4bit" if args.load_in_4bit else "16bit"),
             "loader": "gguf" if args.gguf else args.loader, "gguf": args.gguf,
             "test_file": args.test_file, "seed": args.seed,
