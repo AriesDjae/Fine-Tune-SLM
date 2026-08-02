@@ -70,6 +70,9 @@ llama_bin/
 # --- Artefak run notebook (di-generate ulang tiap run) ---------------------
 pilot_generations.txt
 
+# --- Bundle unggah Overleaf (dibuat ulang dari artikel/) -------------------
+/artikel*.zip
+
 # --- Draf skripsi: repo PUBLIK -> jangan publikasikan sebelum sidang. ------
 #     (Hapus baris ini bila memang ingin skripsi ikut ter-push.)
 skripsi/
