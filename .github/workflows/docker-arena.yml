@@ -13,7 +13,11 @@ name: build-docker-arena
 
 on:
   push:
-    branches: [main]
+    # naskah-artikel-p6 ikut dipicu karena arena dikembangkan di sana. Tanpa ini image
+    # tidak pernah terbangun sampai branch-nya di-merge — dan `workflow_dispatch` pun
+    # tidak menolong, sebab tombol Run workflow hanya muncul untuk berkas workflow yang
+    # sudah ada di branch DEFAULT. Hapus baris branch-nya setelah merge ke main.
+    branches: [main, naskah-artikel-p6]
     paths:
       - webapp/runpod/**
       - .github/workflows/docker-arena.yml
