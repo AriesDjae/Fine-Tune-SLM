@@ -49,6 +49,12 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 
+# --- Deploy webapp (arena penilaian dokter) -------------------------------
+# `npx vercel` menulis id proyek & org ke sini; bukan rahasia keras, tapi tidak ada
+# gunanya di repo dan bikin ribut kalau dua mesin men-deploy proyek yang sama.
+.vercel/
+node_modules/
+
 # --- Secrets / credentials ------------------------------------------------
 .env
 .env.*

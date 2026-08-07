@@ -1,0 +1,84 @@
+# Build image worker RunPod Serverless untuk ARENA PENILAIAN DOKTER (inferensi).
+# Saudara dari docker.yml — yang itu image TRAINING (torch + unsloth, ~25-30 GB).
+# Yang ini jauh lebih ramping: tanpa torch, cuma llama.cpp + tokenizer.
+#
+# Hasil: ghcr.io/ariesdjae/p6-arena:v1
+# SETELAH build pertama: buka halaman package di GitHub -> Package settings ->
+# Change visibility -> PUBLIC, supaya RunPod bisa pull tanpa kredensial.
+#
+# BUILD CONTEXT = webapp/runpod, BUKAN root repo. Itu bukan selera: pre-deploy check
+# RunPod hanya memindai root konteks untuk `runpod.serverless.start()`, dan root repo
+# sudah dipakai handler training.
+name: build-docker-arena
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - webapp/runpod/**
+      - .github/workflows/docker-arena.yml
+      # Gerbang konsistensi membaca keduanya, dan roster/prompt yang bergeser di sini
+      # membuat image yang sudah terbangun jadi usang tanpa satu pun berkas di
+      # webapp/runpod/ berubah.
+      - hf_space/config.py
+      - chat_format.py
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: arena-image
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Gerbang anti-hanyut: hf_space/config.py adalah satu-satunya sumber kebenaran,
+      # dan salinannya di webapp/ mudah menyimpang diam-diam. Membangun image dari
+      # roster yang sudah bergeser berarti dokter menilai sistem yang berbeda dari
+      # yang dilaporkan di naskah — jadi ini WAJIB lolos sebelum ada image sama sekali.
+      - name: Gerbang konsistensi
+        run: python webapp/uji_konsistensi.py
+
+      # Image ini ~6-9 GB (CUDA runtime + wheel llama-cpp cu124). Runner standar punya
+      # ~14 GB kosong, jadi ini pengaman, bukan keharusan seperti di image training.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          df -h /
+
+      - name: Login GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          # Dockerfile ada di akar context, jadi default {context}/Dockerfile sudah benar;
+          # menyebut `file:` secara eksplisit di sini justru mengundang salah-resolve
+          # antara path relatif-context dan relatif-workspace.
+          context: webapp/runpod
+          push: true
+          # Layer dependensi (pip install) mahal dan jarang berubah; cache GHA membuat
+          # rebuild karena ubahan handler.py selesai dalam hitungan menit.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ghcr.io/ariesdjae/p6-arena:v1
+            ghcr.io/ariesdjae/p6-arena:latest
+            ghcr.io/ariesdjae/p6-arena:sha-${{ github.sha }}
+
+      - name: Ringkasan
+        run: |
+          echo "### Image arena terbangun" >> $GITHUB_STEP_SUMMARY
+          echo '`ghcr.io/ariesdjae/p6-arena:latest`' >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo 'Di RunPod: Serverless -> endpoint -> ganti Container Image ke tag di atas, lalu redeploy worker.' >> $GITHUB_STEP_SUMMARY
