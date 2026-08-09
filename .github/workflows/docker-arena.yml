@@ -13,17 +13,20 @@ name: build-docker-arena
 
 on:
   push:
-    # naskah-artikel-p6 ikut dipicu karena arena dikembangkan di sana. Tanpa ini image
-    # tidak pernah terbangun sampai branch-nya di-merge — dan `workflow_dispatch` pun
-    # tidak menolong, sebab tombol Run workflow hanya muncul untuk berkas workflow yang
-    # sudah ada di branch DEFAULT. Hapus baris branch-nya setelah merge ke main.
-    branches: [main, naskah-artikel-p6]
+    # Bangun image arena dari setiap branch yang menyentuh konteks build atau workflow.
+    # `workflow_dispatch` tetap ada untuk manual rerun bila perlu.
     paths:
       - webapp/runpod/**
       - .github/workflows/docker-arena.yml
       # Gerbang konsistensi membaca keduanya, dan roster/prompt yang bergeser di sini
       # membuat image yang sudah terbangun jadi usang tanpa satu pun berkas di
       # webapp/runpod/ berubah.
+      - hf_space/config.py
+      - chat_format.py
+  pull_request:
+    paths:
+      - webapp/runpod/**
+      - .github/workflows/docker-arena.yml
       - hf_space/config.py
       - chat_format.py
   workflow_dispatch: {}
@@ -46,6 +49,14 @@ jobs:
       # dan salinannya di webapp/ mudah menyimpang diam-diam. Membangun image dari
       # roster yang sudah bergeser berarti dokter menilai sistem yang berbeda dari
       # yang dilaporkan di naskah — jadi ini WAJIB lolos sebelum ada image sama sekali.
+      # `python` (tanpa 3) TIDAK dijamin ada di runner ubuntu-24.04 — Ubuntu tidak lagi
+      # memasang symlink python->python3 secara bawaan. Kalau langkah ini gagal, tidak
+      # ada image sama sekali, dan gejalanya muncul jauh di hilir sebagai worker RunPod
+      # "unhealthy" karena tag yang diminta tidak pernah ada.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Gerbang konsistensi
         run: python webapp/uji_konsistensi.py
 
