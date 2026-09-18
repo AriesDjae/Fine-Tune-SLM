@@ -44,6 +44,14 @@ import sys
 import threading
 import time
 
+# Python 3.13+ di Termux melaporkan sys.platform == "android". Banyak pustaka hanya
+# mengenal win32/darwin/linux dan menolak dengan "Unsupported platform" — termasuk
+# llama_cpp saat memuat pustaka bersamanya. Android MEMANG Linux, jadi cukup luruskan
+# namanya sebelum pustaka itu diimpor. Tidak ada efek lain: kode di bawah tak memakai
+# sys.platform untuk apa pun.
+if sys.platform == "android":
+    sys.platform = "linux"
+
 try:
     import psutil
 except ImportError:                                  # Termux/Android: psutil menolak dipasang

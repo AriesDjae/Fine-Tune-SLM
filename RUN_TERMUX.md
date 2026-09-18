@@ -54,6 +54,12 @@ CMAKE_ARGS="-DGGML_NATIVE=OFF -DGGML_LLAMAFILE=OFF" pip install llama-cpp-python
 Kompilasi di HP memakan **20–60 menit** dan panas; biarkan tersambung ke charger. `GGML_NATIVE=OFF`
 mencegah kompiler memakai flag `-march` yang sering gagal di ARM.
 
+> **`llama_cpp` bisa gagal saat dipakai walau pemasangannya sukses**, dengan
+> `RuntimeError: Unsupported platform`. Sebabnya sama dengan psutil: Python 3.13+ di Termux
+> melaporkan `sys.platform == "android"`, sedangkan `llama_cpp` hanya mengenal
+> win32/darwin/linux. `benchmark_ondevice.py` meluruskannya sendiri sebelum mengimpor
+> pustaka itu, jadi pastikan Anda memakai versi skrip terbaru.
+
 ### Jalur B — biner `llama.cpp` (cadangan bila Jalur A gagal)
 
 ```bash
@@ -89,11 +95,28 @@ curl -L -o Qwen3.5-0.8B.Q4_K_M.gguf \
 
 ## 4. Ambil kode dan daftar pertanyaan
 
+Repo GitHub-nya **privat**, jadi `git clone` di HP akan meminta kredensial dan gagal
+(GitHub sudah mematikan autentikasi password). Paket kecil berisi skrip + modul `redflag/` +
+daftar pertanyaan diunggah ke repo HuggingFace publik, sehingga bisa ditarik tanpa token:
+
 ```bash
-cd ~ && git clone -b naskah-artikel-p6 https://github.com/AriesDjae/Fine-Tune-SLM.git
-cd Fine-Tune-SLM
-cp ~/storage/downloads/pertanyaan_bench.json .      # hasil langkah 0
+mkdir -p ~/bench && cd ~/bench
+curl -L -o bench_hp.zip   https://huggingface.co/AriesDjaenuri/p6-hasil/resolve/main/tools/bench_hp.zip
+unzip bench_hp.zip
 ```
+
+Perbarui paket itu dari laptop bila skripnya berubah:
+
+```bash
+python - <<'PY'
+from huggingface_hub import HfApi
+HfApi().upload_file(path_or_fileobj="bench_hp.zip", path_in_repo="tools/bench_hp.zip",
+                    repo_id="AriesDjaenuri/p6-hasil", repo_type="model")
+PY
+```
+
+Alternatif bila ingin tetap lewat git: buat *fine-grained token* baca-saja lalu
+`git clone -b naskah-artikel-p6 https://<TOKEN>@github.com/AriesDjae/Fine-Tune-SLM.git`.
 
 ---
 
