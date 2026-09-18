@@ -117,10 +117,24 @@ class PuncakRSS:
         return self.peak / 1e9  # GB
 
 
-def ambil_pertanyaan(n: int) -> list[str]:
-    """Keluhan pasien NYATA dari test set; ~1/3 dari kasus yang memicu red-flag."""
+def ambil_pertanyaan(n: int, berkas: str | None = None) -> list[str]:
+    """Keluhan pasien NYATA dari test set; ~1/3 dari kasus yang memicu red-flag.
+
+    `berkas` = JSON berisi daftar pertanyaan yang sudah dipilih sebelumnya. Dipakai saat
+    menjalankan benchmark di HP: `Data/` tidak ikut ke perangkat (aturan lisensi yang sama
+    dengan bank jawaban), dan lagipula perbandingan laptop vs HP hanya sah bila pertanyaannya
+    PERSIS sama. Dump-nya dibuat di laptop dengan --simpan-pertanyaan.
+    """
+    if berkas:
+        with open(berkas, encoding="utf-8") as f:
+            daftar = json.load(f)
+        if len(daftar) < n:
+            raise SystemExit(f"{berkas} hanya berisi {len(daftar)} pertanyaan, diminta {n}.")
+        return daftar[:n]
     if not os.path.exists(TEST_FILE):
-        raise SystemExit(f"Tidak ada {TEST_FILE} — dibutuhkan agar prompt mewakili pemakaian nyata.")
+        raise SystemExit(
+            f"Tidak ada {TEST_FILE}. Di HP, pakai --pertanyaan hasil --simpan-pertanyaan "
+            "dari laptop supaya pertanyaannya sama persis.")
     semua = []
     with open(TEST_FILE, encoding="utf-8") as f:
         for baris in f:
@@ -169,7 +183,7 @@ def benchmark(args) -> None:
     proc = psutil.Process(os.getpid())
     rss0 = proc.memory_info().rss / 1e9
     sampler = PuncakRSS()
-    pertanyaan = ambil_pertanyaan(args.n_queries)
+    pertanyaan = ambil_pertanyaan(args.n_queries, args.pertanyaan)
 
     # ---- MEMUAT (CPU murni) ----
     sampler.reset()
@@ -331,7 +345,20 @@ def main() -> None:
     ap.add_argument("--threads", type=int, default=max(1, (os.cpu_count() or 4) // 2))
     ap.add_argument("--out_dir", default="results_bench")
     ap.add_argument("--summarize", metavar="DIR", help="ringkas semua bench_*.json di DIR")
+    ap.add_argument("--pertanyaan", metavar="JSON",
+                    help="pakai daftar pertanyaan dari berkas (untuk run di HP)")
+    ap.add_argument("--simpan-pertanyaan", metavar="JSON", dest="simpan_pertanyaan",
+                    help="tulis pertanyaan yang terpilih lalu keluar (tanpa memuat model)")
     args = ap.parse_args()
+
+    if args.simpan_pertanyaan:
+        # Dijalankan di laptop: menuliskan pertanyaan yang SAMA dengan yang dipakai run
+        # laptop, supaya run HP bisa dibandingkan baris per baris.
+        daftar = ambil_pertanyaan(args.n_queries)
+        with open(args.simpan_pertanyaan, "w", encoding="utf-8") as f:
+            json.dump(daftar, f, ensure_ascii=False, indent=1)
+        print(f"{len(daftar)} pertanyaan -> {args.simpan_pertanyaan}")
+        return
 
     if args.summarize:
         ringkas(args.summarize)
