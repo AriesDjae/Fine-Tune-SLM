@@ -143,7 +143,7 @@ class PuncakRSS:
     def _loop(self):
         while self._run:
             try:
-                self.peak = max(self.peak, self.proc.memory_info().rss)
+                self.peak = max(self.peak, _rss_bytes())
             except Exception:
                 pass
             time.sleep(self.interval)
@@ -240,7 +240,7 @@ def benchmark(args) -> None:
                 n_threads=args.threads, verbose=False)
     waktu_muat = time.time() - t0
     puncak_muat = sampler.stop()
-    rss_setelah_muat = proc.memory_info().rss / 1e9
+    rss_setelah_muat = _rss_bytes() / 1e9
 
     # ---- pemanasan (tak diukur) ----
     llm.create_completion(bangun_prompt(pertanyaan[0]), max_tokens=8, temperature=0.0)
