@@ -29,7 +29,7 @@ versi Play Store sudah lama tidak diperbarui dan paketnya gagal dipasang.
 ```bash
 pkg update && pkg upgrade -y
 pkg install -y python clang cmake git libopenblas python-numpy
-pip install huggingface_hub          # psutil TIDAK perlu: ditolak di Android
+# psutil TIDAK perlu (ditolak di Android); huggingface_hub juga tidak — pakai curl
 termux-setup-storage        # supaya ~/storage/downloads bisa dibaca
 termux-wake-lock            # cegah Android mematikan proses saat layar mati
 ```
