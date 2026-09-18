@@ -1,120 +1,185 @@
-# Fine-Tune SLM for Medical Chatbot — Qwen3.5-0.8B: **baseline vs fine-tuned**
+# Fine-Tune SLM untuk Chatbot Medis Berbahasa Indonesia
 
-Skripsi UII — **Chatbot Medis Offline untuk Puskesmas**. Setelah **revisi dosen**, objektifnya
-**BUKAN lagi perbandingan antar-model**, melainkan **satu model** (`Qwen3.5-0.8B`) yang dibandingkan
-dengan **dirinya sendiri**: kondisi **baseline (pre-trained)** vs **setelah fine-tuning** (QLoRA pada
-dataset medis berbahasa Indonesia).
+Studi **scaling satu keluarga**: `Qwen3.5` ukuran **0.8B / 2B / 4B**, masing-masing dibandingkan
+dengan dirinya sendiri — **baseline (pra-latih)** vs **fine-tuned (LoRA bf16)** pada QnA
+pasien–dokter berbahasa Indonesia. Target luaran: jurnal Scopus Q4 + preprint arXiv.
 
-| | Baseline | Fine-tuned |
+**Sasaran deploy = HP milik masyarakat umum di wilayah tanpa jaringan**, bukan fasilitas
+kesehatan. Tidak ada tenaga kesehatan yang menyaring keluaran model, jadi sistem diposisikan
+sebagai **informasi dan triase awal, bukan diagnosis**, dan seluruh naskah dibingkai sebagai
+**studi kelayakan**.
+
+> Dokumen orientasi lengkap (keputusan, angka, gotcha operasional) ada di `CLAUDE.md`.
+> Pivot 1–5 diarsipkan di `arsip/`.
+
+---
+
+## Pertanyaan penelitian
+
+| | Pertanyaan | Status |
 |---|---|---|
-| Model | `unsloth/Qwen3.5-0.8B` (pre-trained, apa adanya) | base + adapter QLoRA hasil training |
-| Loader | `FastLanguageModel` (model **teks**, bukan VLM) | sama |
-| Data latih | — | `Data/processed_id/` (Indonesia native, 30003/2997/2998) |
-| Chat format | ChatML `<\|im_start\|>` + scaffold `<think></think>` | identik (train = eval = deploy) |
-
-> **Gemma 3 1B & Llama 3.2 1B di-DROP** (revisi dosen) — notebook-nya diarsipkan di
-> `notebooks/notebook-lawas/` sebagai jejak eksplorasi. Pivot 3 (2 model ~2B, `FastVisionModel`)
-> juga superseded & diarsipkan.
-
-## Pertanyaan Penelitian (revisi)
-- **RQ1** — Apakah fine-tuning QLoRA **meningkatkan kualitas jawaban** Qwen3.5-0.8B (token-F1, ROUGE-L)
-  dibanding baseline pre-trained, khususnya pada subset **Indonesia**?
-- **RQ2** — Apakah model hasil fine-tune **layak deploy offline** di Puskesmas/HP (ukuran GGUF Q4_K_M,
-  peak RAM load vs infer, latency tok/s) dengan keterbatasan resource?
+| RQ1 | Apakah fine-tuning memperbaiki mutu jawaban dibanding baseline? | ✅ selesai — signifikan di tiga ukuran |
+| RQ2 | Bagaimana trade-off mutu vs ukuran model? | ✅ selesai |
+| RQ3 | Layakkah deploy offline di HP kelas bawah (RAM 3–4 GB)? | ❌ belum — `benchmark_ondevice.py` belum pernah dijalankan |
 
 ---
 
-## Status terkini (2026-06-21)
+## Hasil utama
 
-- ✅ **Dataset final** `Data/processed_id/{train,val,test}.jsonl` (30003/2997/2998), VERDICT=PASS.
-- ✅ **Training SELESAI** — Qwen3.5-0.8B, QLoRA 4-bit, 3 epoch / 5628 step (Colab):
-  - train loss **3.25 → 1.94**; eval loss **2.74 → 2.075** (best = step terakhir, turun monoton).
-  - Kurva loss tersimpan: `results/qwen35_0_8b_trainer_state.json`.
-  - Adapter di Drive: `MyDrive/Aries/Fine-Tune SLM for Medical Chatbot/outputs/checkpoints/qwen35-0.8b-train/`
-    (`adapter_model.safetensors` 25,6MB + `checkpoint-5628/`). **Tarik ke `outputs/` lokal untuk eval** (gitignored).
-- ⏭️ **BELUM**: eval baseline vs fine-tuned (token-F1 + ROUGE-L), export GGUF Q4_K_M, benchmark on-device.
+Evaluasi kanonik `eval.py` pada n=2998 (`Data/processed_id/test.jsonl`), paired bootstrap 5000×.
 
----
+| fine-tuned | token-F1 | ROUGE-L | BERTScore |
+|---|---|---|---|
+| 0.8B | .2965 | .1554 | .6940 |
+| 2B | .2956 | .1522 | .6910 |
+| **4B** | **.3096** | **.1630** | **.6992** |
 
-## Pipeline & artefak
+Keenam delta (tiga ukuran × baseline/fine-tuned) signifikan, p≈0. **4B unggul, tetapi hanya
+~4–5% relatif dengan ~5× parameter.** Bukan bukti plafon tugas: ketiganya dilatih pada 20K
+contoh yang sama, jadi bisa saja kelaparan data.
 
-```
-preprocessing/  ─► Data/processed_id/{train,val,test}.jsonl   (LOKAL, CPU, gratis)
-        │
-        └─► notebooks/train_qwen_qlora.ipynb  ─► adapter QLoRA (COLAB/KAGGLE T4)   ✅ SELESAI
-                │
-        eval.py (baseline vs fine-tuned, 16-bit) ─► results/*.json ─► --summarize   (RQ1)   ⏭️
-                │
-        export_gguf.py ─► outputs/gguf/qwen35-0.8b-medical-Q4_K_M.gguf              ⏭️
-                │
-        benchmark_ondevice.py (CPU-only) ─► results_bench/*.json ─► --summarize     (RQ2)   ⏭️
-```
+**Plafon manusia.** Kesepakatan antar-dokter pada data yang sama hanya ROUGE-L **0,145** /
+token-F1 **0,285** (n=908 pasangan). Ketiga model fine-tuned melampauinya, ketiga baseline di
+bawahnya — metrik overlap sudah jenuh untuk tugas ini, dan itulah alasan evaluasi manusia
+menjadi keharusan, bukan pelengkap.
 
-| File | Fungsi |
-|------|--------|
-| `preprocessing/strict_clean_v2.py` + `build_id_dataset.py` | bangun dataset Indonesia-native → `Data/processed_id/` |
-| `preprocessing/validate_dataset_for_training.py` | verifikasi mutu file final (dedup/leakage/decode) → VERDICT |
-| `preprocessing/visualize_dataset.py` | grafik dataset (sumber, bahasa, token, noise, funnel) → `results/figures/*.png` |
-| `chat_format.py` | **sumber kebenaran** format prompt + `clean_greeting()` — identik train = eval = deploy |
-| `notebooks/train_qwen_qlora.ipynb` | training Unsloth `FastLanguageModel` + `train_on_responses_only` (di-generate `build_train_qwen_qlora.py`) |
-| `notebooks/03_finetune_qwen3-5_0.8B_RUN.ipynb` | versi notebook yang **benar-benar dijalankan** di Colab (output di-strip) |
-| `eval.py` | multi-metrik (token-F1, ROUGE-L), baseline vs fine-tuned, per-bahasa, 16-bit & GGUF |
-| `export_gguf.py` | adapter/merged 16-bit → GGUF **Q4_K_M** (llama.cpp) |
-| `benchmark_ondevice.py` | RAM load vs infer, throughput, ukuran file (CPU-only) |
+**Temuan terkuat (LLM-judge Tier 2, n=200, `gpt-4o`, buta & berpasangan):** fine-tuning
+**menolong model kecil dan merusak model besar** — Δ rate "Aman" **+16,5 pp** di 0.8B tetapi
+**−17,5 pp** di 2B dan 4B. Arahnya berlawanan dengan metrik overlap. Mekanismenya terukur:
+fine-tuning menukar anjuran tegas "segera ke IGD" dengan "konsultasikan ke dokter" (4B: 17,9%
+→ 2,1%), dan menghapus disclaimer dari 68–93% menjadi ~0%. Ablation `--strip-disclaimer`
+menunjukkan temuan 4B bertahan (−15,5 pp).
 
 ---
 
-## Urutan menjalankan
+## Data
 
-### 0 — Preprocessing (LOKAL, gratis) — *sudah selesai*
-```bash
-python preprocessing/validate_dataset_for_training.py     # VERDICT=PASS
-python preprocessing/visualize_dataset.py                 # -> results/figures/*.png
-```
+| Berkas | Isi | Jumlah |
+|---|---|---|
+| `Data/processed_id_final/{train,val,test}.jsonl` | data latih (hasil reduksi + audit per baris) | 20000 / 2947 / 2952 |
+| `Data/processed_id/test.jsonl` | test set evaluasi (`eval.py`, LLM-judge) | 2998 |
+| `Data/processed/` | gabungan mentah 10 sumber (provenance) | 103.857 / 12.982 / 12.982 |
 
-### 1 — Training (COLAB/KAGGLE T4) — *sudah selesai*
-Buka `notebooks/train_qwen_qlora.ipynb`, set `RUN_MODE="pilot"` → cek GATE → `RUN_MODE="full"`.
-Hasil: adapter QLoRA (di Drive). `HF_TOKEN` opsional (`unsloth/*` ungated).
+Sumber utama QnA Alodokter, DOI `10.57967/hf/8356`; legalitas ditutup lewat due diligence dan
+Pasal 44 UU Hak Cipta. **`Data/` tidak masuk git.**
 
-### 2 — Evaluasi 16-bit (RQ1: baseline vs fine-tuned) — *langkah berikutnya*
-`eval.py` sudah disesuaikan Pivot 5: default `--model_type qwen`, `--test_file
-Data/processed_id/test.jsonl`, loader **FastLanguageModel** (Qwen0.8B = teks), metrik
-**token-F1 + ROUGE-L** (EM/MCQA di-drop).
-```bash
-python eval.py --model unsloth/Qwen3.5-0.8B        --label qwen08_baseline
-python eval.py --model outputs/qwen35-0.8b-medical --label qwen08_finetuned
-python eval.py --summarize results          # tabel + delta (finetuned − baseline)
-```
-> Model fine-tuned (`--model`) boleh berupa **direktori adapter** dari Drive langsung
-> (Unsloth `FastLanguageModel` auto-load base + adapter) **atau** merged 16-bit
-> (`model.save_pretrained_merged("outputs/qwen35-0.8b-medical", tokenizer, save_method="merged_16bit")`).
-> Default `--n_eval 200`; naikkan bila ingin seluruh 2998 sampel test.
-
-### 3 — Export GGUF Q4_K_M + eval terkuantisasi
-```bash
-python export_gguf.py --merged_dir outputs/qwen35-0.8b-medical --model_type qwen --verify
-python eval.py --gguf outputs/gguf/qwen35-0.8b-medical-Q4_K_M.gguf \
-               --model outputs/qwen35-0.8b-medical --model_type qwen --label qwen08_q4 \
-               --test_file Data/processed_id/test.jsonl
-```
-
-### 4 — Benchmark on-device (CPU-only → RQ2)
-```bash
-python benchmark_ondevice.py --gguf outputs/gguf/qwen35-0.8b-medical-Q4_K_M.gguf --model_type qwen --label qwen08_q4
-python benchmark_ondevice.py --summarize results_bench
-```
-> Jalankan di **perangkat uji yang sama** & **sebutkan spesifikasinya** di metodologi.
+Karakter data yang menentukan temuan di atas: jawaban referensi memakai register dokter→pasien,
+hanya **8,8%** memuat eskalasi eksplisit, **1,3%** menyebut IGD, dan **0,0%** memuat disclaimer.
+Dataset ini tidak pernah berisi supervisi keselamatan.
 
 ---
 
-## Catatan & risiko
-- **Konsistensi prompt** = *silent killer*: train, eval, deploy memakai format dari `chat_format.py`
-  (notebook meng-inline logika identik). Qwen3.5 menyisipkan `<think></think>` walau thinking OFF →
-  `RESPONSE_PART` memuat scaffold itu (kalau tidak, train ≠ infer).
-- **`packing=False`** wajib karena `train_on_responses_only` (loss hanya di jawaban) butuh batas turn akurat.
-- **`load_best_model_at_end=True`** → yang dipakai = eval_loss terendah (di sini = checkpoint-5628).
-- **Keterbatasan (BAB V):** model 0.8B tidak mencapai akurasi klinis; halusinasi faktual pasti ada;
-  metrik otomatis (F1/ROUGE) tak menangkap kebenaran medis; single-run. Ini **temuan valid** yang
-  memperkuat argumen "butuh RAG = future work", bukan kegagalan.
-- **Test set Indonesia-only:** semua 2998 sampel `processed_id` = `type=open`, `source_lang=id` →
-  eval otomatis masuk bucket **open** (token-F1/ROUGE-L), kolom `lang:en` kosong (wajar).
+## Model & artefak
+
+Ketiganya dilatih di RunPod serverless H100 (`serverless/`, runbook `RUN_SERVERLESS.md`) dengan
+hyperparameter **seragam** (LR 1e-4, r=16/α=32, 3 epoch, eff batch 16, MAX_SEQ 1024) — limitasi
+yang disebut eksplisit di naskah.
+
+| | eval loss terbaik | checkpoint |
+|---|---|---|
+| 0.8B | 2.0830 | step 3750 (3 epoch penuh) |
+| 2B | 1.9196 | step 2500 (EarlyStopping, ~2,3 epoch) |
+| 4B | 1.7723 | step 2500 (EarlyStopping, ~2,3 epoch) |
+
+Adapter, merged 16-bit, dan GGUF (Q4_K_M + Q8_0) ada di HuggingFace `AriesDjaenuri/*`;
+ringkasan hasil di `AriesDjaenuri/p6-hasil` bisa dibaca tanpa token.
+
+---
+
+## Evaluasi dokter (Tier 3) — arena penilaian
+
+`hf_space_arena/` adalah satu Space Docker yang memuat halaman penilaian, inferensi, dan
+penyimpanan sekaligus. Dokter mengetik satu pertanyaan, menerima **enam jawaban berlabel A–F**
+(tiga ukuran × baseline/fine-tuned) dalam urutan yang diacak di server, lalu menilainya dengan
+rubrik yang **identik** dengan rubrik Tier 2 — supaya kesepakatan dokter↔GPT-4o bisa dihitung.
+Peta label ke nama model tidak ada di dalam Space; tirai dibuka saat analisis.
+
+Dua sumber jawaban, satu protokol (GGUF Q4_K_M, greedy, `seed=42`, pemblokir 3-gram,
+`max_tokens=1024`, `n_ctx=4096`):
+
+- **Bank** — jawaban pra-generate di laptop (`scripts/pragenerate_arena.py`), disajikan seketika.
+  Sah karena decoding deterministik: jawaban live akan identik.
+- **Live** — pertanyaan di luar bank dijalankan di dalam Space.
+
+Penilaian ditulis ke dataset privat `AriesDjaenuri/p6-penilaian-dokter` (`ratings/*.json`,
+log sesi di `logs/*.jsonl`).
+
+### Menjalankan Space
+
+```bash
+python webapp/uji_konsistensi.py          # gerbang anti-hanyut, WAJIB sebelum deploy
+python scripts/space_mode.py status       # hardware, indeks wheel, GPU_LAYERS
+python scripts/space_mode.py gpu          # produksi: t4-medium  ($0,60/jam)
+python scripts/space_mode.py cpu          # demo:     cpu-upgrade ($0,03/jam)
+```
+
+Mengganti hardware di Settings **tanpa** mengganti indeks wheel llama.cpp gagal secara senyap:
+wheel CPU menerima `n_gpu_layers=99` tanpa protes lalu tetap menghitung di CPU — tarif GPU,
+kecepatan CPU. Karena itu peralihan dilakukan lewat satu perintah, dan langkah hardware-nya
+(satu-satunya yang manual) disebutkan di keluaran perintah itu.
+
+Terukur pada satu pertanyaan live, enam model berurutan:
+
+| | total | per model |
+|---|---|---|
+| `cpu-upgrade` (8 vCPU) | 519 dtk | 47–137 dtk |
+| `t4-medium` (T4 16 GB) | **76 dtk** | 1,2–13,3 dtk |
+
+Operator perlu memasang Secret **`HF_TOKEN`** (scope write; tanpa ini penilaian tidak bisa
+disimpan dan halaman mengatakannya sejak awal) dan **`KODE_AKSES`**. Job penilaian hidup di
+memori proses, jadi **jangan mengganti mode atau menyentuh Settings saat ada sesi berjalan** —
+restart menggugurkan jawaban yang sedang dikerjakan.
+
+---
+
+## Struktur berkas
+
+```
+├── CLAUDE.md · README.md · RUN_SERVERLESS.md   # orientasi + runbook training
+├── skripsi/ · artikel/                         # draf skripsi (ID) + naskah jurnal (EN)
+├── eval.py                                     # eval kanonik (token-F1/ROUGE-L/BERTScore)
+├── chat_format.py                              # sumber kebenaran format prompt
+├── ukur_disclaimer.py                          # rate disclaimer/eskalasi (offline, gratis)
+├── llm_judge_tier2.py · judge_run.py           # Tier 2: rubrik, ablation, kappa
+├── redflag/ · redflag_annotate.py              # lapisan keselamatan rule-based
+├── human_eval/                                 # rubrik dokter, gold set, bank pertanyaan
+├── arena/ · hf_space_arena/ · scripts/space_mode.py   # arena penilaian dokter (Tier 3)
+├── benchmark_ondevice.py                       # ⚠ masih artefak Pivot 3 — perlu ditulis ulang
+├── serverless/ · handler.py · Dockerfile       # harness training H100
+├── notebooks/ · preprocessing/ · inference/
+├── results/                                    # semua hasil (JSON ringkas ter-track)
+└── arsip/                                      # pivot 1–5
+```
+
+Gitignored: `Data/`, `outputs/`, `results/**/*.jsonl`, `*.key`, berkas bank jawaban
+(`webapp/bank/`, `hf_space_arena/bank/`, `human_eval/bank_pertanyaan.csv` — teks Alodokter
+verbatim, aturannya sama dengan `Data/`).
+
+---
+
+## Sisa pekerjaan, urut dampak
+
+1. **RQ3 — benchmark on-device.** Gratis, dampak terbesar, dan naskah belum menjawab
+   pertanyaannya sendiri. `llama-cpp-python` sudah terpasang; `benchmark_ondevice.py` perlu
+   ditulis ulang untuk tiga ukuran Qwen, idealnya diulang di HP 3–4 GB lewat Termux.
+2. **Penulisan naskah** — faktor tunggal terbesar di tier Q4.
+3. **Evaluasi dokter (Tier 3)** n=10–20 lewat arena, plus 400 baris anotasi red-flag.
+4. Penilai kedua lintas-galur (butuh OpenRouter/Anthropic berbayar; Gemini tier gratis tidak
+   layak, 20 permintaan/hari).
+5. Replikasi seed untuk anomali 2B.
+
+**Limitasi yang wajib disebut:** data latih 20K · hyperparameter seragam tanpa tuning per
+ukuran · anggaran epoch tidak sama antar ukuran · satu penilai dan satu seed · ROUGE-L absolut
+masih di bawah target 0,30.
+
+---
+
+## Catatan operasional
+
+- `UNSLOTH_COMPILE_DISABLE=1` wajib di-set **sebelum** `import unsloth` untuk generate/eval.
+- `save_pretrained_gguf(dir)` menulis ke folder ber-suffix `_gguf` dan ikut menghasilkan berkas
+  `*mmproj*` (proyektor vision) — abaikan untuk deploy teks.
+- Konfigurasi 0.8B tetap multimodal (`Qwen3_5ForConditionalGeneration` + `vision_config`), jadi
+  warning bobot `UNEXPECTED` saat load = vision tower + kepala MTP; jinak.
+- Konsol Windows cp1252: skrip yang mencetak `Δ` atau `→` memaksa stdout UTF-8, kalau tidak ia
+  mati setelah pekerjaan terkirim dan tampak seperti kegagalan.

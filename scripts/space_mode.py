@@ -34,6 +34,13 @@ import sys
 
 from huggingface_hub import HfApi
 
+# Konsol Windows cp1252 meledak pada panah dan Δ. Dipaksa UTF-8 seperti skrip judge,
+# kalau tidak skrip ini mati SETELAH Dockerfile terkirim — rebuild jalan, pesan
+# langkah manualnya hilang, dan operator mengira peralihannya gagal.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 SPACE = os.environ.get("SPACE_ARENA", "AriesDjaenuri/Medis-Chat")
 AKAR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DIR = os.path.join(AKAR, "hf_space_arena")

@@ -1,25 +1,34 @@
 # ================================================================
-# Dockerfile — Space Docker "arena penilaian dokter".
+# Dockerfile.gpu — mode PRODUKSI (t4-medium, $0,60/jam).
 #
-# Tidak ada torch: model dijalankan llama.cpp lewat GGUF Q4_K_M, transformers dipakai
-# HANYA untuk chat template (AutoTokenizer). Image kecil, build beberapa menit.
+# JANGAN disunting langsung sebagai `Dockerfile`. Pakai:
+#     python scripts/space_mode.py gpu
+# yang menyalin berkas ini menjadi `Dockerfile`, menyetel variabel Space, lalu
+# mengunggahnya (unggahan itu yang memicu rebuild).
 #
-# DUA MODE PERANGKAT KERAS:
-#   demo/pengembangan : cpu-upgrade (8 vCPU/32 GB) — $0,03/jam, GPU_LAYERS=0
-#   produksi          : t4-medium  (8 vCPU/30 GB + T4 16 GB) — $0,60/jam, GPU_LAYERS=99
+# Dua hal yang HARUS berubah bersamaan saat pindah ke GPU, dan kegagalannya senyap
+# kalau hanya salah satu:
+#   1. wheel llama-cpp-python dari indeks cu124 (wheel CPU tidak akan menyentuh GPU
+#      walau GPU_LAYERS diisi — Space tetap jalan, hanya tetap selambat CPU);
+#   2. basis image yang memuat pustaka CUDA runtime. python:3.12-slim tidak punya,
+#      jadi wheel cu124 gagal dimuat di sana.
 #
-# Untuk produksi, indeks wheel di bawah HARUS diganti ke cu124 (barisnya sudah
-# disiapkan) — wheel CPU tidak akan memakai GPU meski GPU_LAYERS diisi, dan
-# kegagalannya senyap: Space tetap jalan, hanya tetap selambat CPU.
+# Wheel cu124 0.3.35 adalah manylinux_2_35 → butuh glibc >= 2.35, yaitu Ubuntu 22.04.
+# Itu sebabnya basisnya bukan image CUDA yang lebih lama.
 # ================================================================
-FROM python:3.12-slim
+FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
 
-ENV PIP_NO_CACHE_DIR=1 \
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_NO_CACHE_DIR=1 \
     PYTHONUNBUFFERED=1 \
     HF_XET_HIGH_PERFORMANCE=1
 
-# Space menjalankan kontainer sebagai uid 1000; menulis ke /root tidak diizinkan,
-# jadi cache HF harus berada di rumah pengguna itu.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends python3 python3-pip && \
+    rm -rf /var/lib/apt/lists/* && \
+    ln -sf /usr/bin/python3 /usr/bin/python
+
+# Space menjalankan kontainer sebagai uid 1000.
 RUN useradd -m -u 1000 user
 USER user
 ENV PATH="/home/user/.local/bin:$PATH" \
@@ -28,21 +37,10 @@ ENV PATH="/home/user/.local/bin:$PATH" \
 WORKDIR /app
 
 COPY --chown=user requirements.txt .
-# Wheel PREBUILT — jangan biarkan pip mengompilasi llama-cpp-python dari sumber.
-# --only-binary bukan optimasi melainkan jaring pengaman: kalau pin di requirements.txt
-# menunjuk versi tanpa wheel, pip diam-diam jatuh ke sdist dan mengompilasi llama.cpp
-# di image tanpa toolchain — gagal setelah puluhan menit dengan galat compiler yang
-# tidak menyebut-nyebut soal versi. Flag ini membuatnya gagal SEKETIKA.
-#
-# GANTI baris indeks ini saat pindah ke t4-medium:
-#   https://abetlen.github.io/llama-cpp-python/whl/cu124
 RUN pip install --no-cache-dir --only-binary llama-cpp-python \
-      --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu \
+      --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu124 \
       -r requirements.txt
 
-# Kode + halaman + bank disalin belakangan supaya menyuntingnya tidak mengulang
-# layer dependensi. Bank berisi jawaban pra-generate (JSON kecil); bobot GGUF TIDAK
-# dipanggang ke image — 9,3 GB akan memperlambat tiap rebuild dan tiap pull.
 COPY --chown=user . /app
 
 EXPOSE 7860
