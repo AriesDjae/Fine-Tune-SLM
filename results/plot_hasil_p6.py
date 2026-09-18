@@ -7,14 +7,21 @@ menyimpang dari hasil eksperimen:
   - RQ1/RQ2  <- results/eval_truncation.json  (blok `per_ukuran.<size>.semua`)
   - Tier 2   <- results/llm_judge/tier2_<size>_ringkas.json
 
-Keluaran (results/figures/):
+Keluaran:
   fig_p6_rq1_rq2.png   mutu jawaban: baseline vs fine-tuned, 3 ukuran, + plafon dokter
   fig_p6_tier2_aman.png  perubahan rate "Aman" — pembalikan tanda lintas ukuran
 
-Jalankan:  python results/plot_hasil_p6.py
+Jalankan:
+  python results/plot_hasil_p6.py            # bahasa Indonesia -> results/figures/ (skripsi)
+  python results/plot_hasil_p6.py --lang en  # bahasa Inggris  -> artikel/figures/ (naskah)
+
+Versi `en` sengaja TANPA judul besar & catatan bawah di dalam gambar: di naskah,
+penjelasan itu sudah ada di caption LaTeX, dan judul yang menyimpulkan
+("menolong model kecil, merusak model besar") tidak lazim di figur jurnal.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import pathlib
 
@@ -26,7 +33,22 @@ import matplotlib.pyplot as plt
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 RES = ROOT / "results"
-OUT = RES / "figures"
+OUT = {"id": RES / "figures", "en": ROOT / "artikel" / "figures"}
+
+TEKS = {
+    "id": {
+        "baseline": "Baseline (pra-latih)",
+        "plafon": "Plafon kesepakatan dokter ({:.3f})",
+        "skor": "skor",
+        "delta_aman": "Δ rate “Aman” (poin persentase)",
+    },
+    "en": {
+        "baseline": "Baseline (pre-trained)",
+        "plafon": "Inter-physician agreement ({:.3f})",
+        "skor": "Score",
+        "delta_aman": "Change in Safe rate (percentage points)",
+    },
+}
 
 # --- palet (dataviz: slot kategorikal 1+2, diverging blue<->red; sudah divalidasi) ---
 BASELINE = "#2a78d6"   # biru
@@ -88,7 +110,7 @@ def muat_tier2() -> dict:
     return out
 
 
-def fig_rq1_rq2(metrik: dict) -> pathlib.Path:
+def fig_rq1_rq2(metrik: dict, lang: str) -> pathlib.Path:
     """Dua panel — token-F1 dan ROUGE-L punya skala berbeda, jadi TIDAK disatukan
     dalam satu sumbu (aturan: jangan pernah dua skala-y dalam satu grafik)."""
     panel = [("f1", "Token-F1"), ("rougeL", "ROUGE-L")]
@@ -107,7 +129,7 @@ def fig_rq1_rq2(metrik: dict) -> pathlib.Path:
 
         # jarak 2px antar batang bersebelahan -> pakai selisih posisi, bukan batang menempel
         b1 = ax.bar([i - lebar / 2 - 0.012 for i in x], base, lebar,
-                    color=BASELINE, label="Baseline (pra-latih)", zorder=2)
+                    color=BASELINE, label=TEKS[lang]["baseline"], zorder=2)
         b2 = ax.bar([i + lebar / 2 + 0.012 for i in x], ft, lebar,
                     color=FINETUNED, label="Fine-tuned", zorder=2)
 
@@ -130,7 +152,7 @@ def fig_rq1_rq2(metrik: dict) -> pathlib.Path:
         if kunci in PLAFON:
             pegangan.append(ax.axhline(
                 PLAFON[kunci], color=INK2, linewidth=1.4, linestyle=(0, (5, 3)),
-                zorder=3, label=f"Plafon kesepakatan dokter ({PLAFON[kunci]:.3f})"))
+                zorder=3, label=TEKS[lang]["plafon"].format(PLAFON[kunci])))
             batas_atas = max(batas_atas, PLAFON[kunci])
 
         ax.set_xticks(list(x))
@@ -140,23 +162,26 @@ def fig_rq1_rq2(metrik: dict) -> pathlib.Path:
         ax.legend(handles=pegangan, frameon=False, fontsize=10,
                   labelcolor=INK2, loc="upper left", handlelength=1.8)
 
-    axes[0].set_ylabel("skor", fontsize=11, color=INK2)
+    axes[0].set_ylabel(TEKS[lang]["skor"], fontsize=11, color=INK2)
 
-    fig.suptitle("Mutu jawaban: fine-tuning menaikkan skor di ketiga ukuran (n = 2.998)",
-                 fontsize=14.5, color=INK, x=0.008, ha="left", fontweight="bold")
-    fig.text(0.008, 0.015,
-             "Ketiga model fine-tuned melampaui plafon kesepakatan antar-dokter "
-             "(n = 908 pasangan) — metrik overlap sudah jenuh untuk tugas ini.",
-             fontsize=9.5, color=INK2)
-    fig.tight_layout(rect=[0, 0.05, 1, 0.93])
+    if lang == "id":
+        fig.suptitle("Mutu jawaban: fine-tuning menaikkan skor di ketiga ukuran (n = 2.998)",
+                     fontsize=14.5, color=INK, x=0.008, ha="left", fontweight="bold")
+        fig.text(0.008, 0.015,
+                 "Ketiga model fine-tuned melampaui plafon kesepakatan antar-dokter "
+                 "(n = 908 pasangan) — metrik overlap sudah jenuh untuk tugas ini.",
+                 fontsize=9.5, color=INK2)
+        fig.tight_layout(rect=[0, 0.05, 1, 0.93])
+    else:
+        fig.tight_layout()
 
-    p = OUT / "fig_p6_rq1_rq2.png"
+    p = OUT[lang] / "fig_p6_rq1_rq2.png"
     fig.savefig(p, dpi=200, facecolor=SURFACE)
     plt.close(fig)
     return p
 
 
-def fig_tier2(t2: dict) -> pathlib.Path:
+def fig_tier2(t2: dict, lang: str) -> pathlib.Path:
     """Satu seri bertanda -> warna diverging (biru naik / merah turun), tanpa legenda."""
     fig, ax = plt.subplots(figsize=(8.2, 5.0), facecolor=SURFACE)
     gaya(ax)
@@ -181,28 +206,34 @@ def fig_tier2(t2: dict) -> pathlib.Path:
 
     ax.set_xticks(list(x))
     ax.set_xticklabels(LABEL_UKURAN, fontsize=12)
-    ax.set_ylabel("Δ rate “Aman” (poin persentase)", fontsize=11, color=INK2)
+    ax.set_ylabel(TEKS[lang]["delta_aman"], fontsize=11, color=INK2)
     ax.set_ylim(min(delta) - 15, max(delta) + 15)
 
-    fig.suptitle("Keselamatan: fine-tuning menolong model kecil, merusak model besar",
-                 fontsize=14, color=INK, x=0.008, ha="left", fontweight="bold")
-    fig.text(0.008, 0.015,
-             "Penilai LLM buta & berpasangan, n = 200 per ukuran. Ketiga selisih signifikan "
-             "(CI 95% tidak memuat nol).\nArahnya BERLAWANAN dengan metrik overlap di atas — "
-             "di sana justru 4B fine-tuned yang terbaik.",
-             fontsize=9.5, color=INK2)
-    fig.tight_layout(rect=[0, 0.085, 1, 0.93])
+    if lang == "id":
+        fig.suptitle("Keselamatan: fine-tuning menolong model kecil, merusak model besar",
+                     fontsize=14, color=INK, x=0.008, ha="left", fontweight="bold")
+        fig.text(0.008, 0.015,
+                 "Penilai LLM buta & berpasangan, n = 200 per ukuran. Ketiga selisih signifikan "
+                 "(CI 95% tidak memuat nol).\nArahnya BERLAWANAN dengan metrik overlap di atas — "
+                 "di sana justru 4B fine-tuned yang terbaik.",
+                 fontsize=9.5, color=INK2)
+        fig.tight_layout(rect=[0, 0.085, 1, 0.93])
+    else:
+        fig.tight_layout()
 
-    p = OUT / "fig_p6_tier2_aman.png"
+    p = OUT[lang] / "fig_p6_tier2_aman.png"
     fig.savefig(p, dpi=200, facecolor=SURFACE)
     plt.close(fig)
     return p
 
 
 def main():
-    OUT.mkdir(parents=True, exist_ok=True)
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--lang", choices=["id", "en"], default="id")
+    lang = ap.parse_args().lang
+    OUT[lang].mkdir(parents=True, exist_ok=True)
     metrik, t2 = muat_metrik(), muat_tier2()
-    for p in (fig_rq1_rq2(metrik), fig_tier2(t2)):
+    for p in (fig_rq1_rq2(metrik, lang), fig_tier2(t2, lang)):
         print("tersimpan:", p.relative_to(ROOT), f"({p.stat().st_size / 1e3:.0f} KB)")
 
 
