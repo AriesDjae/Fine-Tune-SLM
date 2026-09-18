@@ -44,7 +44,38 @@ import sys
 import threading
 import time
 
-import psutil
+try:
+    import psutil
+except ImportError:                                  # Termux/Android: psutil menolak dipasang
+    psutil = None                                    # ("platform android is not supported")
+
+
+def _rss_bytes() -> int:
+    """RSS proses ini. /proc dipakai bila psutil tak ada — di Android itu satu-satunya jalan,
+    dan angkanya berasal dari sumber yang sama dengan yang dibaca psutil di Linux."""
+    if psutil is not None:
+        return psutil.Process(os.getpid()).memory_info().rss
+    with open("/proc/self/status", encoding="utf-8") as f:
+        for baris in f:
+            if baris.startswith("VmRSS:"):
+                return int(baris.split()[1]) * 1024
+    raise RuntimeError("tidak bisa membaca RSS: psutil tak ada dan /proc/self/status tak terbaca")
+
+
+def _meminfo_bytes(kunci: str) -> int:
+    with open("/proc/meminfo", encoding="utf-8") as f:
+        for baris in f:
+            if baris.startswith(kunci + ":"):
+                return int(baris.split()[1]) * 1024
+    return 0
+
+
+def _ram_total_bytes() -> int:
+    return psutil.virtual_memory().total if psutil is not None else _meminfo_bytes("MemTotal")
+
+
+def _ram_available_bytes() -> int:
+    return psutil.virtual_memory().available if psutil is not None else _meminfo_bytes("MemAvailable")
 
 for _aliran in (sys.stdout, sys.stderr):
     try:
@@ -88,14 +119,13 @@ class PuncakRSS:
     """Sampler RSS latar -> menangkap PUNCAK memori (mis. saat KV cache tumbuh)."""
 
     def __init__(self, interval: float = 0.05):
-        self.proc = psutil.Process(os.getpid())
         self.interval = interval
-        self.peak = self.proc.memory_info().rss
+        self.peak = _rss_bytes()
         self._run = False
         self._t = None
 
     def reset(self):
-        self.peak = self.proc.memory_info().rss
+        self.peak = _rss_bytes()
 
     def start(self):
         self._run = True
@@ -184,14 +214,13 @@ def _ram_tersedia_GB() -> float:
     latar. Angka ini dicatat pada setiap run supaya gerbang kelayakan dapat dilaporkan
     dengan ketersediaan TERUKUR, bukan hanya dengan asumsi SISA_UNTUK_APP.
     """
-    return round(psutil.virtual_memory().available / 1e9, 2)
+    return round(_ram_available_bytes() / 1e9, 2)
 
 
 def benchmark(args) -> None:
     from llama_cpp import Llama
 
-    proc = psutil.Process(os.getpid())
-    rss0 = proc.memory_info().rss / 1e9
+    rss0 = _rss_bytes() / 1e9
     sampler = PuncakRSS()
     pertanyaan = ambil_pertanyaan(args.n_queries, args.pertanyaan)
 
@@ -253,7 +282,7 @@ def benchmark(args) -> None:
         "arsitektur": ARCH.get(args.label, {}),
         "perangkat": {
             "cpu": _cpu(), "threads": args.threads,
-            "ram_total_GB": round(psutil.virtual_memory().total / 1e9, 1),
+            "ram_total_GB": round(_ram_total_bytes() / 1e9, 1),
             "ram_tersedia_saat_mulai_GB": _ram_tersedia_GB(),
             "os": f"{platform.system()} {platform.release()}",
             "CATATAN": "angka dari mesin ini PROKSI; ulangi di HP nyata via Termux",

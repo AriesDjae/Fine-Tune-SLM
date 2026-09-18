@@ -29,12 +29,17 @@ versi Play Store sudah lama tidak diperbarui dan paketnya gagal dipasang.
 ```bash
 pkg update && pkg upgrade -y
 pkg install -y python clang cmake git libopenblas python-numpy
-pip install psutil huggingface_hub
+pip install huggingface_hub          # psutil TIDAK perlu: ditolak di Android
 termux-setup-storage        # supaya ~/storage/downloads bisa dibaca
 termux-wake-lock            # cegah Android mematikan proses saat layar mati
 ```
 
 Ruang yang dibutuhkan: sekitar 1,5 GB untuk paket + 0,6 GB untuk model 0,8B.
+
+> **`pip install psutil` GAGAL di Termux** dengan pesan `platform android is not supported`
+> (psutil 7.x menolak `sys.platform == "android"` yang dilaporkan Python 3.13+). Itu tidak
+> menghalangi: `benchmark_ondevice.py` membaca `/proc/self/status` dan `/proc/meminfo` bila
+> psutil tidak ada, yaitu sumber angka yang sama dengan yang dipakai psutil di Linux.
 
 ---
 
