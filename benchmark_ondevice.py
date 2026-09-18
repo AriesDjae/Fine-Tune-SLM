@@ -177,6 +177,16 @@ def _cpu() -> str:
     return platform.processor() or platform.machine() or "tak diketahui"
 
 
+def _ram_tersedia_GB() -> float:
+    """RAM yang BENAR-BENAR bisa dipakai saat ini, bukan taksiran dari RAM total.
+
+    Di Android, RAM nominal 8 GB sering hanya menyisakan ~3 GB karena OS dan aplikasi
+    latar. Angka ini dicatat pada setiap run supaya gerbang kelayakan dapat dilaporkan
+    dengan ketersediaan TERUKUR, bukan hanya dengan asumsi SISA_UNTUK_APP.
+    """
+    return round(psutil.virtual_memory().available / 1e9, 2)
+
+
 def benchmark(args) -> None:
     from llama_cpp import Llama
 
@@ -244,6 +254,7 @@ def benchmark(args) -> None:
         "perangkat": {
             "cpu": _cpu(), "threads": args.threads,
             "ram_total_GB": round(psutil.virtual_memory().total / 1e9, 1),
+            "ram_tersedia_saat_mulai_GB": _ram_tersedia_GB(),
             "os": f"{platform.system()} {platform.release()}",
             "CATATAN": "angka dari mesin ini PROKSI; ulangi di HP nyata via Termux",
         },
