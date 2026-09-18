@@ -63,8 +63,11 @@ GRID = "#e3e2de"
 UKURAN = ["0.8b", "2b", "4b"]
 LABEL_UKURAN = ["0.8B", "2B", "4B"]
 
-# Plafon kesepakatan antar-dokter (n=908 pasangan Alodokter)
-PLAFON = {"f1": 0.285, "rougeL": 0.145}
+# Plafon kesepakatan antar-dokter. Dihitung ulang oleh plafon_manusia.py pada 1093
+# pasangan jawaban dokter berbeda (satu pasangan per pertanyaan, jawaban identik
+# dibuang) -> results/plafon_manusia.json. Angka lama 0,285/0,145 berasal dari
+# prosedur yang tidak tersimpan sebagai skrip dan tidak dapat direproduksi.
+PLAFON = {"f1": 0.2972, "rougeL": 0.1496, "bertscore": 0.6867}
 
 
 def gaya(ax):

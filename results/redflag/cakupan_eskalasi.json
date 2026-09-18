@@ -109,5 +109,165 @@
     "tegas_tidak_terpicu": 0.05565300590017541,
     "rasio": 2.2252457979592672
   },
+  "uji_statistik": {
+    "0.8b_tegas": {
+      "delta_pp": -1.03,
+      "ci95_pp": [
+        -3.08,
+        1.03
+      ],
+      "mcnemar": {
+        "n01": 1,
+        "n10": 3,
+        "p": 0.625
+      },
+      "signifikan": false
+    },
+    "0.8b_umum": {
+      "delta_pp": -5.13,
+      "ci95_pp": [
+        -14.36,
+        4.1
+      ],
+      "mcnemar": {
+        "n01": 38,
+        "n10": 48,
+        "p": 0.3318343545999156
+      },
+      "signifikan": false
+    },
+    "2b_tegas": {
+      "delta_pp": 0.0,
+      "ci95_pp": [
+        -3.59,
+        3.59
+      ],
+      "mcnemar": {
+        "n01": 6,
+        "n10": 6,
+        "p": 1.0
+      },
+      "signifikan": false
+    },
+    "2b_umum": {
+      "delta_pp": 17.44,
+      "ci95_pp": [
+        8.21,
+        26.67
+      ],
+      "mcnemar": {
+        "n01": 63,
+        "n10": 29,
+        "p": 0.0005090902243497337
+      },
+      "signifikan": true
+    },
+    "4b_tegas": {
+      "delta_pp": -15.9,
+      "ci95_pp": [
+        -21.54,
+        -10.77
+      ],
+      "mcnemar": {
+        "n01": 2,
+        "n10": 33,
+        "p": 3.6729034036397934e-08
+      },
+      "signifikan": true
+    },
+    "4b_umum": {
+      "delta_pp": 21.03,
+      "ci95_pp": [
+        12.82,
+        29.74
+      ],
+      "mcnemar": {
+        "n01": 60,
+        "n10": 19,
+        "p": 4.194042408924102e-06
+      },
+      "signifikan": true
+    }
+  },
+  "uji_vs_referensi": {
+    "qwen0.8b_baseline": {
+      "delta_pp": -13.33,
+      "ci95_pp": [
+        -18.46,
+        -8.72
+      ],
+      "mcnemar": {
+        "n01": 1,
+        "n10": 27,
+        "p": 2.1606683731079102e-07
+      },
+      "signifikan": true
+    },
+    "qwen0.8b_finetuned": {
+      "delta_pp": -14.36,
+      "ci95_pp": [
+        -20.0,
+        -9.74
+      ],
+      "mcnemar": {
+        "n01": 1,
+        "n10": 29,
+        "p": 5.774199962615967e-08
+      },
+      "signifikan": true
+    },
+    "qwen2b_baseline": {
+      "delta_pp": -11.79,
+      "ci95_pp": [
+        -17.44,
+        -6.67
+      ],
+      "mcnemar": {
+        "n01": 4,
+        "n10": 27,
+        "p": 3.39532271027565e-05
+      },
+      "signifikan": true
+    },
+    "qwen2b_finetuned": {
+      "delta_pp": -11.79,
+      "ci95_pp": [
+        -17.44,
+        -6.67
+      ],
+      "mcnemar": {
+        "n01": 5,
+        "n10": 28,
+        "p": 6.618769839406013e-05
+      },
+      "signifikan": true
+    },
+    "qwen4b_baseline": {
+      "delta_pp": 3.08,
+      "ci95_pp": [
+        -3.59,
+        9.74
+      ],
+      "mcnemar": {
+        "n01": 25,
+        "n10": 19,
+        "p": 0.4513808323961257
+      },
+      "signifikan": false
+    },
+    "qwen4b_finetuned": {
+      "delta_pp": -12.82,
+      "ci95_pp": [
+        -18.46,
+        -7.69
+      ],
+      "mcnemar": {
+        "n01": 3,
+        "n10": 28,
+        "p": 4.649162292480469e-06
+      },
+      "signifikan": true
+    }
+  },
   "catatan": "cakupan dihitung HANYA pada subset terpicu; setelah lapisan red-flag dipasang, cakupan menjadi 100% menurut konstruksi"
 }

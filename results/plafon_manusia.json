@@ -1,0 +1,28 @@
+{
+ "sumber": "Data\\indonesia-medical-qna\\qna.csv",
+ "n_pasangan": 1093,
+ "prosedur": "satu pasangan per pertanyaan, dokter berbeda (answer_by), jawaban identik dibuang, clean_greeting diterapkan seperti eval.py",
+ "token_f1": {
+  "mean": 0.2972,
+  "ci95": [
+   0.2916,
+   0.3028
+  ]
+ },
+ "rougeL": {
+  "mean": 0.1496,
+  "ci95": [
+   0.1466,
+   0.1527
+  ],
+  "catatan": "rata-rata dua arah karena ROUGE-L tidak simetris"
+ },
+ "bertscore_f1": {
+  "model": "bert-base-multilingual-cased",
+  "mean": 0.6867,
+  "ci95": [
+   0.6842,
+   0.6892
+  ]
+ }
+}

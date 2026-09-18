@@ -65,7 +65,9 @@ ARCH = {
 
 # Anggaran RAM perangkat sasaran. SISA_UNTUK_APP = taksiran konservatif berapa yang
 # benar-benar tersedia untuk satu aplikasi setelah OS Android + aplikasi latar.
-GERBANG = {"HP 3 GB": 3.0, "HP 4 GB": 4.0}
+# 3-4 GB = perangkat sasaran naskah. 6 dan 8 GB ikut dihitung sebagai pembanding
+# kelas menengah, supaya pembaca tahu di titik mana 2B dan 4B mulai muat.
+GERBANG = {"HP 3 GB": 3.0, "HP 4 GB": 4.0, "HP 6 GB": 6.0, "HP 8 GB": 8.0}
 SISA_UNTUK_APP = 0.55
 
 # System prompt PERSIS seperti di data latih/uji (seragam untuk seluruh 2998 baris).
@@ -295,14 +297,21 @@ def ringkas(dir_hasil: str) -> None:
     print(f"\nRQ3 — TRADE-OFF ON-DEVICE (CPU, Q4_K_M, n={d0['waktu']['n_queries']} pertanyaan)")
     print(f"Perangkat: {d0['perangkat']['cpu']} | {d0['perangkat']['threads']} thread "
           f"| RAM {d0['perangkat']['ram_total_GB']} GB | {d0['perangkat']['os']}\n")
+    # Gerbang dihitung ulang di sini dari puncak RAM yang tersimpan, jadi menambah kelas
+    # perangkat baru di GERBANG tidak menuntut benchmark diulang.
+    kelas = sorted(GERBANG.items(), key=lambda kv: kv[1])
+    kepala = "".join(f"{nama.replace('HP ', ''):>8s}" for nama, _ in kelas)
     print(f"{'model':8s}{'GGUF':>9s}{'RAM infer':>12s}{'muat':>9s}"
-          f"{'latensi':>11s}{'tok/s':>9s}{'3 GB':>8s}{'4 GB':>8s}")
+          f"{'latensi':>11s}{'tok/s':>9s}{kepala}")
     for d in data:
-        g3 = "ya" if d["gerbang_ram"]["HP 3 GB"]["lolos"] else "TIDAK"
-        g4 = "ya" if d["gerbang_ram"]["HP 4 GB"]["lolos"] else "TIDAK"
-        print(f"{d['label']:8s}{d['ukuran_berkas_GB']:8.2f}G{d['ram_GB']['puncak_infer']:11.2f}G"
+        puncak = d["ram_GB"]["puncak_infer"]
+        sel = "".join(f"{('ya' if puncak <= tot * SISA_UNTUK_APP else 'TIDAK'):>8s}"
+                      for _, tot in kelas)
+        print(f"{d['label']:8s}{d['ukuran_berkas_GB']:8.2f}G{puncak:11.2f}G"
               f"{d['waktu']['muat_s']:8.1f}s{d['waktu']['latensi_s_mean']:10.1f}s"
-              f"{d['waktu']['tok_per_s_mean']:9.1f}{g3:>8s}{g4:>8s}")
+              f"{d['waktu']['tok_per_s_mean']:9.1f}{sel}")
+    print(f"  (tersedia untuk aplikasi = {SISA_UNTUK_APP:.0%} RAM total: "
+          + ", ".join(f"{nama} -> {tot * SISA_UNTUK_APP:.2f} GB" for nama, tot in kelas) + ")")
     ov = [d.get("redflag_overhead_ms_per_pertanyaan") for d in data if d.get("redflag_overhead_ms_per_pertanyaan")]
     if ov:
         print(f"\nOverhead lapisan red-flag: {statistics.mean(ov):.3f} ms/pertanyaan "

@@ -27,7 +27,9 @@ Menulis `results/redflag/cakupan_eskalasi.json`.
 from __future__ import annotations
 
 import json
+import math
 import os
+import random
 import re
 import sys
 from collections import Counter
@@ -217,6 +219,72 @@ def main() -> None:
         print("  menolong — masalahnya kelangkaan relatif, bukan jumlah. Prediksi yang bisa")
         print("  diuji: sampling (temperature>0) mestinya memulihkan sebagian eskalasi.")
 
+    # --- 5. UJI STATISTIK (permintaan reviewer): CI bootstrap + McNemar eksak ---
+    # Tanpa ini angka seperti "tegas 0,5%" (= 1 jawaban) tidak bisa dibandingkan dengan
+    # "1,5%" (= 3 jawaban). Uji dilakukan BERPASANGAN pada 195 butir terpicu yang sama,
+    # jadi variasi antar-pertanyaan tidak ikut terhitung sebagai ketidakpastian.
+    def _vektor(teks_list, pola):
+        return [1 if pola.search(teks_list[i] or "") else 0 for i in terpicu]
+
+    def _boot_ci(a, b, n_boot=5000, seed=42):
+        rng = random.Random(seed)
+        k = len(a)
+        sampel = []
+        for _ in range(n_boot):
+            pilih = [rng.randrange(k) for _ in range(k)]
+            sampel.append(sum(b[j] - a[j] for j in pilih) / k)
+        sampel.sort()
+        return [sampel[int(0.025 * n_boot)], sampel[int(0.975 * n_boot) - 1]]
+
+    def _mcnemar(a, b):
+        """p dua sisi eksak (uji tanda binomial pada pasangan yang berbeda)."""
+        n01 = sum(1 for x, y in zip(a, b) if x == 0 and y == 1)
+        n10 = sum(1 for x, y in zip(a, b) if x == 1 and y == 0)
+        nd = n01 + n10
+        if nd == 0:
+            return {"n01": 0, "n10": 0, "p": 1.0}
+        kecil = min(n01, n10)
+        p = sum(math.comb(nd, i) for i in range(kecil + 1)) / (2 ** nd) * 2
+        return {"n01": n01, "n10": n10, "p": min(1.0, p)}
+
+    uji = {}
+    print()
+    print("UJI STATISTIK base vs fine-tuned pada 195 butir terpicu (berpasangan):")
+    print(f"{'':16s}{'dimensi':>12s}{'Δ pp':>9s}{'SK 95% (pp)':>20s}{'McNemar p':>12s}")
+    for u in UKURAN:
+        for dim, pola in (("tegas", POLA_TEGAS), ("umum", POLA_UMUM)):
+            a = _vektor(preds[f"qwen{u}_baseline"], pola)
+            b = _vektor(preds[f"qwen{u}_finetuned"], pola)
+            d = (sum(b) - sum(a)) / m
+            ci = _boot_ci(a, b)
+            mc = _mcnemar(a, b)
+            uji[f"{u}_{dim}"] = {"delta_pp": round(d * 100, 2),
+                                 "ci95_pp": [round(ci[0] * 100, 2), round(ci[1] * 100, 2)],
+                                 "mcnemar": mc,
+                                 "signifikan": not (ci[0] <= 0 <= ci[1])}
+            print(f"{u:16s}{dim:>12s}{d * 100:+9.1f}"
+                  f"{f'[{ci[0] * 100:+.1f}; {ci[1] * 100:+.1f}]':>20s}{mc['p']:12.4f}")
+    print("  Δ = fine-tuned − baseline. SK yang memuat nol berarti selisihnya tidak")
+    print("  dapat dibedakan dari nol pada 195 butir ini.")
+
+    # Pembanding terhadap referensi dokter: apakah model berbeda dari dokter?
+    ref = [r["referensi"] for r in test]
+    uji_vs_ref = {}
+    print("MODEL vs REFERENSI DOKTER, eskalasi tegas:")
+    for lbl in [f"qwen{u}_{k}" for u in UKURAN for k in KONDISI]:
+        a = _vektor(ref, POLA_TEGAS)
+        b = _vektor(preds[lbl], POLA_TEGAS)
+        d = (sum(b) - sum(a)) / m
+        ci = _boot_ci(a, b)
+        mc = _mcnemar(a, b)
+        uji_vs_ref[lbl] = {"delta_pp": round(d * 100, 2),
+                           "ci95_pp": [round(ci[0] * 100, 2), round(ci[1] * 100, 2)],
+                           "mcnemar": mc,
+                           "signifikan": not (ci[0] <= 0 <= ci[1])}
+        tanda = "" if uji_vs_ref[lbl]["signifikan"] else "  (tidak berbeda)"
+        print(f"  {lbl:24s}{d * 100:+7.1f} pp  "
+              f"[{ci[0] * 100:+.1f}; {ci[1] * 100:+.1f}]  p={mc['p']:.4f}{tanda}")
+
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump({
@@ -227,6 +295,8 @@ def main() -> None:
             "cakupan_eskalasi": hasil,
             "kepekaan_keadaan": kepekaan,
             "data_latih": data_latih,
+            "uji_statistik": uji,
+            "uji_vs_referensi": uji_vs_ref,
             "catatan": "cakupan dihitung HANYA pada subset terpicu; setelah lapisan "
                        "red-flag dipasang, cakupan menjadi 100% menurut konstruksi",
         }, f, ensure_ascii=False, indent=2)
