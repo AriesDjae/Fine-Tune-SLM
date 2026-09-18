@@ -1,0 +1,250 @@
+{
+  "seed_tier2": 42,
+  "n_sampel_tier2": 200,
+  "saring_panjang": [
+    60,
+    450
+  ],
+  "bank": [
+    {
+      "id": "G001",
+      "sumber": "gold_set",
+      "idx_test": "",
+      "kategori": "gejala_umum"
+    },
+    {
+      "id": "G002",
+      "sumber": "gold_set",
+      "idx_test": "",
+      "kategori": "obat"
+    },
+    {
+      "id": "G003",
+      "sumber": "gold_set",
+      "idx_test": "",
+      "kategori": "rujukan"
+    },
+    {
+      "id": "G004",
+      "sumber": "gold_set",
+      "idx_test": "",
+      "kategori": "pencegahan"
+    },
+    {
+      "id": "G005",
+      "sumber": "gold_set",
+      "idx_test": "",
+      "kategori": "ibu_anak"
+    },
+    {
+      "id": "G006",
+      "sumber": "gold_set",
+      "idx_test": "",
+      "kategori": "kondisi_kronis"
+    },
+    {
+      "id": "G007",
+      "sumber": "gold_set",
+      "idx_test": "",
+      "kategori": "gejala_umum"
+    },
+    {
+      "id": "G008",
+      "sumber": "gold_set",
+      "idx_test": "",
+      "kategori": "obat"
+    },
+    {
+      "id": "G009",
+      "sumber": "gold_set",
+      "idx_test": "",
+      "kategori": "rujukan"
+    },
+    {
+      "id": "G010",
+      "sumber": "gold_set",
+      "idx_test": "",
+      "kategori": "pencegahan"
+    },
+    {
+      "id": "T01",
+      "sumber": "test_tier2",
+      "idx_test": 2619,
+      "kategori": "umum"
+    },
+    {
+      "id": "T02",
+      "sumber": "test_tier2",
+      "idx_test": 456,
+      "kategori": "umum"
+    },
+    {
+      "id": "T03",
+      "sumber": "test_tier2",
+      "idx_test": 102,
+      "kategori": "umum"
+    },
+    {
+      "id": "T04",
+      "sumber": "test_tier2",
+      "idx_test": 1126,
+      "kategori": "umum"
+    },
+    {
+      "id": "T05",
+      "sumber": "test_tier2",
+      "idx_test": 1003,
+      "kategori": "umum"
+    },
+    {
+      "id": "T06",
+      "sumber": "test_tier2",
+      "idx_test": 914,
+      "kategori": "umum"
+    },
+    {
+      "id": "T07",
+      "sumber": "test_tier2",
+      "idx_test": 571,
+      "kategori": "umum"
+    },
+    {
+      "id": "T08",
+      "sumber": "test_tier2",
+      "idx_test": 419,
+      "kategori": "umum"
+    },
+    {
+      "id": "T09",
+      "sumber": "test_tier2",
+      "idx_test": 2771,
+      "kategori": "umum"
+    },
+    {
+      "id": "T10",
+      "sumber": "test_tier2",
+      "idx_test": 2233,
+      "kategori": "umum"
+    },
+    {
+      "id": "T11",
+      "sumber": "test_tier2",
+      "idx_test": 356,
+      "kategori": "umum"
+    },
+    {
+      "id": "T12",
+      "sumber": "test_tier2",
+      "idx_test": 1728,
+      "kategori": "umum"
+    },
+    {
+      "id": "T13",
+      "sumber": "test_tier2",
+      "idx_test": 130,
+      "kategori": "umum"
+    },
+    {
+      "id": "T14",
+      "sumber": "test_tier2",
+      "idx_test": 122,
+      "kategori": "umum"
+    },
+    {
+      "id": "T15",
+      "sumber": "test_tier2",
+      "idx_test": 383,
+      "kategori": "umum"
+    },
+    {
+      "id": "T16",
+      "sumber": "test_tier2",
+      "idx_test": 895,
+      "kategori": "umum"
+    },
+    {
+      "id": "T17",
+      "sumber": "test_tier2",
+      "idx_test": 952,
+      "kategori": "umum"
+    },
+    {
+      "id": "T18",
+      "sumber": "test_tier2",
+      "idx_test": 2069,
+      "kategori": "umum"
+    },
+    {
+      "id": "T19",
+      "sumber": "test_tier2",
+      "idx_test": 2465,
+      "kategori": "umum"
+    },
+    {
+      "id": "T20",
+      "sumber": "test_tier2",
+      "idx_test": 108,
+      "kategori": "umum"
+    },
+    {
+      "id": "T21",
+      "sumber": "test_tier2",
+      "idx_test": 2932,
+      "kategori": "umum"
+    },
+    {
+      "id": "T22",
+      "sumber": "test_tier2",
+      "idx_test": 2661,
+      "kategori": "umum"
+    },
+    {
+      "id": "T23",
+      "sumber": "test_tier2",
+      "idx_test": 2872,
+      "kategori": "umum"
+    },
+    {
+      "id": "T24",
+      "sumber": "test_tier2",
+      "idx_test": 2232,
+      "kategori": "umum"
+    },
+    {
+      "id": "R01",
+      "sumber": "test_tier2",
+      "idx_test": 814,
+      "kategori": "redflag:perdarahan"
+    },
+    {
+      "id": "R02",
+      "sumber": "test_tier2",
+      "idx_test": 1731,
+      "kategori": "redflag:kardiovaskular"
+    },
+    {
+      "id": "R03",
+      "sumber": "test_tier2",
+      "idx_test": 418,
+      "kategori": "redflag:obstetri"
+    },
+    {
+      "id": "R04",
+      "sumber": "test_tier2",
+      "idx_test": 1481,
+      "kategori": "redflag:trauma_keracunan"
+    },
+    {
+      "id": "R05",
+      "sumber": "test_tier2",
+      "idx_test": 1105,
+      "kategori": "redflag:neurologis"
+    },
+    {
+      "id": "R06",
+      "sumber": "test_tier2",
+      "idx_test": 271,
+      "kategori": "redflag:pernapasan"
+    }
+  ]
+}

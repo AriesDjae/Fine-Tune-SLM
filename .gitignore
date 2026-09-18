@@ -107,3 +107,19 @@ results/**/*.jsonl
 # ...dan prediksi mentah eval P6 (6 file, ~20 MB) — arsip resmi di HuggingFace
 # `AriesDjaenuri/p6-hasil/preds/`. Lihat results/preds_p6/README.md untuk cara tarik ulang.
 results/preds_p6/preds/
+
+# ===========================================================================
+# Bank jawaban Tier 3 (webapp/RENCANA_BANK.md). Teks pertanyaan = QnA Alodokter
+# verbatim, jadi ia mengikuti aturan yang sama dengan Data/: tidak masuk git.
+# Catatan reproduksinya ada di human_eval/bank_indeks.json (indeks saja, ter-track),
+# dan berkas jawabannya ikut ter-deploy ke Vercel lewat CLI, bukan lewat repo.
+# ===========================================================================
+human_eval/bank_pertanyaan.csv
+webapp/bank/
+
+# Bank jawaban yang ikut terbundel ke Space arena — aturan sama dengan webapp/bank/:
+# teks pertanyaan = QnA Alodokter verbatim, jadi tidak masuk git.
+hf_space_arena/bank/
+
+# Cache GGUF yang diunduh untuk pra-generate bank (7+ GB).
+.local_models/

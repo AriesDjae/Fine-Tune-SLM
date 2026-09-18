@@ -1,0 +1,19 @@
+# Mesin inferensi. Dipasang dari indeks wheel CPU prebuilt di Dockerfile
+# (--extra-index-url .../whl/cpu). PIN WAJIB: --extra-index-url MENAMBAH indeks,
+# bukan menggantikannya, jadi pip tetap melihat PyPI dan bisa memilih versi yang
+# hanya tersedia sebagai sdist lalu mencoba mengompilasinya di dalam image.
+# 0.3.35 punya wheel py3-none-manylinux2014_x86_64 di indeks itu — sudah diperiksa.
+#
+# CATATAN GPU: wheel ini CPU-only. Saat Space dinaikkan ke t4-medium, Dockerfile harus
+# memakai indeks cu124 (lihat komentarnya) supaya GPU_LAYERS>0 benar-benar berpengaruh.
+llama-cpp-python==0.3.35
+
+fastapi
+uvicorn[standard]
+
+# HANYA untuk chat template (AutoTokenizer). >=5.5 wajib: arsitektur qwen3_5 tidak
+# ada di seluruh jalur transformers 4.x. Torch TIDAK dipasang dan tidak diperlukan.
+transformers>=5.5
+
+huggingface_hub>=0.34
+numpy
