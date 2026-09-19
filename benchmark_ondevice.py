@@ -197,6 +197,33 @@ def ambil_pertanyaan(n: int, berkas: str | None = None) -> list[str]:
     return pilih
 
 
+# Salinan `eval._ngram_blocker` — sengaja disalin, bukan diimpor, karena eval.py menarik
+# dependensi evaluasi yang tidak ada di Termux. Angka dan semantiknya WAJIB sama dengan
+# eval.py (NO_REPEAT_NGRAM=3): tanpa pemblokir ini 0.8B/2B terkunci mengulang kalimat,
+# sehingga jawaban di HP tak sebanding dengan yang dinilai, dan latensi ikut membengkak.
+NO_REPEAT_NGRAM = 3
+
+
+def _ngram_blocker(n):
+    import numpy as np
+
+    def proses(input_ids, scores):
+        ids = np.asarray(input_ids)
+        if ids.size < n:
+            return scores
+        batas = ids.size - n + 1
+        cocok = np.ones(batas, dtype=bool)
+        awalan = ids[-(n - 1):]
+        for j in range(n - 1):
+            cocok &= ids[j:j + batas] == awalan[j]
+        terlarang = ids[np.flatnonzero(cocok) + (n - 1)]
+        if terlarang.size:
+            scores[terlarang] = -np.inf
+        return scores
+
+    return proses
+
+
 def bangun_prompt(q: str) -> str:
     """ChatML Qwen3.5 dengan blok <think> KOSONG — sama persis seperti saat training.
 
@@ -245,19 +272,28 @@ def benchmark(args) -> None:
     # ---- pemanasan (tak diukur) ----
     llm.create_completion(bangun_prompt(pertanyaan[0]), max_tokens=8, temperature=0.0)
 
+    from llama_cpp import LogitsProcessorList
+    proc = LogitsProcessorList([_ngram_blocker(NO_REPEAT_NGRAM)])
+    # max_new_tokens <= 0 -> tanpa batas: berhenti di <|im_end|> atau saat n_ctx penuh.
+    maks = args.max_new_tokens if args.max_new_tokens > 0 else None
+
     # ---- INFERENSI ----
     sampler.reset()
     sampler.start()
-    lat, tps, n_tok = [], [], []
+    lat, tps, n_tok, jawaban = [], [], [], []
     for i, q in enumerate(pertanyaan, 1):
         t = time.time()
-        o = llm.create_completion(bangun_prompt(q), max_tokens=args.max_new_tokens,
-                                  temperature=0.0, top_k=1)
+        o = llm.create_completion(bangun_prompt(q), max_tokens=maks, temperature=0.0,
+                                  top_k=1, repeat_penalty=1.0, logits_processor=proc)
         dt = time.time() - t
-        ntok = o.get("usage", {}).get("completion_tokens") or args.max_new_tokens
+        ntok = o.get("usage", {}).get("completion_tokens") or 0
         lat.append(dt)
         n_tok.append(ntok)
         tps.append(ntok / dt if dt > 0 else 0.0)
+        jawaban.append({"pertanyaan": q, "jawaban": o["choices"][0]["text"],
+                        "token": ntok, "latensi_s": round(dt, 2),
+                        # "stop" = selesai wajar; "length" = terpotong batas token/konteks
+                        "selesai": o["choices"][0].get("finish_reason")})
         print(f"  {i}/{len(pertanyaan)}  {dt:6.2f}s  {tps[-1]:5.1f} tok/s   ", end="\r")
     print()
     puncak_infer = sampler.stop()
@@ -311,13 +347,16 @@ def benchmark(args) -> None:
             "tok_per_s_std": round(statistics.pstdev(tps), 2),
             "token_keluaran_mean": round(statistics.mean(n_tok), 1),
             "n_queries": len(pertanyaan),
-            "max_new_tokens": args.max_new_tokens,
+            "max_new_tokens": args.max_new_tokens if args.max_new_tokens > 0 else "tanpa batas",
+            "no_repeat_ngram_size": NO_REPEAT_NGRAM,
+            "terpotong": sum(j["selesai"] == "length" for j in jawaban),
             "n_ctx": args.n_ctx,
         },
         "redflag_overhead_ms_per_pertanyaan": (
             round(overhead_ms, 3) if overhead_ms is not None else None
         ),
         "gerbang_ram": gerbang,
+        "jawaban": jawaban,
     }
 
     os.makedirs(args.out_dir, exist_ok=True)
@@ -339,6 +378,9 @@ def _cetak_satu(o: dict) -> None:
     print(f"  waktu muat         : {w['muat_s']:.2f} s")
     print(f"  latensi/pertanyaan : {w['latensi_s_mean']:.2f} +- {w['latensi_s_std']:.2f} s")
     print(f"  throughput         : {w['tok_per_s_mean']:.1f} +- {w['tok_per_s_std']:.1f} tok/s")
+    if "terpotong" in w:
+        print(f"  token keluaran     : {w['token_keluaran_mean']:.0f} rata-rata, "
+              f"{w['terpotong']}/{w['n_queries']} terpotong")
     if o.get("redflag_overhead_ms_per_pertanyaan") is not None:
         print(f"  overhead red-flag  : {o['redflag_overhead_ms_per_pertanyaan']:.3f} ms/pertanyaan")
     print("  GERBANG RAM:")
@@ -388,7 +430,8 @@ def main() -> None:
     ap.add_argument("--gguf", help="path berkas GGUF Q4_K_M")
     ap.add_argument("--label", choices=sorted(ARCH), help="ukuran model")
     ap.add_argument("--n_queries", type=int, default=12)
-    ap.add_argument("--max_new_tokens", type=int, default=256)
+    ap.add_argument("--max_new_tokens", type=int, default=0,
+                    help="0 = tanpa batas (sampai <|im_end|> atau n_ctx penuh)")
     ap.add_argument("--n_ctx", type=int, default=1024)
     ap.add_argument("--threads", type=int, default=max(1, (os.cpu_count() or 4) // 2))
     ap.add_argument("--out_dir", default="results_bench")
