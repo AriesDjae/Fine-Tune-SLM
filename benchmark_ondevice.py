@@ -199,8 +199,8 @@ def ambil_pertanyaan(n: int, berkas: str | None = None) -> list[str]:
 
 # Salinan `eval._ngram_blocker` — sengaja disalin, bukan diimpor, karena eval.py menarik
 # dependensi evaluasi yang tidak ada di Termux. Angka dan semantiknya WAJIB sama dengan
-# eval.py (NO_REPEAT_NGRAM=3): tanpa pemblokir ini 0.8B/2B terkunci mengulang kalimat,
-# sehingga jawaban di HP tak sebanding dengan yang dinilai, dan latensi ikut membengkak.
+# eval.py (NO_REPEAT_NGRAM=3). Dipakai hanya dengan --decoding token3, untuk mencocokkan
+# protokol angka naskah; bawaannya DRY+ (pengaman_decoding.py), yang tidak merusak kata.
 NO_REPEAT_NGRAM = 3
 
 
@@ -273,7 +273,16 @@ def benchmark(args) -> None:
     llm.create_completion(bangun_prompt(pertanyaan[0]), max_tokens=8, temperature=0.0)
 
     from llama_cpp import LogitsProcessorList
-    proc = LogitsProcessorList([_ngram_blocker(NO_REPEAT_NGRAM)])
+    if args.decoding == "dry_plus":
+        from pengaman_decoding import dry_plus
+
+        def siapkan(p):
+            return dry_plus(llm, p)
+    else:
+        def siapkan(p):
+            return ({"repeat_penalty": 1.0,
+                     "logits_processor": LogitsProcessorList([_ngram_blocker(NO_REPEAT_NGRAM)])},
+                    lambda teks: teks)
     # max_new_tokens <= 0 -> tanpa batas: berhenti di <|im_end|> atau saat n_ctx penuh.
     maks = args.max_new_tokens if args.max_new_tokens > 0 else None
 
@@ -282,15 +291,17 @@ def benchmark(args) -> None:
     sampler.start()
     lat, tps, n_tok, jawaban = [], [], [], []
     for i, q in enumerate(pertanyaan, 1):
+        p = bangun_prompt(q)
+        kw, rapikan = siapkan(p)
         t = time.time()
-        o = llm.create_completion(bangun_prompt(q), max_tokens=maks, temperature=0.0,
-                                  top_k=1, repeat_penalty=1.0, logits_processor=proc)
+        o = llm.create_completion(p, max_tokens=maks, temperature=0.0, top_k=1, **kw)
+        teks = rapikan(o["choices"][0]["text"])
         dt = time.time() - t
         ntok = o.get("usage", {}).get("completion_tokens") or 0
         lat.append(dt)
         n_tok.append(ntok)
         tps.append(ntok / dt if dt > 0 else 0.0)
-        jawaban.append({"pertanyaan": q, "jawaban": o["choices"][0]["text"],
+        jawaban.append({"pertanyaan": q, "jawaban": teks,
                         "token": ntok, "latensi_s": round(dt, 2),
                         # "stop" = selesai wajar; "length" = terpotong batas token/konteks
                         "selesai": o["choices"][0].get("finish_reason")})
@@ -348,7 +359,7 @@ def benchmark(args) -> None:
             "token_keluaran_mean": round(statistics.mean(n_tok), 1),
             "n_queries": len(pertanyaan),
             "max_new_tokens": args.max_new_tokens if args.max_new_tokens > 0 else "tanpa batas",
-            "no_repeat_ngram_size": NO_REPEAT_NGRAM,
+            "decoding": args.decoding,
             "terpotong": sum(j["selesai"] == "length" for j in jawaban),
             "n_ctx": args.n_ctx,
         },
@@ -433,6 +444,9 @@ def main() -> None:
     ap.add_argument("--max_new_tokens", type=int, default=0,
                     help="0 = tanpa batas (sampai <|im_end|> atau n_ctx penuh)")
     ap.add_argument("--n_ctx", type=int, default=1024)
+    ap.add_argument("--decoding", choices=["dry_plus", "token3"], default="dry_plus",
+                    help="pengaman pengulangan: dry_plus (deploy, pengaman_decoding.py) "
+                         "atau token3 (no_repeat_ngram=3, protokol angka naskah)")
     ap.add_argument("--threads", type=int, default=max(1, (os.cpu_count() or 4) // 2))
     ap.add_argument("--out_dir", default="results_bench")
     ap.add_argument("--summarize", metavar="DIR", help="ringkas semua bench_*.json di DIR")

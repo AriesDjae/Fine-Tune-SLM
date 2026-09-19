@@ -12,6 +12,7 @@ Varian (semua greedy, tanpa batas token selain n_ctx):
   B polos    : tanpa pengaman apa pun — untuk melihat seberapa parah loop-nya
   C kalimat  : generasi bebas; begitu kalimat utuh terulang atau rangkaian 6 KATA muncul
                ketiga kalinya, generasi dihentikan dan teks dipotong di awal pengulangan
+  (implementasi C/D/E ada di pengaman_decoding.py, dipakai juga oleh benchmark_ondevice)
   D dry      : hukuman DRY (mult 0.8, base 1.75, allowed_length 2) — pengulangan pendek
                dibiarkan, perpanjangan urutan berulang dihukum eksponensial. Pendekatan:
                tanpa "sequence breakers" llama.cpp.
@@ -39,11 +40,12 @@ import time
 import numpy as np
 
 from eval import rougeL, token_f1, _ngram_blocker, NO_REPEAT_NGRAM
+from pengaman_decoding import (ada_loop, berhenti_saat_loop, dry_processor,
+                               gagap_processor, potong_loop)
 
 TEST = "Data/processed_id/test.jsonl"
 LATIH = "Data/processed_id_final/train.jsonl"
 KATA = re.compile(r"\w+")
-N_KALIMAT = 6          # panjang rangkaian kata yang dianggap loop
 VARIAN = ["token3", "polos", "kalimat", "dry", "dry_plus"]
 
 
@@ -56,84 +58,6 @@ def prompt_dari(sample):
     return p, ref
 
 
-KALIMAT = re.compile(r"[^.!?\n]+[.!?\n]")
-
-
-def ada_loop(teks, n=N_KALIMAT):
-    """Posisi karakter tempat teks harus dipotong karena loop, atau None.
-
-    Frasa 6 kata yang muncul DUA kali masih wajar ("Demam pada anak dapat disebabkan
-    oleh ..." sebagai pembuka dua kalimat berbeda). Yang dianggap loop:
-      (1) kalimat utuh (>= 4 kata) yang persis sama muncul lagi -> potong di awal ulangannya;
-      (2) rangkaian n kata muncul untuk KETIGA kalinya -> potong di awal kemunculan kedua
-          (menangkap loop tanpa tanda baca: "bisul ini juga dapat terjadi ... bisul ini ...").
-    """
-    lihat = set()
-    for k in KALIMAT.finditer(teks):
-        kunci = " ".join(KATA.findall(k.group().lower()))
-        if kunci.count(" ") >= 3:
-            if kunci in lihat:
-                return k.start()
-            lihat.add(kunci)
-    m = list(KATA.finditer(teks.lower()))
-    w = [x.group() for x in m]
-    muncul = {}
-    for i in range(len(w) - n + 1):
-        g = tuple(w[i:i + n])
-        muncul.setdefault(g, []).append(i)
-        if len(muncul[g]) == 3:
-            return m[muncul[g][1]].start()
-    return None
-
-
-def potong_kalimat(teks, pos):
-    """Buang semuanya mulai titik pengulangan."""
-    return teks[:pos].rstrip(" ,;:")
-
-
-def dry_processor(mult=0.8, base=1.75, allowed=2, cap=50):
-    def proses(input_ids, scores):
-        ids = np.asarray(input_ids)
-        n = ids.size
-        if n < 3:
-            return scores
-        last = ids[-1]
-        hukum = {}
-        for i in np.flatnonzero(ids[:-1] == last):
-            L = 1
-            while L < cap and i - L >= 0 and ids[i - L] == ids[n - 1 - L]:
-                L += 1
-            if L >= allowed:
-                t = int(ids[i + 1])
-                hukum[t] = max(hukum.get(t, 0.0), mult * base ** (L - allowed))
-        for t, h in hukum.items():
-            scores[t] -= h
-        return scores
-    return proses
-
-
-def gagap_processor(llm):
-    """Larang token awal-kata yang sama persis dengan token sebelumnya ("memang memang").
-
-    Hanya token yang diawali spasi dan berisi huruf; angka dan potongan kata tak disentuh,
-    jadi "100" (token '1','0','0') dan reduplikasi berhubung ("anak-anak") tetap bisa.
-    """
-    cache = {}
-
-    def kata_utuh(t):
-        if t not in cache:
-            s = llm.detokenize([t]).decode("utf-8", "ignore")
-            cache[t] = s.startswith(" ") and s.strip().isalpha()
-        return cache[t]
-
-    def proses(input_ids, scores):
-        t = int(input_ids[-1])
-        if kata_utuh(t):
-            scores[t] = -np.inf
-        return scores
-    return proses
-
-
 def generate(llm, prompt, varian, n_ctx):
     from llama_cpp import LogitsProcessorList, StoppingCriteriaList
     kw = dict(max_tokens=None, temperature=0.0, top_k=1, repeat_penalty=1.0)
@@ -144,22 +68,13 @@ def generate(llm, prompt, varian, n_ctx):
     elif varian == "dry_plus":
         kw["logits_processor"] = LogitsProcessorList([dry_processor(), gagap_processor(llm)])
     if varian in ("kalimat", "dry_plus"):
-        plen = len(llm.tokenize(prompt.encode("utf-8"), special=True))
-
-        def berhenti(input_ids, logits):
-            if (len(input_ids) - plen) % 4:          # cukup periksa tiap 4 token
-                return False
-            t = llm.detokenize(list(input_ids[plen:])).decode("utf-8", "ignore")
-            return ada_loop(t) is not None
-        kw["stopping_criteria"] = StoppingCriteriaList([berhenti])
+        kw["stopping_criteria"] = StoppingCriteriaList([berhenti_saat_loop(llm, prompt)])
     t0 = time.time()
     o = llm.create_completion(prompt, **kw)
     dt = time.time() - t0
     teks = o["choices"][0]["text"]
     if varian in ("kalimat", "dry_plus"):
-        pos = ada_loop(teks)
-        if pos is not None:
-            teks = potong_kalimat(teks, pos)
+        teks = potong_loop(teks)
     return teks, o["choices"][0].get("finish_reason"), o["usage"]["completion_tokens"], dt
 
 
