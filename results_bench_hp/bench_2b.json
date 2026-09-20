@@ -1,0 +1,47 @@
+{
+ "CATATAN_SALINAN": "Ringkasan disalin dari HP (Termux) 2026-09-20; array 'jawaban' sengaja dibuang karena memuat teks pasien verbatim. Berkas utuh ada di HP: ~/bench/results_bench_hp/.",
+ "PROTOKOL": "Run ini memakai pemblokir 3-gram (no_repeat_ngram_size=3), BUKAN dry_plus — skrip di HP masih versi commit 8b20c76. Puncak RAM tidak terpengaruh; latensi sedikit lebih rendah daripada bila memakai DRY+.",
+ "label": "2b",
+ "gguf": "Qwen3.5-2B.Q4_K_M.gguf",
+ "kuantisasi": "Q4_K_M",
+ "arsitektur": {
+  "family": "Qwen3.5-2B",
+  "total_params_B": 2.0
+ },
+ "perangkat": {
+  "cpu": "aarch64",
+  "threads": 4,
+  "ram_total_GB": 7.8,
+  "ram_tersedia_saat_mulai_GB": 2.81,
+  "os": "Linux 4.14.186-g73b1500db6a0",
+  "perangkat_nyata": "Xiaomi POCO X3 GT (21061110AG), Android 13 (API 33), MediaTek Dimensity 1100 (MT6891)"
+ },
+ "ukuran_berkas_GB": 1.312,
+ "ram_GB": {
+  "dasar": 0.047,
+  "setelah_muat": 1.425,
+  "puncak_muat": 1.424,
+  "puncak_infer": 1.503,
+  "bobot_saja": 1.378
+ },
+ "waktu": {
+  "muat_s": 3.49,
+  "latensi_s_mean": 82.29,
+  "latensi_s_std": 24.78,
+  "tok_per_s_mean": 3.08,
+  "tok_per_s_std": 0.5,
+  "token_keluaran_mean": 248.3,
+  "n_queries": 12,
+  "max_new_tokens": "tanpa batas",
+  "no_repeat_ngram_size": 3,
+  "terpotong": 0,
+  "n_ctx": 1024
+ },
+ "redflag_overhead_ms_per_pertanyaan": 3.268,
+ "gerbang_ram": {
+  "HP 3 GB": {"ram_total_GB": 3.0, "diasumsikan_tersedia_GB": 1.65, "puncak_infer_GB": 1.5, "lolos": true},
+  "HP 4 GB": {"ram_total_GB": 4.0, "diasumsikan_tersedia_GB": 2.2, "puncak_infer_GB": 1.5, "lolos": true},
+  "HP 6 GB": {"ram_total_GB": 6.0, "diasumsikan_tersedia_GB": 3.3, "puncak_infer_GB": 1.5, "lolos": true},
+  "HP 8 GB": {"ram_total_GB": 8.0, "diasumsikan_tersedia_GB": 4.4, "puncak_infer_GB": 1.5, "lolos": true}
+ }
+}

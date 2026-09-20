@@ -1,0 +1,39 @@
+Spesifikasi perangkat uji RQ3 — dicatat 2026-09-20 lewat Termux.
+Sumber: getprop, uname, nproc, /proc/meminfo, /sys/devices/system/cpu/.
+
+PERANGKAT
+  pabrikan                     Xiaomi
+  model pemasaran              POCO X3 GT
+  model                        21061110AG
+
+ANDROID
+  versi                        13
+  API level                    33
+
+CHIPSET
+  SoC pabrikan                 Mediatek
+  SoC model                    MT6891      (Dimensity 1100)
+  platform                     mt6893
+  ABI                          arm64-v8a
+  arsitektur                   aarch64
+  kernel                       4.14.186-g73b1500db6a0
+
+CPU
+  inti terlihat                8
+  frekuensi maksimum           2.600.000 kHz (4x Cortex-A78)
+                               2.000.000 kHz (4x Cortex-A55)
+  thread dipakai benchmark     4
+
+MEMORI
+  MemTotal                     7.656.624 kB   (7,8 GB; nominal 8 GB)
+  MemAvailable saat dicatat    2.152.792 kB
+  SwapTotal                    6.291.452 kB   (zRAM)
+
+CATATAN UNTUK NASKAH
+  - RAM yang dilaporkan kernel (7,8 GB) lebih kecil daripada angka pemasaran
+    (8 GB); naskah memakai angka kernel.
+  - Perangkat ini DI ATAS kelas sasaran (3-4 GB). Gerbang RAM kelas sasaran
+    tetap hitungan dari puncak RAM, bukan pengamatan langsung.
+  - Ada 6,3 GB zRAM. Saat benchmark dijalankan memori bebas 3,48 GB (0.8B) dan
+    2,81 GB (2B), jauh di atas anggaran 1,65 GB yang dipakai gerbang. Jadi
+    tidak ada run yang benar-benar ditekan sampai anggarannya.
