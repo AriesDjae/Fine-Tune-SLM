@@ -127,3 +127,7 @@ hf_space_arena/bank/
 # Daftar pertanyaan benchmark RQ3: teks Alodokter verbatim, aturan sama dengan Data/.
 # Dibuat ulang kapan saja: benchmark_ondevice.py --simpan-pertanyaan
 results_bench/pertanyaan_bench.json
+
+# Paket benchmark HP dibangun ulang dari berkas repo; isinya memuat
+# pertanyaan Alodokter verbatim, jadi jangan ikut di-commit.
+tools/bench_hp.zip

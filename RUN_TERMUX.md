@@ -141,6 +141,55 @@ angka laptop di § RQ3 naskah dan Tabel 4.14 BAB IV.
 
 ---
 
+## 6. Catat spesifikasi perangkat
+
+Metodologi wajib menyebut perangkat ujinya. Jalankan di HP:
+
+```bash
+sh spek_hp.sh > spek_hp.txt
+cat spek_hp.txt
+```
+
+`spek_hp.sh` ikut di dalam `bench_hp.zip`. Ia hanya membaca `getprop` dan `/proc`,
+jadi keluarannya aman ditempel ke naskah. Yang dipakai di naskah: model HP, versi
+Android, SoC, jumlah inti, dan **MemTotal** (bukan angka RAM pemasaran — Android
+selalu melaporkan lebih kecil karena sebagian dipakai firmware).
+
+---
+
+## 7. Tarik hasilnya ke laptop
+
+Hasil hanya ada di HP sampai Anda menyalinnya. Dua cara:
+
+**a. Ringkasan angka saja** (tanpa teks pasien, aman ditempel ke chat/naskah):
+
+```bash
+python - <<'PY'
+import json, glob
+for f in sorted(glob.glob("results_bench_hp/bench_*.json")):
+    d = json.load(open(f, encoding="utf-8"))
+    d.pop("jawaban", None)
+    print(json.dumps(d, indent=1, ensure_ascii=False))
+PY
+```
+
+**b. Berkas utuh** (termasuk teks jawaban, untuk arsip):
+
+```bash
+termux-setup-storage          # sekali saja
+cp -r results_bench_hp ~/storage/downloads/
+```
+
+Lalu ambil dari folder Download HP lewat kabel USB atau penyimpanan awan Anda.
+
+> **Awas isi berkasnya.** Sejak commit `8b20c76`, `bench_*.json` menyimpan teks
+> pertanyaan dan jawaban apa adanya — termasuk keluhan pasien Alodokter verbatim.
+> `results_bench/pertanyaan_bench.json` sengaja di-gitignore karena alasan yang
+> sama, jadi pertimbangkan apakah `bench_*.json` versi HP pantas ikut di-commit,
+> atau cukup ringkasannya.
+
+---
+
 ## Yang harus dicatat apa adanya
 
 - **Spesifikasi HP**: merek, tipe, RAM total, chipset, versi Android. Ini wajib disebut di
