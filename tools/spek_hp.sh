@@ -49,15 +49,39 @@ grep -c "^processor" /proc/cpuinfo 2>/dev/null | sed 's/^/  jumlah processor: /'
 echo
 echo "=== MEMORI ==="
 grep -E "^(MemTotal|MemAvailable|MemFree|SwapTotal)" /proc/meminfo | sed 's/^/  /'
-p "ukuran halaman"  "$(getconf PAGESIZE 2>/dev/null) byte"
+p "ukuran halaman"  "$(getconf PAGE_SIZE 2>/dev/null || getconf PAGESIZE 2>/dev/null || python -c 'import os;print(os.sysconf("SC_PAGE_SIZE"))' 2>/dev/null) byte"
 
 echo
 echo "=== TERMUX ==="
 p "python"          "$(python -V 2>&1)"
-p "llama_cpp"       "$(python -c 'import llama_cpp;print(llama_cpp.__version__)' 2>/dev/null || echo 'tidak terpasang')"
+cek_llama=$(python - 2>&1 <<'PY'
+import sys
+# benchmark_ondevice.py melakukan hal yang sama sebelum mengimpor llama_cpp
+if sys.platform == "android":
+    sys.platform = "linux"
+try:
+    import llama_cpp
+    print(llama_cpp.__version__)
+except Exception as e:
+    print("GAGAL: %s: %s" % (type(e).__name__, str(e)[:60]))
+PY
+)
+p "llama_cpp"       "$cek_llama"
 p "numpy"           "$(python -c 'import numpy;print(numpy.__version__)' 2>/dev/null || echo '-')"
 
 echo
+case "$cek_llama" in
+  GAGAL*)
+    echo
+    echo "!! llama_cpp tidak bisa diimpor. Dua sebab yang lazim:"
+    echo "   1. memang belum dipasang; atau"
+    echo "   2. Termux baru memperbarui Python, sehingga modul yang sudah"
+    echo "      dikompilasi untuk versi lama tidak terbaca lagi."
+    echo "   Pasang ulang:"
+    echo "   CMAKE_ARGS=\"-DGGML_NATIVE=OFF -DGGML_LLAMAFILE=OFF\" pip install --force-reinstall --no-cache-dir llama-cpp-python"
+    ;;
+esac
+
 echo "Catatan: RAM total yang dilaporkan Android SELALU lebih kecil daripada RAM"
 echo "yang tertulis di kotak (sebagian dipakai firmware). Naskah menyebut angka"
 echo "MemTotal di atas, bukan angka pemasaran."
