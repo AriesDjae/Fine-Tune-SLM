@@ -29,6 +29,58 @@ kelas sasaran sekarang bukan cuma memori, melainkan 187 detik per jawaban.
    publikasi — hanya perapian. 4B sudah dry_plus.
 2. **Quantization gap** Q4_K_M vs 16-bit: belum diukur sama sekali.
 
+## Lanjutkan di sini
+
+Sisa: ulang 0.8B dan 2B dengan `--decoding dry_plus` (4B sudah). Tempel apa adanya.
+
+```bash
+cd ~/bench
+curl -L -o bench_hp.zip https://huggingface.co/AriesDjaenuri/p6-hasil/resolve/main/tools/bench_hp.zip
+ls -l bench_hp.zip          # 25045 byte = versi dengan simpan-parsial
+unzip -o bench_hp.zip
+
+python - <<'CEK'
+import sys
+if sys.platform == "android": sys.platform = "linux"
+import llama_cpp; print("OK", llama_cpp.__version__)
+CEK
+
+termux-wake-lock
+
+python benchmark_ondevice.py --gguf ~/models/Qwen3.5-0.8B.Q4_K_M.gguf \
+  --label 0.8b --decoding dry_plus --pertanyaan pertanyaan_bench.json \
+  --out_dir results_bench_hp --threads 4
+cp results_bench_hp/bench_0.8b.json ~/storage/downloads/results_bench_hp/
+
+# beri jeda supaya HP dingin, lalu:
+python benchmark_ondevice.py --gguf ~/models/Qwen3.5-2B.Q4_K_M.gguf \
+  --label 2b --decoding dry_plus --pertanyaan pertanyaan_bench.json \
+  --out_dir results_bench_hp --threads 4
+cp results_bench_hp/bench_2b.json ~/storage/downloads/results_bench_hp/
+```
+
+Lalu tempel ringkasannya (tanpa teks pasien) ke Claude:
+
+```bash
+cd ~/bench && python - <<'RINGKAS'
+import json, glob
+for f in sorted(glob.glob("results_bench_hp/bench_[02]*.json")):
+    d = json.load(open(f, encoding="utf-8")); d.pop("jawaban", None)
+    print(json.dumps(d, indent=1, ensure_ascii=False))
+RINGKAS
+```
+
+Yang harus dicek di hasilnya: `"decoding"` harus berbunyi `dry_plus`. Kalau yang
+muncul justru `no_repeat_ngram_size`, zip-nya belum terbarui.
+
+Kalau ada `bench_*_parsial.json` tersisa sesudah run, artinya run itu mati di
+tengah jalan. Isinya tetap berguna, jangan dihapus.
+
+Model GGUF sebaiknya dipindah ke `~/storage/downloads/models/` supaya selamat
+kalau Termux di-reset lagi.
+
+---
+
 ## Sebelum run berikutnya
 
 ```bash
