@@ -306,6 +306,11 @@ def benchmark(args) -> None:
                         # "stop" = selesai wajar; "length" = terpotong batas token/konteks
                         "selesai": o["choices"][0].get("finish_reason")})
         print(f"  {i}/{len(pertanyaan)}  {dt:6.2f}s  {tps[-1]:5.1f} tok/s   ", end="\r")
+        # Simpan kemajuan SETIAP pertanyaan. Di HP, Android bisa membunuh proses
+        # di tengah jalan karena tekanan memori -- terutama pada model besar.
+        # Tanpa ini, run yang mati di pertanyaan ke-7 tidak meninggalkan apa pun.
+        _simpan_parsial(args, jawaban, sampler.peak / 1e9, waktu_muat, rss0,
+                        rss_setelah_muat, puncak_muat, len(pertanyaan))
     print()
     puncak_infer = sampler.stop()
 
@@ -374,8 +379,53 @@ def benchmark(args) -> None:
     path = os.path.join(args.out_dir, f"bench_{args.label}.json")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
+    parsial = os.path.join(args.out_dir, f"bench_{args.label}_parsial.json")
+    if os.path.exists(parsial):
+        os.remove(parsial)
     _cetak_satu(out)
     print(f"\nDisimpan -> {path}")
+
+
+def _simpan_parsial(args, jawaban, puncak_infer, waktu_muat, rss0,
+                    rss_setelah_muat, puncak_muat, n_total) -> None:
+    """Tulis hasil sementara ke bench_<label>_parsial.json.
+
+    Berkas ini ditimpa tiap pertanyaan dan DIHAPUS begitu run selesai wajar,
+    jadi keberadaannya sesudah run = tanda run itu mati di tengah jalan.
+    """
+    lat = [j["latensi_s"] for j in jawaban]
+    tok = [j["token"] for j in jawaban]
+    out = {
+        "STATUS": "PARSIAL - run belum selesai atau mati di tengah jalan",
+        "label": args.label,
+        "gguf": os.path.basename(args.gguf),
+        "kuantisasi": "Q4_K_M",
+        "perangkat": {
+            "cpu": _cpu(), "threads": args.threads,
+            "ram_total_GB": round(_ram_total_bytes() / 1e9, 1),
+            "os": f"{platform.system()} {platform.release()}",
+        },
+        "kemajuan": {"selesai": len(jawaban), "dari": n_total},
+        "ram_GB": {
+            "dasar": round(rss0, 3),
+            "setelah_muat": round(rss_setelah_muat, 3),
+            "puncak_muat": round(puncak_muat, 3),
+            "puncak_infer_sejauh_ini": round(puncak_infer, 3),
+        },
+        "waktu": {
+            "muat_s": round(waktu_muat, 2),
+            "latensi_s_mean": round(statistics.mean(lat), 2) if lat else None,
+            "tok_per_s_mean": (round(statistics.mean(
+                [t / l for t, l in zip(tok, lat) if l > 0]), 2) if lat else None),
+            "decoding": args.decoding,
+            "n_ctx": args.n_ctx,
+        },
+        "jawaban": jawaban,
+    }
+    os.makedirs(args.out_dir, exist_ok=True)
+    with open(os.path.join(args.out_dir, f"bench_{args.label}_parsial.json"),
+              "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, indent=2)
 
 
 def _cetak_satu(o: dict) -> None:
