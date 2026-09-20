@@ -12,21 +12,22 @@ Rincian: `spek_perangkat.txt`.
 |---|---|---:|---:|---:|---|
 | 0.8B | token-3 | 0,76 GB | 32,6 dtk | 7,6 | `bench_0.8b.json` |
 | 2B | token-3 | 1,50 GB | 82,3 dtk | 3,1 | `bench_2b.json` |
-| 4B | token-3 | ? | ? | ? | **angka belum disalin ke laptop** |
+| 4B | **dry_plus** | 2,99 GB | 187,0 dtk | 1,32 | `bench_4b.json` |
 
-Ketiganya **selesai tanpa dimatikan Android**, termasuk 4B — ini sendiri sudah
-temuan, karena naskah sebelumnya hanya punya hitungan ekstrapolasi untuk 4B.
+Ketiganya **selesai tanpa dimatikan Android**, termasuk 4B. Puncak RAM di HP lebih
+rendah daripada laptop di semua ukuran, dan selisihnya MELEBAR seiring model:
+23% (0.8B), 31% (2B), 37% (4B). Akibatnya 4B LOLOS gerbang HP 6 GB, padahal
+pengukuran laptop menyatakan gagal di semua kelas. Yang menyingkirkan 4B dari
+kelas sasaran sekarang bukan cuma memori, melainkan 187 detik per jawaban.
 
 ## Yang belum
 
-1. **Angka 4B belum masuk repo.** Ada di HP: `~/bench/results_bench_hp/bench_4b.json`.
-   Salin ringkasannya (buang array `jawaban`) dengan cuplikan di `RUN_TERMUX.md` §7.
-2. **Ulang ketiganya dengan DRY+.** Semua angka HP di atas memakai pemblokir 3-gram,
+1. **Ulang 0.8B dan 2B dengan DRY+.** Keduanya memakai pemblokir 3-gram,
    sementara laptop memakai DRY+. Puncak RAM tidak terpengaruh, tapi latensi dan
    throughput HP jadi sedikit optimistis (di laptop DRY+ 8% lebih lambat pada 0.8B).
    Naskah sudah menyebut ketidaksamaan ini apa adanya, jadi ini bukan penghalang
-   publikasi — hanya perapian.
-3. **Quantization gap** Q4_K_M vs 16-bit: belum diukur sama sekali.
+   publikasi — hanya perapian. 4B sudah dry_plus.
+2. **Quantization gap** Q4_K_M vs 16-bit: belum diukur sama sekali.
 
 ## Sebelum run berikutnya
 
