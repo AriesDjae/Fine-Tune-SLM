@@ -5,15 +5,15 @@ Dipakai `scripts/pragenerate_arena.py` (bank) dan `scripts/proses_usulan.py` (us
 dokter). Keduanya harus memakai mesin yang SAMA, kalau tidak dua dokter bisa menilai
 teks yang tidak sebanding.
 
-Ini penerus `webapp/runpod/handler.py` setelah jalur RunPod dipensiunkan
-(lihat `webapp/RENCANA_BANK.md`). Perbedaannya cuma satu: tidak ada lagi pembungkus
+Ini penerus `webapp/runpod/handler.py` setelah jalur RunPod dipensiunkan; keduanya
+kini di `arsip/pivot6_jalur-lama/` (lihat `webapp/RENCANA_BANK.md` di sana). Perbedaannya cuma satu: tidak ada lagi pembungkus
 serverless dan tidak ada lagi salinan roster — parameter diimpor LANGSUNG dari
-`hf_space/config.py`, yang memang satu-satunya sumber kebenaran. Berkas ini hanya
+`arena/config.py`, yang memang satu-satunya sumber kebenaran. Berkas ini hanya
 berjalan di laptop peneliti, jadi tidak ada persoalan `KEY_MAP` bocor ke server;
 sebagai gantinya, `KEY_MAP` tidak pernah disentuh di sini dan tidak pernah ikut ke
 berkas keluaran.
 
-Empat hal yang haram diubah (warisan `hf_space/KONTRAK_RUNPOD.md` § 5):
+Empat hal yang haram diubah (warisan `arsip/pivot6_jalur-lama/hf_space/KONTRAK_RUNPOD.md` § 5):
 
 1. `system_prompt` verbatim dari config.
 2. Greedy + `seed=42` + `no_repeat_ngram=3` sebagai pemblokir KERAS.
@@ -33,10 +33,9 @@ import numpy as np
 
 _AKAR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _AKAR)
-sys.path.insert(0, os.path.join(_AKAR, "hf_space"))
 
 from chat_format import MODEL_MODES, build_prompt, clean_greeting   # noqa: E402
-from config import MODELS, PARAMS_GENERASI                          # noqa: E402  (hf_space/)
+from arena.config import MODELS, PARAMS_GENERASI                    # noqa: E402
 
 MODE = MODEL_MODES["qwen"]          # roster Pivot 6 seluruhnya Qwen3.5
 LABELS = list(MODELS)
@@ -108,7 +107,7 @@ def _pemblokir_ngram(n: int):
     eval.py memakai pemblokiran KERAS: token yang akan melengkapi n-gram yang pernah
     muncul diberi probabilitas nol. Tanpa ini, greedy decoding pada model kecil terkunci
     di siklus kalimat yang sama sampai jatah token habis — teramati nyata pada dua label
-    di 1024 token. Disalin apa adanya dari webapp/runpod/handler.py.
+    di 1024 token. Disalin apa adanya dari handler RunPod yang kini diarsipkan.
     """
     def proses(input_ids, scores):
         ids = np.asarray(input_ids)

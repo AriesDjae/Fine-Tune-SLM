@@ -1,8 +1,9 @@
 """
 pragenerate_arena.py — membuat bank jawaban Tier 3 di laptop, sekali jalan.
 
-Rancangan: `webapp/RENCANA_BANK.md`. Masukan `human_eval/bank_pertanyaan.csv`
-(disusun `scripts/susun_bank_pertanyaan.py`), keluaran `webapp/bank/<versi>/<hash>.json`
+Rancangan: `arsip/pivot6_jalur-lama/webapp/RENCANA_BANK.md`. Masukan
+`human_eval/bank_pertanyaan.csv` (disusun `scripts/susun_bank_pertanyaan.py`),
+keluaran `hf_space_arena/bank/<versi>/<hash>.json`
 yang ikut ter-deploy bersama fungsi Vercel.
 
 Kenapa ini sah dan bukan "curang": decoding arena greedy + `seed=42` + `no_repeat_ngram=3`,
@@ -36,7 +37,7 @@ from arena import mesin                                      # noqa: E402
 from arena.mesin import LABELS, PARAMS_GENERASI              # noqa: E402
 
 BANK_CSV = os.path.join(_AKAR, "human_eval", "bank_pertanyaan.csv")
-KELUAR = os.path.join(_AKAR, "webapp", "bank")
+KELUAR = os.path.join(_AKAR, "hf_space_arena", "bank")
 
 
 def muat_bank() -> list[dict]:
@@ -90,7 +91,7 @@ def tulis_metrik() -> None:
     """Simpan metrik kecepatan/memori per label — hasil sampingan gratis dari run bank.
 
     Bukan jawaban RQ3: perangkatnya laptop, bukan HP 3-4 GB, dan labelnya masih buta
-    (pemetaan ke ukuran model ada di hf_space/config.py). Tapi ini satu-satunya angka
+    (pemetaan ke ukuran model ada di arena/config.py). Tapi ini satu-satunya angka
     llama.cpp CPU yang dimiliki repo, dan ia diukur pada jalur yang PERSIS sama dengan
     artefak deploy (GGUF Q4_K_M, n_ctx & prompt yang sama).
     """

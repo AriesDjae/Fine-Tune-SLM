@@ -66,8 +66,8 @@ hf_token*
 service_account*.json
 
 # --- Smoke test manual webapp (Agustus 2026) ------------------------------
-#     Dipakai sekali waktu menelusuri proxy webapp/api/index.py. Fungsinya
-#     sudah tertutup webapp/uji_konsistensi.py, jadi tidak perlu di repo.
+#     Dipakai sekali waktu menelusuri proxy webapp/api/index.py, yang kini
+#     diarsipkan. Fungsinya tertutup scripts/uji_konsistensi.py.
 /test_local_api.py
 /tmp_proxy_smoke.py
 
@@ -85,7 +85,7 @@ pilot_generations.txt
 # --- Bundle unggah Overleaf (dibuat ulang dari artikel/) -------------------
 /artikel*.zip
 
-# --- Log runtime aplikasi penilaian dokter (hf_space/app.py) ---------------
+# --- Log runtime aplikasi penilaian dokter (Space arena) ------------------
 #     Jejak sesi yang sesungguhnya diarsipkan ke logs/ di HF Dataset.
 evaluasi_app.log
 
@@ -119,17 +119,13 @@ results/**/*.jsonl
 results/preds_p6/preds/
 
 # ===========================================================================
-# Bank jawaban Tier 3 (webapp/RENCANA_BANK.md). Teks pertanyaan = QnA Alodokter
-# verbatim, jadi ia mengikuti aturan yang sama dengan Data/: tidak masuk git.
-# Catatan reproduksinya ada di human_eval/bank_indeks.json (indeks saja, ter-track),
-# dan berkas jawabannya ikut ter-deploy ke Vercel lewat CLI, bukan lewat repo.
+# Bank jawaban Tier 3. Teks pertanyaan = QnA Alodokter verbatim, jadi ia
+# mengikuti aturan yang sama dengan Data/: tidak masuk git. Catatan
+# reproduksinya ada di human_eval/bank_indeks.json (indeks saja, ter-track).
 # ===========================================================================
 human_eval/bank_pertanyaan.csv
-webapp/bank/
-
-# Bank jawaban yang ikut terbundel ke Space arena — aturan sama dengan webapp/bank/:
-# teks pertanyaan = QnA Alodokter verbatim, jadi tidak masuk git.
 hf_space_arena/bank/
+arsip/pivot6_jalur-lama/webapp/bank/
 
 # Cache GGUF yang diunduh untuk pra-generate bank (7+ GB).
 .local_models/

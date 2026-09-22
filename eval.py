@@ -226,7 +226,7 @@ def load_model(args):
 # --------------------------------------------------------------------------- #
 # Generate (greedy, identik antar model utk fair comparison)
 # --------------------------------------------------------------------------- #
-NO_REPEAT_NGRAM = 3   # satu-satunya sumber angka ini; hf_space/config.py mengikutinya
+NO_REPEAT_NGRAM = 3   # satu-satunya sumber angka ini; arena/config.py mengikutinya
 
 
 def _ngram_blocker(n):

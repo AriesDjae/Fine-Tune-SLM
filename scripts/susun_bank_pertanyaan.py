@@ -1,7 +1,7 @@
 """
 susun_bank_pertanyaan.py — menyusun bank pertanyaan Tier 3 (arena penilaian dokter).
 
-Rancangan: `webapp/RENCANA_BANK.md` § 4. Ringkasnya, bank berisi 40 pertanyaan:
+Rancangan: `arsip/pivot6_jalur-lama/webapp/RENCANA_BANK.md` § 4. Ringkasnya, bank berisi 40 pertanyaan:
 
     10  gold set          human_eval/gold_set.csv            (punya jawaban referensi)
     24  test set "umum"   dari 200 indeks sampel Tier 2      (supaya κ dokter↔GPT-4o hidup)

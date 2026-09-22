@@ -2,7 +2,7 @@
 app.py — arena penilaian dokter, seluruhnya di dalam satu Space Docker.
 
 Menggantikan pasangan Vercel + RunPod: halaman yang dilihat dokter PERSIS
-`webapp/public/index.html` yang sudah dipakai sebelumnya, kontrak API-nya juga sama
+`public/index.html` yang sudah dipakai sebelumnya, kontrak API-nya juga sama
 (`/api/awal`, `/api/tanya`, `/api/status`, `/api/batal`, `/api/simpan`), hanya saja
 inferensinya sekarang berjalan di proses ini lewat llama.cpp, dan penilaian ditulis
 langsung ke HF Dataset privat.
@@ -15,12 +15,12 @@ DUA SUMBER JAWABAN, satu protokol:
    `no_repeat_ngram=3`): jawaban live akan identik.
 2. **Live** — kalau tidak ada di bank, keenam model dijalankan di sini.
 
-Sifat yang tidak boleh hilang, warisan `hf_space/KONTRAK_RUNPOD.md`:
+Sifat yang tidak boleh hilang, warisan `arsip/pivot6_jalur-lama/hf_space/KONTRAK_RUNPOD.md`:
 
-- `SYSTEM_PROMPT` & `PARAMS_GENERASI` verbatim dari `hf_space/config.py`.
+- `SYSTEM_PROMPT` & `PARAMS_GENERASI` verbatim dari `arena/config.py`.
 - Pemblokir n-gram KERAS; kalau tidak bisa aktif, job GAGAL, tidak dilanjutkan diam-diam.
 - Label A-F buta: peta ke nama model asli TIDAK ADA di berkas ini maupun di mana pun
-  di dalam Space. Tirai dibuka belakangan saat analisis lewat `hf_space/config.py`.
+  di dalam Space. Tirai dibuka belakangan saat analisis lewat `arena/config.py`.
 - Urutan kartu diacak DI SERVER tiap pertanyaan, dan `urutan_tampil` ikut disimpan.
 - Job gagal → browser tidak boleh bisa menyimpan skor.
 """
@@ -49,9 +49,9 @@ from chat_format import MODEL_MODES, build_prompt, clean_greeting
 MODE = MODEL_MODES["qwen"]
 
 # =========================================================================== #
-# SALINAN VERBATIM dari hf_space/config.py. Disalin, bukan diimpor — Space hanya
+# SALINAN VERBATIM dari arena/config.py. Disalin, bukan diimpor — Space hanya
 # membundel isi direktori ini. Kalau config.py berubah, SALIN ULANG ke sini;
-# `webapp/uji_konsistensi.py` membandingkan keduanya dan gagal bila menyimpang.
+# `scripts/uji_konsistensi.py` membandingkan keduanya dan gagal bila menyimpang.
 # =========================================================================== #
 LABELS = ["Model A", "Model B", "Model C", "Model D", "Model E", "Model F"]
 

@@ -107,7 +107,7 @@ log sesi di `logs/*.jsonl`).
 ### Menjalankan Space
 
 ```bash
-python webapp/uji_konsistensi.py          # gerbang anti-hanyut, WAJIB sebelum deploy
+python scripts/uji_konsistensi.py         # gerbang anti-hanyut, WAJIB sebelum deploy
 python scripts/space_mode.py status       # hardware, indeks wheel, GPU_LAYERS
 python scripts/space_mode.py gpu          # produksi: t4-medium  ($0,60/jam)
 python scripts/space_mode.py cpu          # demo:     cpu-upgrade ($0,03/jam)
@@ -146,13 +146,13 @@ restart menggugurkan jawaban yang sedang dikerjakan.
 ├── arena/ · hf_space_arena/ · scripts/space_mode.py   # arena penilaian dokter (Tier 3)
 ├── benchmark_ondevice.py                       # ⚠ masih artefak Pivot 3 — perlu ditulis ulang
 ├── serverless/ · handler.py · Dockerfile       # harness training H100
-├── notebooks/ · preprocessing/ · inference/
+├── notebooks/ · preprocessing/
 ├── results/                                    # semua hasil (JSON ringkas ter-track)
-└── arsip/                                      # pivot 1–5
+└── arsip/                                      # pivot 1–5 + jalur P6 lama
 ```
 
 Gitignored: `Data/`, `outputs/`, `results/**/*.jsonl`, `*.key`, berkas bank jawaban
-(`webapp/bank/`, `hf_space_arena/bank/`, `human_eval/bank_pertanyaan.csv` — teks Alodokter
+(`hf_space_arena/bank/`, `human_eval/bank_pertanyaan.csv` — teks Alodokter
 verbatim, aturannya sama dengan `Data/`).
 
 ---
