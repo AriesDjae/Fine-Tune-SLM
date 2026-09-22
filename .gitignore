@@ -65,6 +65,12 @@ hf_token*
 *credentials*.json
 service_account*.json
 
+# --- Smoke test manual webapp (Agustus 2026) ------------------------------
+#     Dipakai sekali waktu menelusuri proxy webapp/api/index.py. Fungsinya
+#     sudah tertutup webapp/uji_konsistensi.py, jadi tidak perlu di repo.
+/test_local_api.py
+/tmp_proxy_smoke.py
+
 # --- Stray screenshots / scratch images (bukan figur skripsi) -------------
 /output.png
 /output_preview.png
