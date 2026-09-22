@@ -22,7 +22,7 @@ import time
 
 import requests
 
-API = "https://api.runpod.ai/v2"
+API = "https://api.runpod.io/v2"
 
 
 def _env(name):

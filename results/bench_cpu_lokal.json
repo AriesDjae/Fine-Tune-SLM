@@ -1,0 +1,47 @@
+{
+  "catatan": "hasil sampingan pragenerate_arena.py — laptop peneliti, CPU-only, label masih buta. BUKAN pengganti uji HP 3-4 GB (RQ3).",
+  "waktu": "2026-09-18T07:46:44+00:00",
+  "mesin": {
+    "platform": "Windows-10-10.0.26200-SP0",
+    "prosesor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "python": "3.11.9"
+  },
+  "params": {
+    "max_tokens": 1024,
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "top_k": 1,
+    "repeat_penalty": 1.0,
+    "seed": 42,
+    "no_repeat_ngram": 3,
+    "n_ctx": 4096
+  },
+  "per_label": {
+    "Model F": {
+      "berkas": "Qwen3.5-2B-Q4_K_M.gguf",
+      "muat_detik": 94.1,
+      "gguf_mb": 1280.8,
+      "rss_mb": 1488.3,
+      "n_ctx": 4096,
+      "n_threads": "bawaan",
+      "n_jawaban": 40,
+      "total_token": 32602,
+      "total_detik": 1615.4,
+      "tok_per_detik": 20.18,
+      "rss_puncak_mb": 2310.7
+    },
+    "Model E": {
+      "berkas": "Qwen3.5-4B-Q4_K_M.gguf",
+      "muat_detik": 5.5,
+      "gguf_mb": 2740.9,
+      "rss_mb": 3299.4,
+      "n_ctx": 4096,
+      "n_threads": "bawaan",
+      "n_jawaban": 18,
+      "total_token": 15733,
+      "total_detik": 1702.6,
+      "tok_per_detik": 9.24,
+      "rss_puncak_mb": 4519.7
+    }
+  }
+}

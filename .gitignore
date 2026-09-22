@@ -88,6 +88,10 @@ evaluasi_app.log
 skripsi/
 
 # --- OS / editor cruft ----------------------------------------------------
+#     .vscode/settings.json memuat path absolut mesin ini, jadi tidak berguna
+#     di repo; .agent_harnesses.json adalah state alat, bukan kode.
+.vscode/
+.agent_harnesses.json
 .DS_Store
 Thumbs.db
 desktop.ini
