@@ -125,7 +125,6 @@ results/preds_p6/preds/
 # ===========================================================================
 human_eval/bank_pertanyaan.csv
 hf_space_arena/bank/
-arsip/pivot6_jalur-lama/webapp/bank/
 
 # Cache GGUF yang diunduh untuk pra-generate bank (7+ GB).
 .local_models/
