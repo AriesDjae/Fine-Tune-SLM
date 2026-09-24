@@ -36,7 +36,7 @@ Sisa: ulang 0.8B dan 2B dengan `--decoding dry_plus` (4B sudah). Tempel apa adan
 ```bash
 cd ~/bench
 curl -L -o bench_hp.zip https://huggingface.co/AriesDjaenuri/p6-hasil/resolve/main/tools/bench_hp.zip
-ls -l bench_hp.zip          # 25045 byte = versi dengan simpan-parsial
+ls -l bench_hp.zip          # 27396 byte = versi dengan demo_chat.py
 unzip -o bench_hp.zip
 
 python - <<'CEK'
@@ -81,12 +81,25 @@ kalau Termux di-reset lagi.
 
 ---
 
+## Demo langsung (peraga, bukan pengukuran)
+
+`demo_chat.py` (ada di zip sejak 2026-09-24) menampilkan jawaban kata demi kata dengan
+DRY+ dan lapisan red-flag. Angkanya tidak dipakai naskah.
+
+```bash
+cd ~/bench && termux-wake-lock
+python demo_chat.py --ukuran 0.8b --contoh 3 --simpan demo_jawaban.json
+```
+
+Contoh ke-2 dan ke-3 memicu banner red-flag. Sesudah contoh habis, ketik pertanyaan sendiri;
+`keluar` untuk berhenti. Nyalakan mode pesawat supaya terlihat offline.
+
 ## Sebelum run berikutnya
 
 ```bash
 cd ~/bench
 curl -L -o bench_hp.zip https://huggingface.co/AriesDjaenuri/p6-hasil/resolve/main/tools/bench_hp.zip
-ls -l bench_hp.zip          # 25045 byte = versi dengan simpan-parsial
+ls -l bench_hp.zip          # 27396 byte = versi dengan demo_chat.py
 unzip -o bench_hp.zip
 python - <<'PY'
 import sys

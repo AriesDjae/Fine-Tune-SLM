@@ -6,10 +6,12 @@ menyimpang dari hasil eksperimen:
 
   - RQ1/RQ2  <- results/eval_truncation.json  (blok `per_ukuran.<size>.semua`)
   - Tier 2   <- results/llm_judge/tier2_<size>_ringkas.json
+  - RQ3      <- results_bench/bench_<size>.json (laptop) & results_bench_hp/ (HP)
 
 Keluaran:
   fig_p6_rq1_rq2.png   mutu jawaban: baseline vs fine-tuned, 3 ukuran, + plafon dokter
   fig_p6_tier2_aman.png  perubahan rate "Aman" — pembalikan tanda lintas ukuran
+  fig_p6_rq3.png         puncak RAM (+ anggaran kelas HP) dan latensi, laptop vs HP
 
 Jalankan:
   python results/plot_hasil_p6.py            # bahasa Indonesia -> results/figures/ (skripsi)
@@ -28,6 +30,7 @@ import pathlib
 import matplotlib
 
 matplotlib.use("Agg")
+import matplotlib.patches as mpatches
 import matplotlib.patheffects as pe
 import matplotlib.pyplot as plt
 
@@ -41,12 +44,28 @@ TEKS = {
         "plafon": "Plafon kesepakatan dokter ({:.3f})",
         "skor": "skor",
         "delta_aman": "Δ rate “Aman” (poin persentase)",
+        "laptop": "Laptop CPU (12 thread)",
+        "hp": "HP POCO X3 GT (4 thread)",
+        "ram": "Puncak RAM saat generate (GB)",
+        "lat": "Latensi per jawaban (detik)",
+        "judul_ram": "Memori",
+        "judul_lat": "Kecepatan",
+        "anggaran": "anggaran HP {} GB",
+        "token3": "HP, pemblokir 3-gram (belum diulang DRY+)",
     },
     "en": {
         "baseline": "Baseline (pre-trained)",
         "plafon": "Inter-physician agreement ({:.3f})",
         "skor": "Score",
         "delta_aman": "Change in Safe rate (percentage points)",
+        "laptop": "Laptop CPU (12 threads)",
+        "hp": "Android phone (4 threads)",
+        "ram": "Peak RAM during generation (GB)",
+        "lat": "Latency per answer (s)",
+        "judul_ram": "Memory",
+        "judul_lat": "Speed",
+        "anggaran": "{} GB phone budget",
+        "token3": "Phone, 3-gram block",
     },
 }
 
@@ -55,6 +74,11 @@ BASELINE = "#2a78d6"   # biru
 FINETUNED = "#eb6834"  # oranye
 POS = "#2a78d6"        # delta positif
 NEG = "#e34948"        # delta negatif
+# Perangkat memakai slot 3 & 7, BUKAN 1 & 2: biru/oranye di naskah sudah berarti
+# baseline/fine-tuned. Pasangan ini divalidasi (CVD ΔE 31, normal ΔE 36); aqua di
+# bawah 3:1 terhadap surface -> label nilai wajib ada di tiap batang.
+LAPTOP = "#1baf7a"     # aqua
+HP = "#4a3aa7"         # violet
 SURFACE = "#fcfcfb"
 INK = "#0b0b0b"
 INK2 = "#52514e"
@@ -230,13 +254,103 @@ def fig_tier2(t2: dict, lang: str) -> pathlib.Path:
     return p
 
 
+def muat_bench() -> dict:
+    """Ringkasan benchmark on-device. `token3` = run yang masih memakai pemblokir
+    3-gram (kunci `decoding` tidak ada) — latensinya ditandai arsir di grafik,
+    dan tanda itu hilang sendiri begitu run DRY+ disalin ke results_bench_hp/."""
+    out = {}
+    for perangkat, folder in (("laptop", "results_bench"), ("hp", "results_bench_hp")):
+        out[perangkat] = {}
+        for u in UKURAN:
+            d = json.loads((ROOT / folder / f"bench_{u}.json").read_text(encoding="utf-8"))
+            out[perangkat][u] = {
+                "ram": d["ram_GB"]["puncak_infer"],
+                "lat": d["waktu"]["latensi_s_mean"],
+                "tps": d["waktu"]["tok_per_s_mean"],
+                "token3": d["waktu"].get("decoding") != "dry_plus",
+                "anggaran": {int(float(k.split()[1])): v["diasumsikan_tersedia_GB"]
+                             for k, v in d["gerbang_ram"].items()},
+            }
+    return out
+
+
+def fig_rq3(b: dict, lang: str) -> pathlib.Path:
+    """Dua panel, bukan dua sumbu-y: GB dan detik tidak boleh berbagi skala."""
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.5, 5.0), facecolor=SURFACE)
+    x = range(len(UKURAN))
+    lebar = 0.36
+    geser = lebar / 2 + 0.012
+    halo = [pe.withStroke(linewidth=3.2, foreground=SURFACE)]
+
+    def batang(ax, kunci, fmt):
+        pegangan = []
+        for perangkat, warna, arah in (("laptop", LAPTOP, -1), ("hp", HP, 1)):
+            nilai = [b[perangkat][u][kunci] for u in UKURAN]
+            rs = ax.bar([i + arah * geser for i in x], nilai, lebar, color=warna, zorder=2)
+            pegangan.append(mpatches.Patch(facecolor=warna, label=TEKS[lang][perangkat]))
+            for u, r in zip(UKURAN, rs):
+                if kunci == "lat" and perangkat == "hp" and b["hp"][u]["token3"]:
+                    r.set_hatch("////")
+                    r.set_edgecolor(SURFACE)
+                    r.set_linewidth(0)
+                ax.text(r.get_x() + r.get_width() / 2, r.get_height(),
+                        " " + fmt(r.get_height()), ha="center", va="bottom",
+                        fontsize=9.5, color=INK2, path_effects=halo, zorder=4)
+        ax.set_xticks(list(x))
+        ax.set_xticklabels(LABEL_UKURAN, fontsize=12)
+        return pegangan
+
+    # --- panel memori + garis anggaran kelas HP ---
+    gaya(ax1)
+    peg = batang(ax1, "ram", lambda v: f"{v:.2f}")
+    anggaran = b["hp"]["0.8b"]["anggaran"]
+    for kelas, gb in sorted(anggaran.items()):
+        ax1.axhline(gb, color=INK2, linewidth=1.0, linestyle=(0, (4, 3)), zorder=1)
+        ax1.text(len(UKURAN) - 0.58, gb, TEKS[lang]["anggaran"].format(kelas),
+                 ha="left", va="center", fontsize=8.5, color=INK2, path_effects=halo)
+    ax1.set_ylim(0, max(b["laptop"][u]["ram"] for u in UKURAN) * 1.15)
+    ax1.set_xlim(-0.6, len(UKURAN) + 0.45)
+    ax1.set_ylabel(TEKS[lang]["ram"], fontsize=11, color=INK2)
+    ax1.set_title(TEKS[lang]["judul_ram"], fontsize=13, color=INK, pad=10,
+                  loc="left", fontweight="bold")
+    ax1.legend(handles=peg, frameon=False, fontsize=10, labelcolor=INK2, loc="upper left")
+
+    # --- panel latensi ---
+    gaya(ax2)
+    peg = batang(ax2, "lat", lambda v: f"{v:.1f} s")
+    if any(b["hp"][u]["token3"] for u in UKURAN):
+        peg.append(mpatches.Patch(facecolor=HP, hatch="////", edgecolor=SURFACE,
+                                  linewidth=0, label=TEKS[lang]["token3"]))
+    ax2.set_ylim(0, max(b["hp"][u]["lat"] for u in UKURAN) * 1.15)
+    ax2.set_ylabel(TEKS[lang]["lat"], fontsize=11, color=INK2)
+    ax2.set_title(TEKS[lang]["judul_lat"], fontsize=13, color=INK, pad=10,
+                  loc="left", fontweight="bold")
+    ax2.legend(handles=peg, frameon=False, fontsize=10, labelcolor=INK2, loc="upper left")
+
+    if lang == "id":
+        fig.suptitle("Deploy offline: memori muat, kecepatan yang menyaring (Q4_K_M, n = 12 pertanyaan)",
+                     fontsize=14, color=INK, x=0.008, ha="left", fontweight="bold")
+        fig.text(0.008, 0.015,
+                 "Garis putus-putus = memori yang diasumsikan tersedia untuk satu aplikasi "
+                 "(55% RAM total). Puncak RAM di HP 23–37% lebih rendah daripada laptop.",
+                 fontsize=9.5, color=INK2)
+        fig.tight_layout(rect=[0, 0.05, 1, 0.95])
+    else:
+        fig.tight_layout()
+
+    p = OUT[lang] / "fig_p6_rq3.png"
+    fig.savefig(p, dpi=200, facecolor=SURFACE)
+    plt.close(fig)
+    return p
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--lang", choices=["id", "en"], default="id")
     lang = ap.parse_args().lang
     OUT[lang].mkdir(parents=True, exist_ok=True)
-    metrik, t2 = muat_metrik(), muat_tier2()
-    for p in (fig_rq1_rq2(metrik, lang), fig_tier2(t2, lang)):
+    metrik, t2, bench = muat_metrik(), muat_tier2(), muat_bench()
+    for p in (fig_rq1_rq2(metrik, lang), fig_tier2(t2, lang), fig_rq3(bench, lang)):
         print("tersimpan:", p.relative_to(ROOT), f"({p.stat().st_size / 1e3:.0f} KB)")
 
 
