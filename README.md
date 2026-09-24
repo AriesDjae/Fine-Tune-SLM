@@ -2,7 +2,7 @@
 
 Studi **scaling satu keluarga**: `Qwen3.5` ukuran **0.8B / 2B / 4B**, masing-masing dibandingkan
 dengan dirinya sendiri — **baseline (pra-latih)** vs **fine-tuned (LoRA bf16)** pada QnA
-pasien–dokter berbahasa Indonesia. Target luaran: jurnal Scopus Q4 + preprint arXiv.
+pasien–dokter berbahasa Indonesia. Target luaran: jurnal SINTA 2 + preprint arXiv.
 
 **Sasaran deploy = HP milik masyarakat umum di wilayah tanpa jaringan**, bukan fasilitas
 kesehatan. Tidak ada tenaga kesehatan yang menyaring keluaran model, jadi sistem diposisikan
@@ -162,7 +162,7 @@ verbatim, aturannya sama dengan `Data/`).
 1. **RQ3 — benchmark on-device.** Gratis, dampak terbesar, dan naskah belum menjawab
    pertanyaannya sendiri. `llama-cpp-python` sudah terpasang; `benchmark_ondevice.py` perlu
    ditulis ulang untuk tiga ukuran Qwen, idealnya diulang di HP 3–4 GB lewat Termux.
-2. **Penulisan naskah** — faktor tunggal terbesar di tier Q4.
+2. **Penulisan naskah** — faktor tunggal terbesar untuk diterima.
 3. **Evaluasi dokter (Tier 3)** n=10–20 lewat arena, plus 400 baris anotasi red-flag.
 4. Penilai kedua lintas-galur (butuh OpenRouter/Anthropic berbayar; Gemini tier gratis tidak
    layak, 20 permintaan/hari).
