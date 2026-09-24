@@ -36,7 +36,9 @@ import matplotlib.pyplot as plt
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 RES = ROOT / "results"
-OUT = {"id": RES / "figures", "en": ROOT / "artikel" / "figures"}
+# "skripsi" = teks Indonesia tanpa judul/catatan di dalam gambar (keterangan ada di caption LaTeX).
+OUT = {"id": RES / "figures", "en": ROOT / "artikel" / "figures",
+       "skripsi": ROOT / "skripsi" / "latex" / "gambar"}
 
 TEKS = {
     "id": {
@@ -195,8 +197,8 @@ def fig_rq1_rq2(metrik: dict, lang: str) -> pathlib.Path:
         fig.suptitle("Mutu jawaban: fine-tuning menaikkan skor di ketiga ukuran (n = 2.998)",
                      fontsize=14.5, color=INK, x=0.008, ha="left", fontweight="bold")
         fig.text(0.008, 0.015,
-                 "Ketiga model fine-tuned melampaui plafon kesepakatan antar-dokter "
-                 "(n = 908 pasangan) — metrik overlap sudah jenuh untuk tugas ini.",
+                 "Model fine-tuned mencapai plafon kesepakatan antar-dokter (n = 1.093 pasangan); "
+                 "hanya 4B yang melampauinya pada token-F1.",
                  fontsize=9.5, color=INK2)
         fig.tight_layout(rect=[0, 0.05, 1, 0.93])
     else:
@@ -346,8 +348,10 @@ def fig_rq3(b: dict, lang: str) -> pathlib.Path:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--lang", choices=["id", "en"], default="id")
+    ap.add_argument("--lang", choices=["id", "en", "skripsi"], default="id")
     lang = ap.parse_args().lang
+    if lang == "skripsi":
+        TEKS["skripsi"] = TEKS["id"]
     OUT[lang].mkdir(parents=True, exist_ok=True)
     metrik, t2, bench = muat_metrik(), muat_tier2(), muat_bench()
     for p in (fig_rq1_rq2(metrik, lang), fig_tier2(t2, lang), fig_rq3(bench, lang)):
