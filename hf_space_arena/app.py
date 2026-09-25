@@ -524,6 +524,10 @@ def batal(id: str):
     return {"ok": True}
 
 
+# Sama dengan POLA_EMAIL di public/index.html — keduanya harus berubah bersamaan.
+POLA_EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
 class Penilaian(BaseModel):
     id_sesi: str
     penilai: str
@@ -535,7 +539,8 @@ class Penilaian(BaseModel):
     terpotong: list[str] = []
     detik: dict[str, float | None] = {}
     token: dict[str, int | None] = {}
-    catatan: str = ""
+    email: str = ""
+    saran: str = ""
     sistem: dict = {}
     peristiwa: list[dict] = []
 
@@ -550,6 +555,15 @@ def simpan(p: Penilaian, request: Request):
                             status_code=503)
     if not (p.penilai or "").strip():
         return JSONResponse({"galat": "Isi dulu nama penilai."}, status_code=400)
+    email = (p.email or "").strip()
+    if not email:
+        return JSONResponse({"galat": "Isi dulu email Anda."}, status_code=400)
+    if not POLA_EMAIL.match(email):
+        return JSONResponse({"galat": "Format email belum benar — contoh: andi@contoh.com."},
+                            status_code=400)
+    saran = (p.saran or "").strip()
+    if len(re.findall(r"[^\W_]", saran)) < 3:
+        return JSONResponse({"galat": "Isi dulu saran Anda."}, status_code=400)
 
     # Validasi diulang di server. Yang di browser hanya kenyamanan; ini yang menentukan,
     # karena tanpa ini satu permintaan buatan tangan bisa menyisipkan baris tanpa skor.
@@ -581,7 +595,10 @@ def simpan(p: Penilaian, request: Request):
         "detik": p.detik,
         "token": p.token,
         "urutan_tampil": p.urutan,     # untuk memeriksa efek posisi saat analisis
-        "catatan": (p.catatan or "").strip(),
+        # Email hanya di sini (dataset privat) — tidak di pesan commit, tidak di log sesi.
+        # Baris sebelum 2026-09-25 memakai kunci `catatan` (opsional) dan tanpa email.
+        "email": email,
+        "saran": saran,
         "sistem": {"system_prompt": SYSTEM_PROMPT,
                    "max_tokens": PARAMS_GENERASI["max_tokens"],
                    "temperature": PARAMS_GENERASI["temperature"],
