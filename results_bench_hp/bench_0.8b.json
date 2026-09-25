@@ -1,6 +1,6 @@
 {
- "CATATAN_SALINAN": "Ringkasan disalin dari HP (Termux) 2026-09-20; array 'jawaban' sengaja dibuang karena memuat teks pasien verbatim. Berkas utuh ada di HP: ~/bench/results_bench_hp/.",
- "PROTOKOL": "Run ini memakai pemblokir 3-gram (no_repeat_ngram_size=3), BUKAN dry_plus — skrip di HP masih versi commit 8b20c76. Puncak RAM tidak terpengaruh; latensi sedikit lebih rendah daripada bila memakai DRY+.",
+ "CATATAN_SALINAN": "Ringkasan disalin dari HP (Termux) 2026-09-25; array 'jawaban' sengaja dibuang karena memuat teks pasien verbatim. Berkas utuh ada di HP: ~/bench/results_bench_hp/ dan ~/storage/downloads/results_bench_hp/.",
+ "PROTOKOL": "dry_plus — sama dengan laptop dan 4B. Menggantikan run 2026-09-20 yang memakai pemblokir 3-gram (0.8B: 32,57 s, 241 token; 2B: 82,29 s, 248 token).",
  "label": "0.8b",
  "gguf": "Qwen3.5-0.8B.Q4_K_M.gguf",
  "kuantisasi": "Q4_K_M",
@@ -12,36 +12,56 @@
   "cpu": "aarch64",
   "threads": 4,
   "ram_total_GB": 7.8,
-  "ram_tersedia_saat_mulai_GB": 3.48,
+  "ram_tersedia_saat_mulai_GB": 2.93,
   "os": "Linux 4.14.186-g73b1500db6a0",
-  "perangkat_nyata": "Xiaomi POCO X3 GT (21061110AG), Android 13 (API 33), MediaTek Dimensity 1100 (MT6891)"
+  "CATATAN": "angka dari mesin ini PROKSI; ulangi di HP nyata via Termux"
  },
  "ukuran_berkas_GB": 0.542,
  "ram_GB": {
-  "dasar": 0.047,
-  "setelah_muat": 0.68,
-  "puncak_muat": 0.679,
-  "puncak_infer": 0.758,
+  "dasar": 0.048,
+  "setelah_muat": 0.681,
+  "puncak_muat": 0.68,
+  "puncak_infer": 0.747,
   "bobot_saja": 0.633
  },
  "waktu": {
-  "muat_s": 1.49,
-  "latensi_s_mean": 32.57,
-  "latensi_s_std": 9.26,
-  "tok_per_s_mean": 7.62,
-  "tok_per_s_std": 1.63,
-  "token_keluaran_mean": 241.2,
+  "muat_s": 1.64,
+  "latensi_s_mean": 45.56,
+  "latensi_s_std": 30.99,
+  "tok_per_s_mean": 7.98,
+  "tok_per_s_std": 2.46,
+  "token_keluaran_mean": 309.6,
   "n_queries": 12,
   "max_new_tokens": "tanpa batas",
-  "no_repeat_ngram_size": 3,
+  "decoding": "dry_plus",
   "terpotong": 0,
   "n_ctx": 1024
  },
- "redflag_overhead_ms_per_pertanyaan": 2.943,
+ "redflag_overhead_ms_per_pertanyaan": 3.651,
  "gerbang_ram": {
-  "HP 3 GB": {"ram_total_GB": 3.0, "diasumsikan_tersedia_GB": 1.65, "puncak_infer_GB": 0.76, "lolos": true},
-  "HP 4 GB": {"ram_total_GB": 4.0, "diasumsikan_tersedia_GB": 2.2, "puncak_infer_GB": 0.76, "lolos": true},
-  "HP 6 GB": {"ram_total_GB": 6.0, "diasumsikan_tersedia_GB": 3.3, "puncak_infer_GB": 0.76, "lolos": true},
-  "HP 8 GB": {"ram_total_GB": 8.0, "diasumsikan_tersedia_GB": 4.4, "puncak_infer_GB": 0.76, "lolos": true}
+  "HP 3 GB": {
+   "ram_total_GB": 3.0,
+   "diasumsikan_tersedia_GB": 1.65,
+   "puncak_infer_GB": 0.75,
+   "lolos": true
+  },
+  "HP 4 GB": {
+   "ram_total_GB": 4.0,
+   "diasumsikan_tersedia_GB": 2.2,
+   "puncak_infer_GB": 0.75,
+   "lolos": true
+  },
+  "HP 6 GB": {
+   "ram_total_GB": 6.0,
+   "diasumsikan_tersedia_GB": 3.3,
+   "puncak_infer_GB": 0.75,
+   "lolos": true
+  },
+  "HP 8 GB": {
+   "ram_total_GB": 8.0,
+   "diasumsikan_tersedia_GB": 4.4,
+   "puncak_infer_GB": 0.75,
+   "lolos": true
+  }
  }
 }

@@ -6,30 +6,29 @@ TP1A.220624.014), MediaTek Dimensity 1100 (MT6891Z/CZA), 4× Cortex-A55 @2,0 GHz
 kernel 4.14.186. Benchmark memakai `--threads 4`.
 Rincian: `spek_perangkat.txt`.
 
-## Yang sudah diukur
+## Yang sudah diukur — RQ3 SELESAI
 
-| Model | Protokol | Puncak RAM | Latensi | tok/dtk | Berkas di repo |
-|---|---|---:|---:|---:|---|
-| 0.8B | token-3 | 0,76 GB | 32,6 dtk | 7,6 | `bench_0.8b.json` |
-| 2B | token-3 | 1,50 GB | 82,3 dtk | 3,1 | `bench_2b.json` |
-| 4B | **dry_plus** | 2,99 GB | 187,0 dtk | 1,32 | `bench_4b.json` |
+Ketiga ukuran memakai protokol yang sama dengan laptop (`dry_plus`).
 
-Ketiganya **selesai tanpa dimatikan Android**, termasuk 4B. Puncak RAM di HP lebih
-rendah daripada laptop di semua ukuran, dan selisihnya MELEBAR seiring model:
-23% (0.8B), 31% (2B), 37% (4B). Akibatnya 4B LOLOS gerbang HP 6 GB, padahal
-pengukuran laptop menyatakan gagal di semua kelas. Yang menyingkirkan 4B dari
-kelas sasaran sekarang bukan cuma memori, melainkan 187 detik per jawaban.
+| Model | Protokol | Puncak RAM | Latensi | tok/dtk | Token rata-rata | Diukur |
+|---|---|---:|---:|---:|---:|---|
+| 0.8B | dry_plus | 0,75 GB | 45,6 dtk | 8,0 | 310 | 2026-09-25 |
+| 2B | dry_plus | 1,50 GB | 87,5 dtk | 3,1 | 268 | 2026-09-25 |
+| 4B | dry_plus | 2,99 GB | 187,0 dtk | 1,3 | 249 | 2026-09-20 |
 
-## Yang belum
+Ketiganya **selesai tanpa dimatikan Android**. Puncak RAM di HP lebih rendah
+daripada laptop di semua ukuran, dan selisihnya MELEBAR seiring model: 25% (0.8B),
+31% (2B), 37% (4B). 4B lolos gerbang HP 6 GB; yang menyingkirkannya dari kelas
+sasaran adalah 187 detik per jawaban.
 
-1. **Ulang 0.8B dan 2B dengan DRY+.** Keduanya memakai pemblokir 3-gram,
-   sementara laptop memakai DRY+. Puncak RAM tidak terpengaruh, tapi latensi dan
-   throughput HP jadi sedikit optimistis (di laptop DRY+ 8% lebih lambat pada 0.8B).
-   Naskah sudah menyebut ketidaksamaan ini apa adanya, jadi ini bukan penghalang
-   publikasi — hanya perapian. 4B sudah dry_plus.
-2. **Quantization gap** Q4_K_M vs 16-bit: belum diukur sama sekali.
+**Run lama 0.8B/2B (pemblokir 3-gram, 2026-09-20) sudah digantikan.** RAM-nya sama
+(0,76 / 1,50 GB). Latensi 0.8B naik 32,6 → 45,6 dtk karena jawaban DRY+ lebih panjang
+(241 → 310 token), bukan karena lebih lambat (7,6 → 8,0 tok/dtk); 2B 82,3 → 87,5 dtk.
 
-## Lanjutkan di sini
+*Quantization gap* Q4_K_M vs 16-bit juga sudah diukur (laptop, `results/quant_gap/`).
+
+## Arsip: perintah yang dipakai untuk run DRY+ 0.8B/2B
+
 
 Sisa: ulang 0.8B dan 2B dengan `--decoding dry_plus` (4B sudah). Tempel apa adanya.
 
