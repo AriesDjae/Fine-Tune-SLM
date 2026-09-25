@@ -1,0 +1,111 @@
+{
+ "protokol": {
+  "test_file": "Data/processed_id/test.jsonl",
+  "seed_subset": 42,
+  "max_new_tokens": 256,
+  "no_repeat_ngram_size": 3,
+  "greedy": true,
+  "postclean": "clean_greeting",
+  "bootstrap": 5000,
+  "q4": "GGUF Q4_K_M, llama.cpp CPU",
+  "sixteen_bit": "results/preds_p6/preds (Tingkat 1)"
+ },
+ "per_ukuran": {
+  "0.8b": {
+   "n": 400,
+   "q4_terpotong_256": 155,
+   "identik_persis": 0,
+   "token_f1": {
+    "q4": 0.2927,
+    "16bit": 0.2931,
+    "delta": -0.0003,
+    "sk95": [
+     -0.0064,
+     0.0054
+    ]
+   },
+   "rougeL": {
+    "q4": 0.1515,
+    "16bit": 0.1541,
+    "delta": -0.0026,
+    "sk95": [
+     -0.0057,
+     0.0003
+    ]
+   },
+   "bertscore": {
+    "q4": 0.692,
+    "16bit": 0.6938,
+    "delta": -0.0018,
+    "sk95": [
+     -0.004,
+     0.0002
+    ]
+   }
+  },
+  "2b": {
+   "n": 400,
+   "q4_terpotong_256": 172,
+   "identik_persis": 0,
+   "token_f1": {
+    "q4": 0.2936,
+    "16bit": 0.2936,
+    "delta": 0.0001,
+    "sk95": [
+     -0.0057,
+     0.0058
+    ]
+   },
+   "rougeL": {
+    "q4": 0.1512,
+    "16bit": 0.1511,
+    "delta": 0.0001,
+    "sk95": [
+     -0.0031,
+     0.0033
+    ]
+   },
+   "bertscore": {
+    "q4": 0.692,
+    "16bit": 0.6909,
+    "delta": 0.0011,
+    "sk95": [
+     -0.0011,
+     0.0032
+    ]
+   }
+  },
+  "4b": {
+   "n": 400,
+   "q4_terpotong_256": 213,
+   "identik_persis": 0,
+   "token_f1": {
+    "q4": 0.3148,
+    "16bit": 0.3085,
+    "delta": 0.0064,
+    "sk95": [
+     0.0007,
+     0.0119
+    ]
+   },
+   "rougeL": {
+    "q4": 0.1646,
+    "16bit": 0.1625,
+    "delta": 0.002,
+    "sk95": [
+     -0.0015,
+     0.0055
+    ]
+   },
+   "bertscore": {
+    "q4": 0.7005,
+    "16bit": 0.7003,
+    "delta": 0.0002,
+    "sk95": [
+     -0.0017,
+     0.0021
+    ]
+   }
+  }
+ }
+}
