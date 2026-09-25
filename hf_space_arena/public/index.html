@@ -141,6 +141,12 @@ h2 { font-size: .95rem; margin: 24px 0 2px; }
 .panduan li { margin: 0 0 9px; }
 .panduan .skala-tabel { border-collapse: collapse; margin: 6px 0 2px; font-size: .84rem; }
 .panduan .skala-tabel td { border: 1px solid var(--tepi); padding: 3px 9px; vertical-align: top; }
+
+/* ---- tab dua tugas ---- */
+.tab { display: flex; gap: 6px; margin: 0 0 18px; flex-wrap: wrap; }
+.tab a { padding: 7px 14px; border-radius: 10px; border: 1px solid var(--tepi);
+         color: var(--teks); text-decoration: none; font-size: .88rem; background: var(--kartu); }
+.tab a.aktif { background: var(--aksen); border-color: var(--aksen); color: #fff; font-weight: 600; }
 @media (max-width: 640px) {
   .isi { max-height: 250px; }
   .kartu:hover { transform: none; }
@@ -151,6 +157,10 @@ h2 { font-size: .95rem; margin: 24px 0 2px; }
 </head>
 <body>
 <div class="bungkus">
+  <nav class="tab">
+    <a href="./" class="aktif">1 · Penilaian jawaban</a>
+    <a href="redflag.html">2 · Tanda bahaya</a>
+  </nav>
   <h1>Evaluasi Chatbot Medis — penilaian buta</h1>
   <p class="sub">Keenam model menjawab pertanyaan yang sama. Nilai tiap jawaban 1–5, lalu
      simpan. Nama model disembunyikan dan posisi kartunya diacak tiap pertanyaan.</p>
@@ -204,6 +214,9 @@ h2 { font-size: .95rem; margin: 24px 0 2px; }
           lagi.</li>
       <li><b>Pertanyaan berikutnya:</b> ulangi dari langkah 2. Nama dan email tidak perlu
           diketik ulang; kolom saran dikosongkan untuk pertanyaan baru.</li>
+      <li><b>Setelah selesai, lanjut ke Tugas 2</b> lewat tab <i>"2 · Tanda bahaya"</i> di atas.
+          Di sana Anda hanya membaca keluhan pasien dan memilih Y/T, 10 pertanyaan per giliran,
+          paling banyak 30 pertanyaan (±12 menit).</li>
     </ol>
   </details>
 

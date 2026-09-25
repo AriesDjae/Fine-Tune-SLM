@@ -634,6 +634,196 @@ def simpan(p: Penilaian, request: Request):
             "ditandai": len(p.tidak_aman)}
 
 
+# --------------------------------------------------------------------------- #
+# Tugas 2 — anotasi tanda bahaya (red-flag) pada PERTANYAAN pasien.
+#
+# Berbeda dari penilaian jawaban di atas: di sini dokter hanya membaca keluhan pasien
+# dan memutuskan apakah perlu penanganan segera (Y/T). Hasilnya dipakai menghitung
+# recall/FPR detektor red-flag (redflag_annotate.py --score). Daftar pertanyaannya
+# (redflag_soal.json) TIDAK memuat keluaran detektor maupun strata — penilaian buta.
+#
+# Space membagikan pertanyaan per giliran kepada dokter mana pun yang datang, menurut
+# urutan di berkas. Pertanyaan ber-`target` 2 dinilai dua dokter berbeda.
+# --------------------------------------------------------------------------- #
+def _muat_soal_rf() -> dict | None:
+    """Daftar pertanyaan diambil dari dataset PRIVAT, bukan disalin ke repo Space: Space
+    ini publik, sedangkan isinya 400 keluhan pasien dari test set."""
+    if not HF_TOKEN:
+        return None
+    try:
+        from huggingface_hub import hf_hub_download
+        path = hf_hub_download(HF_DATASET_REPO, "redflag_soal.json", repo_type="dataset",
+                               token=HF_TOKEN)
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        _log(f"[redflag] daftar pertanyaan tidak bisa dimuat: {e}")
+        return None
+
+
+_RF = _muat_soal_rf()
+_RF_ID = {s["id"]: s for s in _RF["soal"]} if _RF else {}
+_RF_LABEL: dict[str, set[str]] = {}          # id -> email yang sudah menilai
+_RF_PESAN: dict[str, dict[str, float]] = {}  # id -> {email: batas waktu reservasi}
+_RF_KUNCI = threading.Lock()
+RF_PER_GILIRAN = 10
+RF_TTL_PESAN = 30 * 60
+# Waktu dokter terbatas: tiap dokter paling banyak menilai sekian pertanyaan (±12 menit).
+RF_MAKS_PER_DOKTER = int(os.environ.get("RF_MAKS_PER_DOKTER", "30"))
+
+
+def _catat_label_rf(rek: dict) -> None:
+    if rek.get("uji"):
+        return  # uji fungsional tidak boleh membuat pertanyaan dianggap sudah dinilai
+    email = rek["email"].lower()
+    for lab in rek["label"]:
+        _RF_LABEL.setdefault(lab["id"], set()).add(email)
+
+
+def _sinkron_redflag() -> int:
+    """Muat label yang sudah tersimpan di dataset, supaya Space yang baru bangun tidak
+    membagikan ulang pertanyaan yang sudah dinilai."""
+    if not (HF_TOKEN and _RF):
+        return 0
+    try:
+        from huggingface_hub import snapshot_download
+        folder = snapshot_download(HF_DATASET_REPO, repo_type="dataset", token=HF_TOKEN,
+                                   allow_patterns=["redflag/*.json"])
+        d = os.path.join(folder, "redflag")
+        n = 0
+        for nama in os.listdir(d) if os.path.isdir(d) else []:
+            with open(os.path.join(d, nama), encoding="utf-8") as f:
+                _catat_label_rf(json.load(f))
+            n += 1
+        return n
+    except Exception as e:
+        _log(f"[redflag] sinkron dari dataset gagal (tidak fatal): {e}")
+        return 0
+
+
+def _progres_rf(email: str = "") -> dict:
+    n = [len(_RF_LABEL.get(s["id"], ())) for s in _RF["soal"]]
+    saya = sum(email in v for v in _RF_LABEL.values()) if email else 0
+    return {"total": len(n), "selesai": sum(x >= 1 for x in n), "dua_dokter": sum(x >= 2 for x in n),
+            "saya": saya, "kuota": RF_MAKS_PER_DOKTER}
+
+
+@rute.get("/redflag/awal")
+def redflag_awal(request: Request):
+    tolak = _kode_salah(request)
+    if tolak is not None:
+        return tolak
+    if not _RF:
+        return JSONResponse({"galat": "Daftar pertanyaan Tugas 2 belum dipasang."}, status_code=503)
+    with _RF_KUNCI:
+        return {"kategori": _RF["kategori"], "per_giliran": RF_PER_GILIRAN, **_progres_rf()}
+
+
+@rute.get("/redflag/ambil")
+def redflag_ambil(email: str, request: Request):
+    tolak = _kode_salah(request)
+    if tolak is not None:
+        return tolak
+    email = (email or "").strip().lower()
+    if not POLA_EMAIL.match(email):
+        return JSONResponse({"galat": "Isi email yang benar dulu."}, status_code=400)
+    sekarang = time.time()
+    with _RF_KUNCI:
+        sisa_kuota = RF_MAKS_PER_DOKTER - sum(email in v for v in _RF_LABEL.values())
+        calon = []
+        for urut, s in enumerate(_RF["soal"]):
+            sudah = _RF_LABEL.get(s["id"], set())
+            if email in sudah:
+                continue
+            pesan = {e: t for e, t in _RF_PESAN.get(s["id"], {}).items()
+                     if t > sekarang and e != email}
+            # Reservasi mencegah dua dokter yang bekerja bersamaan mendapat pertanyaan
+            # yang sama; kedaluwarsa sendiri kalau dokter menutup halaman.
+            terisi = len(sudah) + len(pesan)
+            if terisi >= s["target"]:
+                continue
+            calon.append((terisi, urut, s, pesan))
+        # Yang belum dinilai siapa pun didahulukan: dengan 2 dokter semua pertanyaan
+        # dinilai sekali, baru dokter berikutnya memberi penilaian kedua.
+        calon.sort(key=lambda x: x[:2])
+        ambil = []
+        for _, _, s, pesan in calon[:max(0, min(RF_PER_GILIRAN, sisa_kuota))]:
+            pesan[email] = sekarang + RF_TTL_PESAN
+            _RF_PESAN[s["id"]] = pesan
+            ambil.append({"id": s["id"], "pertanyaan": s["pertanyaan"]})
+        return {"soal": ambil, **_progres_rf(email)}
+
+
+class LabelRF(BaseModel):
+    id: str
+    label: str
+    kategori: str = ""
+    catatan: str = ""
+
+
+class SimpanRF(BaseModel):
+    penilai: str
+    email: str
+    label: list[LabelRF]
+    uji: bool = False
+
+
+@rute.post("/redflag/simpan")
+def redflag_simpan(p: SimpanRF, request: Request):
+    tolak = _kode_salah(request)
+    if tolak is not None:
+        return tolak
+    if not HF_TOKEN:
+        return JSONResponse({"galat": "HF_TOKEN belum dipasang di Secret Space"}, status_code=503)
+    email = (p.email or "").strip().lower()
+    if not (p.penilai or "").strip():
+        return JSONResponse({"galat": "Isi dulu nama penilai."}, status_code=400)
+    if not POLA_EMAIL.match(email):
+        return JSONResponse({"galat": "Format email belum benar — contoh: andi@contoh.com."},
+                            status_code=400)
+    if not 1 <= len(p.label) <= 2 * RF_PER_GILIRAN:
+        return JSONResponse({"galat": "Tidak ada penilaian untuk disimpan."}, status_code=400)
+    ids = [x.id for x in p.label]
+    asing = [i for i in ids if i not in _RF_ID]
+    if asing or len(set(ids)) != len(ids):
+        return JSONResponse({"galat": "Daftar pertanyaan tidak dikenal — muat ulang halaman."},
+                            status_code=400)
+    kosong = [i for i, x in zip(ids, p.label) if x.label.strip().upper() not in {"Y", "T"}]
+    if kosong:
+        return JSONResponse({"galat": f"Belum dijawab Y/T: {len(kosong)} pertanyaan."},
+                            status_code=400)
+    liar = [x.kategori for x in p.label if x.kategori and x.kategori not in _RF["kategori"]]
+    if liar:
+        return JSONResponse({"galat": "Kategori tidak dikenal."}, status_code=400)
+
+    waktu = datetime.datetime.now(datetime.timezone.utc)
+    rek = {
+        "waktu_utc": waktu.isoformat(timespec="seconds"),
+        "penilai": p.penilai.strip(),
+        "email": email,
+        "uji": bool(p.uji),
+        "label": [{"id": x.id, "label": x.label.strip().upper(),
+                   "kategori": x.kategori if x.label.strip().upper() == "Y" else "",
+                   "catatan": x.catatan.strip()} for x in p.label],
+    }
+    nama = f"rf_{waktu.strftime('%Y%m%dT%H%M%S')}_{uuid.uuid4().hex[:8]}.json"
+    try:
+        from huggingface_hub import HfApi
+        HfApi(token=HF_TOKEN).upload_file(
+            path_or_fileobj=json.dumps(rek, ensure_ascii=False, indent=1).encode("utf-8"),
+            path_in_repo=f"redflag/{nama}", repo_id=HF_DATASET_REPO, repo_type="dataset",
+            commit_message=f"tanda bahaya {p.penilai.strip()} ({len(p.label)} pertanyaan)")
+    except Exception as e:
+        return JSONResponse({"galat": f"gagal menyimpan ke HF Dataset: {type(e).__name__}: {e}"},
+                            status_code=502)
+    with _RF_KUNCI:
+        _catat_label_rf(rek)
+        for i in ids:
+            _RF_PESAN.get(i, {}).pop(email, None)
+        prog = _progres_rf(email)
+    return {"ok": True, "berkas": nama, "waktu": waktu.strftime("%H:%M"), **prog}
+
+
 # Didaftarkan dua kali supaya halaman yang sama bisa dipakai apa adanya, baik saat
 # di-serve dari Space ini maupun saat diletakkan di belakang proxy yang memangkas /api.
 app.include_router(rute, prefix="/api")
@@ -659,6 +849,7 @@ def _dukungan_gpu() -> bool | None:
 
 
 _N_BANK = _sinkron_bank_dari_dataset()
+_N_RF = _sinkron_redflag()
 _GPU_OK = _dukungan_gpu()
 if GPU_LAYERS and _GPU_OK is False:
     _log("[arena] ⚠ GPU_LAYERS>0 tetapi llama-cpp-python TANPA dukungan GPU — "
@@ -668,4 +859,5 @@ if not GPU_LAYERS and _GPU_OK:
          "lapisan tetap di CPU.")
 _log(f"[arena] versi protokol {VERSI} | bank {DIR_BANK} ({_N_BANK} berkas) "
      f"| gpu_layers={GPU_LAYERS} (dukungan GPU: {_GPU_OK}) | maks dimuat {MAKS_DIMUAT} "
-     f"| kode akses {'AKTIF' if KODE_AKSES else 'MATI'}")
+     f"| kode akses {'AKTIF' if KODE_AKSES else 'MATI'} "
+     f"| tanda bahaya {len(_RF_ID)} soal, {_N_RF} berkas label")

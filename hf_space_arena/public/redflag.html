@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Tanda Bahaya — Tugas 2</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%234f46e5'/><path d='M13 6h6v7h7v6h-7v7h-6v-7H6v-6h7z' fill='%23fff'/></svg>">
+<style>
+/* Token warna sama dengan index.html supaya kedua tugas terasa satu aplikasi. */
+:root {
+  --tepi: #e3e6ea;  --latar: #f7f8fa;  --kartu: #ffffff;  --teks: #1f2328;
+  --lembut: #eef2ff; --aksen: #4f46e5; --hijau: #16a34a;  --merah: #b91c1c;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tepi: #2b3038; --latar: #0f1216; --kartu: #171b21; --teks: #e6e9ee;
+    --lembut: #1e223a; --aksen: #8b8cf7; --hijau: #4ade80; --merah: #fca5a5;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 22px 16px 60px; background: var(--latar); color: var(--teks);
+  font: 15px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.bungkus { max-width: 900px; margin: 0 auto; }
+h1 { font-size: 1.25rem; margin: 0 0 6px; }
+h2 { font-size: .95rem; margin: 22px 0 6px; }
+p.sub { margin: 0 0 14px; opacity: .75; font-size: .88rem; }
+.tab { display: flex; gap: 6px; margin: 0 0 18px; flex-wrap: wrap; }
+.tab a { padding: 7px 14px; border-radius: 10px; border: 1px solid var(--tepi);
+         color: var(--teks); text-decoration: none; font-size: .88rem; background: var(--kartu); }
+.tab a.aktif { background: var(--aksen); border-color: var(--aksen); color: #fff; font-weight: 600; }
+.panduan { border: 1px solid var(--tepi); border-radius: 12px; background: var(--kartu);
+           padding: 4px 16px; margin: 0 0 16px; font-size: .88rem; }
+.panduan summary { cursor: pointer; font-weight: 650; padding: 8px 0; }
+.panduan ol { margin: 4px 0 12px; padding-left: 22px; }
+.panduan li { margin: 0 0 8px; }
+.spanduk { border-left: 3px solid var(--aksen); background: var(--kartu);
+           padding: 9px 13px; border-radius: 0 9px 9px 0; font-size: .84rem; margin: 0 0 16px; }
+.spanduk[hidden] { display: none; }
+input[type=text], input[type=email], select {
+  width: 100%; padding: 9px 11px; border: 1px solid var(--tepi); border-radius: 10px;
+  background: var(--kartu); color: var(--teks); font: inherit;
+}
+.identitas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.medan { display: flex; flex-direction: column; gap: 4px; font-size: .84rem; font-weight: 600; }
+.medan.salah input { border-color: var(--merah); }
+.wajib { color: var(--merah); }
+button {
+  padding: 10px 18px; border: 0; border-radius: 10px; background: var(--aksen);
+  color: #fff; font: inherit; font-weight: 600; cursor: pointer;
+}
+button:disabled { opacity: .45; cursor: not-allowed; }
+.baris-aksi { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 14px 0; }
+.bilah { height: 6px; border-radius: 99px; overflow: hidden; background: var(--tepi); margin: 6px 0 4px; }
+.bilah-isi { height: 100%; background: var(--hijau); width: 0; transition: width .35s ease; }
+.kecil { font-size: .8rem; opacity: .75; }
+.soal { border: 1px solid var(--tepi); border-radius: 14px; background: var(--kartu);
+        padding: 12px 16px; margin: 0 0 12px; }
+.soal.salah { border-color: var(--merah); }
+.soal .nomor { font-size: .75rem; font-weight: 650; opacity: .6; margin-bottom: 4px; }
+.soal .teks { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .92rem; margin-bottom: 10px; }
+.pilih { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.pilih label { border: 1px solid var(--tepi); border-radius: 9px; padding: 6px 12px;
+               cursor: pointer; font-size: .86rem; }
+.pilih input { display: none; }
+.pilih label:has(input[value=Y]:checked) { background: #fde8e8; border-color: var(--merah); color: #7f1d1d; font-weight: 650; }
+.pilih label:has(input[value=T]:checked) { background: var(--lembut); border-color: var(--aksen); font-weight: 650; }
+@media (prefers-color-scheme: dark) {
+  .pilih label:has(input[value=Y]:checked) { background: #3b1414; color: #fecaca; }
+}
+.tambahan { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; }
+.tambahan[hidden] { display: none; }
+#pesan { font-size: .88rem; }
+#pesan.ok { color: var(--hijau); }
+#pesan.buruk { color: var(--merah); }
+@media (max-width: 640px) { .tambahan { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="bungkus">
+  <nav class="tab">
+    <a href="./">1 · Penilaian jawaban</a>
+    <a href="redflag.html" class="aktif">2 · Tanda bahaya</a>
+  </nav>
+
+  <h1>Tugas 2 — Tanda bahaya pada keluhan pasien</h1>
+  <p class="sub">Di sini Anda <b>tidak</b> menilai jawaban chatbot. Anda hanya membaca keluhan
+     pasien dan memutuskan apakah keluhan itu perlu penanganan segera.</p>
+  <div class="spanduk" id="spanduk" hidden></div>
+
+  <details class="panduan" open>
+    <summary>📖 Panduan Tugas 2 (±1 menit)</summary>
+    <ol>
+      <li>Isi nama dan email (sama seperti Tugas 1), lalu tekan <b>"Ambil 10 pertanyaan"</b>.</li>
+      <li>Untuk setiap keluhan, pilih <b>Y</b> bila pasien perlu penanganan segera (rujuk atau
+          IGD hari itu juga), atau <b>T</b> bila cukup dijawab sebagai informasi kesehatan biasa.
+          Nilai berdasarkan teks yang tertulis saja. Kalau informasinya kurang tetapi
+          kemungkinan gawatnya nyata, pilih <b>Y</b>.</li>
+      <li>Pertanyaan pengetahuan umum ("apa penyebab stroke?") dan kejadian lama yang sudah
+          tertangani dinilai <b>T</b>, kecuali keluhannya masih berlangsung.</li>
+      <li>Bila memilih Y, Anda boleh memilih kategorinya. Kolom catatan juga boleh dikosongkan.</li>
+      <li>Tekan <b>"Simpan 10 penilaian"</b>. Setelah muncul tulisan hijau, 10 pertanyaan
+          berikutnya langsung muncul. Setiap dokter paling banyak menilai <b>30 pertanyaan
+          (±12 menit)</b>, dan <b>Anda boleh berhenti kapan saja</b>; yang sudah disimpan
+          tetap terpakai. Jawaban yang belum disimpan akan hilang bila halaman ditutup.</li>
+    </ol>
+  </details>
+
+  <h2>Identitas penilai <span class="kecil" style="font-weight:400">— wajib diisi</span></h2>
+  <div class="identitas">
+    <label class="medan" id="medan-penilai"><span>Nama penilai <span class="wajib">*</span></span>
+      <input type="text" id="penilai" autocomplete="name" placeholder="mis. dr. Andi Pratama"></label>
+    <label class="medan" id="medan-email"><span>Email <span class="wajib">*</span></span>
+      <input type="email" id="email" autocomplete="email" inputmode="email" placeholder="mis. andi@contoh.com"></label>
+  </div>
+
+  <div style="margin-top:14px">
+    <div class="kecil" id="teks-progres">Memuat…</div>
+    <div class="bilah"><div class="bilah-isi" id="bilah"></div></div>
+  </div>
+
+  <div class="baris-aksi">
+    <button id="ambil">Ambil 10 pertanyaan</button>
+  </div>
+
+  <div id="daftar"></div>
+
+  <div class="baris-aksi">
+    <button id="simpan" hidden>Simpan 10 penilaian</button>
+    <span id="pesan"></span>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const POLA_EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const UJI = new URLSearchParams(location.search).get("uji") === "1";
+let KATEGORI = {}, soal = [];
+
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// Kode akses & identitas dipakai bersama dengan Tugas 1 (origin yang sama).
+function kodeAkses() { try { return sessionStorage.getItem("kode_akses") || ""; } catch (e) { return ""; } }
+function mintaKode(pesan) {
+  const k = window.prompt(pesan || "Masukkan kode akses sesi penilaian:");
+  if (k) { try { sessionStorage.setItem("kode_akses", k.trim()); } catch (e) {} }
+  return !!k;
+}
+function ingatIdentitas(nama, email) {
+  try { localStorage.setItem("penilai", nama); localStorage.setItem("email", email); } catch (e) {}
+}
+function pulihkanIdentitas() {
+  try {
+    $("penilai").value = localStorage.getItem("penilai") || "";
+    $("email").value = localStorage.getItem("email") || "";
+  } catch (e) {}
+}
+
+async function ambilJson(url, opsi) {
+  const o = Object.assign({}, opsi);
+  o.headers = Object.assign({}, o.headers, { "X-Kode-Akses": kodeAkses() });
+  let r = await fetch(url, o);
+  if (r.status === 401 && mintaKode("Kode akses salah atau belum diisi. Masukkan kode:")) {
+    o.headers["X-Kode-Akses"] = kodeAkses();
+    r = await fetch(url, o);
+  }
+  let data = {};
+  try { data = await r.json(); } catch (e) {}
+  if (!r.ok) throw new Error(data.galat || `HTTP ${r.status}`);
+  return data;
+}
+
+function tampilProgres(p) {
+  // Bilah = kuota Anda sendiri; itulah yang perlu diketahui dokter, bukan angka tim.
+  const adaEmail = !!$("email").value.trim();
+  const persen = adaEmail && p.kuota ? Math.min(100, Math.round((p.saya / p.kuota) * 100)) : 0;
+  $("bilah").style.width = persen + "%";
+  let t = adaEmail ? `Anda: ${p.saya} dari ${p.kuota} pertanyaan. ` : "";
+  t += `Seluruh tim: ${p.selesai} dari ${p.total} pertanyaan sudah dinilai.`;
+  $("teks-progres").textContent = t;
+}
+
+function pesan(teks, kelas) { $("pesan").textContent = teks; $("pesan").className = kelas || ""; }
+
+function identitas() {
+  const nama = $("penilai").value.trim(), email = $("email").value.trim().toLowerCase();
+  for (const m of ["penilai", "email"]) $("medan-" + m).classList.remove("salah");
+  if (!nama) { $("medan-penilai").classList.add("salah"); $("penilai").focus(); return null; }
+  if (!POLA_EMAIL.test(email)) { $("medan-email").classList.add("salah"); $("email").focus(); return null; }
+  return { nama, email };
+}
+
+function gambar() {
+  $("daftar").innerHTML = soal.map((s, n) => `
+    <div class="soal" data-id="${esc(s.id)}">
+      <div class="nomor">Pertanyaan ${n + 1} dari ${soal.length}</div>
+      <div class="teks">${esc(s.pertanyaan)}</div>
+      <div class="pilih">
+        <label><input type="radio" name="p-${n}" value="Y"> Y — perlu penanganan segera</label>
+        <label><input type="radio" name="p-${n}" value="T"> T — tidak</label>
+      </div>
+      <div class="tambahan" hidden>
+        <select><option value="">Kategori (boleh dikosongkan)</option>${
+          Object.entries(KATEGORI).map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join("")}</select>
+        <input type="text" placeholder="Catatan (boleh dikosongkan)">
+      </div>
+    </div>`).join("");
+  for (const kartu of $("daftar").querySelectorAll(".soal")) {
+    kartu.addEventListener("change", () => {
+      const y = kartu.querySelector("input[value=Y]").checked;
+      kartu.querySelector(".tambahan").hidden = !y;
+      kartu.classList.remove("salah");
+    });
+  }
+  $("simpan").hidden = !soal.length;
+  $("simpan").textContent = `Simpan ${soal.length} penilaian`;
+}
+
+async function ambil() {
+  const id = identitas();
+  if (!id) return pesan("⚠ Isi nama dan email yang benar dulu.", "buruk");
+  ingatIdentitas(id.nama, id.email);
+  $("ambil").disabled = true;
+  pesan("Mengambil pertanyaan…");
+  try {
+    const r = await ambilJson("/api/redflag/ambil?email=" + encodeURIComponent(id.email));
+    soal = r.soal;
+    tampilProgres(r);
+    gambar();
+    if (!soal.length) pesan(r.saya >= r.kuota
+      ? `✓ Kuota Anda (${r.kuota} pertanyaan) sudah selesai. Terima kasih banyak!`
+      : "✓ Tidak ada pertanyaan tersisa untuk Anda. Terima kasih!", "ok");
+    else { pesan(""); $("daftar").scrollIntoView({ behavior: "smooth", block: "start" }); }
+  } catch (e) {
+    pesan("❌ " + e.message, "buruk");
+  } finally {
+    $("ambil").disabled = false;
+  }
+}
+
+async function simpan() {
+  const id = identitas();
+  if (!id) return pesan("⚠ Isi nama dan email yang benar dulu.", "buruk");
+  const label = [], belum = [];
+  for (const kartu of $("daftar").querySelectorAll(".soal")) {
+    const dipilih = kartu.querySelector("input:checked");
+    if (!dipilih) { belum.push(kartu); kartu.classList.add("salah"); continue; }
+    label.push({ id: kartu.dataset.id, label: dipilih.value,
+                 kategori: kartu.querySelector("select").value,
+                 catatan: kartu.querySelector("input[type=text]").value.trim() });
+  }
+  if (belum.length) {
+    belum[0].scrollIntoView({ behavior: "smooth", block: "center" });
+    return pesan(`⚠ Masih ada ${belum.length} pertanyaan yang belum dijawab Y/T (ditandai merah).`, "buruk");
+  }
+  $("simpan").disabled = true;
+  pesan("Menyimpan…");
+  try {
+    const r = await ambilJson("/api/redflag/simpan", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ penilai: id.nama, email: id.email, label, uji: UJI }),
+    });
+    tampilProgres(r);
+    await ambil();
+    pesan(`✓ Tersimpan ${r.waktu} UTC${UJI ? " (MODE UJI)" : ""}. ` +
+          (soal.length ? `Ini ${soal.length} pertanyaan berikutnya — boleh berhenti kapan saja.` :
+                         "Kuota Anda sudah selesai. Terima kasih banyak!"), "ok");
+  } catch (e) {
+    pesan("❌ " + e.message, "buruk");
+  } finally {
+    $("simpan").disabled = false;
+  }
+}
+
+(async function awal() {
+  pulihkanIdentitas();
+  if (UJI) { $("spanduk").hidden = false; $("spanduk").textContent = "🧪 Mode uji — penilaian ditandai uji dan tidak dihitung."; }
+  try {
+    const info = await ambilJson("/api/redflag/awal");
+    KATEGORI = info.kategori;
+    tampilProgres(info);
+  } catch (e) {
+    $("spanduk").hidden = false;
+    $("spanduk").textContent = "🔌 Server tidak menjawab — " + e.message;
+    $("ambil").disabled = true;
+  }
+})();
+$("ambil").addEventListener("click", ambil);
+$("simpan").addEventListener("click", simpan);
+</script>
+</body>
+</html>
