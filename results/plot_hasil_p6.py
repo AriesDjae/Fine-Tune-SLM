@@ -30,6 +30,7 @@ import pathlib
 import matplotlib
 
 matplotlib.use("Agg")
+import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 import matplotlib.patheffects as pe
 import matplotlib.pyplot as plt
@@ -89,6 +90,11 @@ GRID = "#e3e2de"
 UKURAN = ["0.8b", "2b", "4b"]
 LABEL_UKURAN = ["0.8B", "2B", "4B"]
 
+# Naskah JUTIF: gambar dicetak selebar teks (~6.5 in). Kanvas lebar 12-16 in membuat
+# huruf 9.5 pt tercetak ~4 pt (checklist JUTIF: gambar harus terbaca). Versi "en"
+# memakai kanvas mendekati ukuran cetak; versi skripsi ("id") tidak diubah.
+KANVAS_EN = {"rq1": (8.4, 3.7), "tier2": (5.6, 3.5), "rq3": (8.0, 3.6)}
+
 # Plafon kesepakatan antar-dokter. Dihitung ulang oleh plafon_manusia.py pada 1093
 # pasangan jawaban dokter berbeda (satu pasangan per pertanyaan, jawaban identik
 # dibuang) -> results/plafon_manusia.json. Angka lama 0,285/0,145 berasal dari
@@ -146,8 +152,8 @@ def fig_rq1_rq2(metrik: dict, lang: str) -> pathlib.Path:
     if "bertscore" in metrik[UKURAN[0]]["finetuned"]:
         panel.append(("bertscore", "BERTScore"))
 
-    fig, axes = plt.subplots(1, len(panel), figsize=(5.5 * len(panel), 4.8),
-                             facecolor=SURFACE)
+    ukuran = KANVAS_EN["rq1"] if lang == "en" else (5.5 * len(panel), 4.8)
+    fig, axes = plt.subplots(1, len(panel), figsize=ukuran, facecolor=SURFACE)
     x = range(len(UKURAN))
     lebar = 0.36
 
@@ -169,7 +175,8 @@ def fig_rq1_rq2(metrik: dict, lang: str) -> pathlib.Path:
             for r in batang:
                 ax.text(r.get_x() + r.get_width() / 2, r.get_height() + 0.004,
                         f"{r.get_height():.3f}", ha="center", va="bottom",
-                        fontsize=9.5, color=INK2, path_effects=halo, zorder=4)
+                        fontsize=8 if lang == "en" else 9.5, color=INK2,
+                        path_effects=halo, zorder=4)
 
         # plafon manusia = garis acuan, bukan seri -> abu-abu, putus-putus.
         # Keterangannya masuk LEGENDA, bukan teks melayang: teks inline bertabrakan
@@ -187,9 +194,12 @@ def fig_rq1_rq2(metrik: dict, lang: str) -> pathlib.Path:
         ax.set_xticks(list(x))
         ax.set_xticklabels(LABEL_UKURAN)
         ax.set_title(judul, fontsize=13, color=INK, pad=10, loc="left", fontweight="bold")
-        ax.set_ylim(0, batas_atas * 1.52)
-        ax.legend(handles=pegangan, frameon=False, fontsize=10,
-                  labelcolor=INK2, loc="upper left", handlelength=1.8)
+        if lang == "en":
+            ax.set_ylim(0, batas_atas * 1.18)
+        else:
+            ax.set_ylim(0, batas_atas * 1.52)
+            ax.legend(handles=pegangan, frameon=False, fontsize=10,
+                      labelcolor=INK2, loc="upper left", handlelength=1.8)
 
     axes[0].set_ylabel(TEKS[lang]["skor"], fontsize=11, color=INK2)
 
@@ -202,17 +212,22 @@ def fig_rq1_rq2(metrik: dict, lang: str) -> pathlib.Path:
                  fontsize=9.5, color=INK2)
         fig.tight_layout(rect=[0, 0.05, 1, 0.93])
     else:
-        fig.tight_layout()
+        garis = mlines.Line2D([], [], color=INK2, linewidth=1.4, linestyle=(0, (5, 3)),
+                              label="Inter-physician agreement")
+        fig.legend(handles=[b1, b2, garis], frameon=False, fontsize=10, labelcolor=INK2,
+                   loc="upper center", ncol=3, handlelength=1.8, bbox_to_anchor=(0.5, 1.0))
+        fig.tight_layout(rect=[0, 0, 1, 0.9])
 
     p = OUT[lang] / "fig_p6_rq1_rq2.png"
-    fig.savefig(p, dpi=200, facecolor=SURFACE)
+    fig.savefig(p, dpi=300 if lang == "en" else 200, facecolor=SURFACE)
     plt.close(fig)
     return p
 
 
 def fig_tier2(t2: dict, lang: str) -> pathlib.Path:
     """Satu seri bertanda -> warna diverging (biru naik / merah turun), tanpa legenda."""
-    fig, ax = plt.subplots(figsize=(8.2, 5.0), facecolor=SURFACE)
+    fig, ax = plt.subplots(figsize=KANVAS_EN["tier2"] if lang == "en" else (8.2, 5.0),
+                           facecolor=SURFACE)
     gaya(ax)
 
     delta = [t2[u]["ft"] - t2[u]["base"] for u in UKURAN]
@@ -251,7 +266,7 @@ def fig_tier2(t2: dict, lang: str) -> pathlib.Path:
         fig.tight_layout()
 
     p = OUT[lang] / "fig_p6_tier2_aman.png"
-    fig.savefig(p, dpi=200, facecolor=SURFACE)
+    fig.savefig(p, dpi=300 if lang == "en" else 200, facecolor=SURFACE)
     plt.close(fig)
     return p
 
@@ -278,7 +293,8 @@ def muat_bench() -> dict:
 
 def fig_rq3(b: dict, lang: str) -> pathlib.Path:
     """Dua panel, bukan dua sumbu-y: GB dan detik tidak boleh berbagi skala."""
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.5, 5.0), facecolor=SURFACE)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=KANVAS_EN["rq3"] if lang == "en" else (12.5, 5.0),
+                                   facecolor=SURFACE)
     x = range(len(UKURAN))
     lebar = 0.36
     geser = lebar / 2 + 0.012
@@ -309,13 +325,15 @@ def fig_rq3(b: dict, lang: str) -> pathlib.Path:
     for kelas, gb in sorted(anggaran.items()):
         ax1.axhline(gb, color=INK2, linewidth=1.0, linestyle=(0, (4, 3)), zorder=1)
         ax1.text(len(UKURAN) - 0.58, gb, TEKS[lang]["anggaran"].format(kelas),
-                 ha="left", va="center", fontsize=8.5, color=INK2, path_effects=halo)
+                 ha="left", va="center", fontsize=8.5, color=INK2,
+                 bbox=dict(facecolor=SURFACE, edgecolor="none", pad=0.6))
     ax1.set_ylim(0, max(b["laptop"][u]["ram"] for u in UKURAN) * 1.15)
     ax1.set_xlim(-0.6, len(UKURAN) + 0.45)
     ax1.set_ylabel(TEKS[lang]["ram"], fontsize=11, color=INK2)
     ax1.set_title(TEKS[lang]["judul_ram"], fontsize=13, color=INK, pad=10,
                   loc="left", fontweight="bold")
-    ax1.legend(handles=peg, frameon=False, fontsize=10, labelcolor=INK2, loc="upper left")
+    if lang != "en":
+        ax1.legend(handles=peg, frameon=False, fontsize=10, labelcolor=INK2, loc="upper left")
 
     # --- panel latensi ---
     gaya(ax2)
@@ -327,7 +345,8 @@ def fig_rq3(b: dict, lang: str) -> pathlib.Path:
     ax2.set_ylabel(TEKS[lang]["lat"], fontsize=11, color=INK2)
     ax2.set_title(TEKS[lang]["judul_lat"], fontsize=13, color=INK, pad=10,
                   loc="left", fontweight="bold")
-    ax2.legend(handles=peg, frameon=False, fontsize=10, labelcolor=INK2, loc="upper left")
+    if lang != "en":
+        ax2.legend(handles=peg, frameon=False, fontsize=10, labelcolor=INK2, loc="upper left")
 
     if lang == "id":
         fig.suptitle("Deploy offline: memori muat, kecepatan yang menyaring (Q4_K_M, n = 12 pertanyaan)",
@@ -338,10 +357,12 @@ def fig_rq3(b: dict, lang: str) -> pathlib.Path:
                  fontsize=9.5, color=INK2)
         fig.tight_layout(rect=[0, 0.05, 1, 0.95])
     else:
-        fig.tight_layout()
+        fig.legend(handles=peg, frameon=False, fontsize=10, labelcolor=INK2,
+                   loc="upper center", ncol=len(peg), bbox_to_anchor=(0.5, 1.0))
+        fig.tight_layout(rect=[0, 0, 1, 0.9])
 
     p = OUT[lang] / "fig_p6_rq3.png"
-    fig.savefig(p, dpi=200, facecolor=SURFACE)
+    fig.savefig(p, dpi=300 if lang == "en" else 200, facecolor=SURFACE)
     plt.close(fig)
     return p
 

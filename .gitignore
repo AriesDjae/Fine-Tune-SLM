@@ -124,6 +124,8 @@ results/preds_p6/preds/
 # reproduksinya ada di human_eval/bank_indeks.json (indeks saja, ter-track).
 # ===========================================================================
 human_eval/bank_pertanyaan.csv
+# Validasi Tier 3: teks pertanyaan + jawaban model (indeksnya di validasi_indeks.json).
+human_eval/validasi_soal.json
 hf_space_arena/bank/
 
 # Cache GGUF yang diunduh untuk pra-generate bank (7+ GB).
@@ -136,3 +138,15 @@ results_bench/pertanyaan_bench.json
 # Paket benchmark HP dibangun ulang dari berkas repo; isinya memuat
 # pertanyaan Alodokter verbatim, jadi jangan ikut di-commit.
 tools/bench_hp.zip
+
+# ===========================================================================
+# Naskah JUTIF: docx/pdf = keluaran artikel/ke_jutif_docx.py (bangkitkan ulang,
+# jangan di-commit); ~$*.docx = berkas kunci Word; contoh artikel = rujukan
+# pihak ketiga, bukan bagian proyek.
+# ===========================================================================
+artikel/JUTIF_naskah*.docx
+artikel/~$*
+artikel/main.pdf
+artikel/Contoh_Artikel_lolos/
+results/__pycache__/
+results/quant_gap/*.log
