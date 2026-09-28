@@ -29,9 +29,9 @@ OUT = ROOT / "artikel" / "figures"
 W, H = 6.5, 6.55                       # inci; lebar = lebar teks halaman
 FONT = "Arial"
 UK = 8.0                                # ukuran huruf (pt) — tercetak hampir 1:1
-WARNA = {"terminal": "#dbe7f5", "proses": "#ffffff", "data": "#eaf4e4",
-         "keputusan": "#fff3d1", "konektor": "#ffffff"}
-GARIS = "#1f1f1f"
+# Polos (permintaan user 2026-09-28): garis hitam, isi putih untuk semua simbol.
+WARNA = {k: "#ffffff" for k in ("terminal", "proses", "data", "keputusan", "konektor")}
+GARIS = "#000000"
 
 C1, C2 = 1.65, 4.90                     # pusat kolom kiri & kanan
 # id: (jenis, cx, cy, lebar, tinggi, teks) — koordinat inci, y dihitung dari ATAS
