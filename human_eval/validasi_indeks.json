@@ -1,0 +1,1114 @@
+{
+ "seed_tier2": 42,
+ "seed_validasi": 2026,
+ "jatah": {
+  "0.8b": 34,
+  "2b": 33,
+  "4b": 33
+ },
+ "n_ganda": 20,
+ "sumber_teks": "results/preds_p6 (sama dengan Tier 2)",
+ "referensi_ditampilkan": false,
+ "pasangan": [
+  {
+   "id": "V001",
+   "idx_test": 814,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": true
+  },
+  {
+   "id": "V002",
+   "idx_test": 449,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": true
+  },
+  {
+   "id": "V003",
+   "idx_test": 418,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": true
+  },
+  {
+   "id": "V004",
+   "idx_test": 271,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": true
+  },
+  {
+   "id": "V005",
+   "idx_test": 2050,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": true
+  },
+  {
+   "id": "V006",
+   "idx_test": 1105,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": true
+  },
+  {
+   "id": "V007",
+   "idx_test": 2364,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": true
+  },
+  {
+   "id": "V008",
+   "idx_test": 1481,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": true
+  },
+  {
+   "id": "V009",
+   "idx_test": 2209,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": true
+  },
+  {
+   "id": "V010",
+   "idx_test": 1563,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": true
+  },
+  {
+   "id": "V011",
+   "idx_test": 2940,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": true
+  },
+  {
+   "id": "V012",
+   "idx_test": 1516,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": true
+  },
+  {
+   "id": "V013",
+   "idx_test": 1731,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": true
+  },
+  {
+   "id": "V014",
+   "idx_test": 2947,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V015",
+   "idx_test": 2418,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V016",
+   "idx_test": 902,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V017",
+   "idx_test": 731,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V018",
+   "idx_test": 396,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V019",
+   "idx_test": 1083,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V020",
+   "idx_test": 1917,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V021",
+   "idx_test": 356,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V022",
+   "idx_test": 938,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V023",
+   "idx_test": 864,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V024",
+   "idx_test": 1002,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V025",
+   "idx_test": 1126,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V026",
+   "idx_test": 1138,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V027",
+   "idx_test": 2872,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V028",
+   "idx_test": 1531,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V029",
+   "idx_test": 1076,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V030",
+   "idx_test": 2251,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V031",
+   "idx_test": 2874,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V032",
+   "idx_test": 2997,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V033",
+   "idx_test": 2786,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V034",
+   "idx_test": 292,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V035",
+   "idx_test": 2196,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V036",
+   "idx_test": 2298,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V037",
+   "idx_test": 130,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V038",
+   "idx_test": 1408,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V039",
+   "idx_test": 1378,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V040",
+   "idx_test": 895,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V041",
+   "idx_test": 2472,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V042",
+   "idx_test": 322,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V043",
+   "idx_test": 676,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V044",
+   "idx_test": 1010,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V045",
+   "idx_test": 1470,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V046",
+   "idx_test": 1139,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V047",
+   "idx_test": 122,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V048",
+   "idx_test": 2044,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V049",
+   "idx_test": 26,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V050",
+   "idx_test": 515,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V051",
+   "idx_test": 1486,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V052",
+   "idx_test": 1620,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V053",
+   "idx_test": 2494,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V054",
+   "idx_test": 898,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V055",
+   "idx_test": 952,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V056",
+   "idx_test": 511,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V057",
+   "idx_test": 350,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V058",
+   "idx_test": 1881,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V059",
+   "idx_test": 419,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V060",
+   "idx_test": 1482,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V061",
+   "idx_test": 1857,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V062",
+   "idx_test": 2167,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V063",
+   "idx_test": 2804,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V064",
+   "idx_test": 858,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V065",
+   "idx_test": 2654,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V066",
+   "idx_test": 525,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V067",
+   "idx_test": 647,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V068",
+   "idx_test": 914,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V069",
+   "idx_test": 2702,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V070",
+   "idx_test": 2181,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V071",
+   "idx_test": 2233,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V072",
+   "idx_test": 655,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V073",
+   "idx_test": 2603,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V074",
+   "idx_test": 870,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V075",
+   "idx_test": 2561,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V076",
+   "idx_test": 1576,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V077",
+   "idx_test": 2988,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V078",
+   "idx_test": 700,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V079",
+   "idx_test": 2453,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V080",
+   "idx_test": 2771,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V081",
+   "idx_test": 47,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V082",
+   "idx_test": 1200,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V083",
+   "idx_test": 1078,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V084",
+   "idx_test": 2266,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V085",
+   "idx_test": 566,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V086",
+   "idx_test": 2684,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V087",
+   "idx_test": 2533,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V088",
+   "idx_test": 1092,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 2,
+   "redflag": false
+  },
+  {
+   "id": "V089",
+   "idx_test": 2281,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V090",
+   "idx_test": 1556,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V091",
+   "idx_test": 1292,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V092",
+   "idx_test": 13,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V093",
+   "idx_test": 1084,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V094",
+   "idx_test": 1096,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V095",
+   "idx_test": 1185,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V096",
+   "idx_test": 953,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V097",
+   "idx_test": 284,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V098",
+   "idx_test": 2621,
+   "ukuran": "2b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V099",
+   "idx_test": 1729,
+   "ukuran": "4b",
+   "kunci": {
+    "A": "finetuned",
+    "B": "baseline"
+   },
+   "target": 1,
+   "redflag": false
+  },
+  {
+   "id": "V100",
+   "idx_test": 1643,
+   "ukuran": "0.8b",
+   "kunci": {
+    "A": "baseline",
+    "B": "finetuned"
+   },
+   "target": 1,
+   "redflag": false
+  }
+ ]
+}

@@ -81,7 +81,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 <body>
 <div class="bungkus">
   <nav class="tab">
-    <a href="./">1 · Penilaian jawaban</a>
+    <a href="./">1 · Validasi jawaban</a>
     <a href="redflag.html" class="aktif">2 · Tanda bahaya</a>
   </nav>
 
@@ -232,7 +232,7 @@ async function ambil() {
     tampilProgres(r);
     gambar();
     if (!soal.length) pesan(r.saya >= r.kuota
-      ? `✓ Kuota Anda (${r.kuota} pertanyaan) sudah selesai. Terima kasih banyak!`
+      ? `✓ Kuota Anda (${r.kuota} pertanyaan) sudah selesai — seluruh tugas penilaian tuntas. Terima kasih banyak!`
       : "✓ Tidak ada pertanyaan tersisa untuk Anda. Terima kasih!", "ok");
     else { pesan(""); $("daftar").scrollIntoView({ behavior: "smooth", block: "start" }); }
   } catch (e) {

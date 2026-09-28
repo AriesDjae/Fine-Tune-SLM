@@ -824,6 +824,204 @@ def redflag_simpan(p: SimpanRF, request: Request):
     return {"ok": True, "berkas": nama, "waktu": waktu.strftime("%H:%M"), **prog}
 
 
+# --------------------------------------------------------------------------- #
+# Tugas 1 (utama) — validasi berpasangan Tier 3.
+#
+# Dokter menilai PERSIS pasangan yang sudah dinilai GPT-4o di Tier 2: teks jawaban yang
+# sama (preds 16-bit, batas 256 token), urutan A/B yang sama, rubrik yang sama, dan tanpa
+# referensi dokter. Hanya dengan begitu kesepakatan dokter↔GPT-4o sah dilaporkan.
+# Daftar pasangan (validasi_soal.json, disusun scripts/susun_validasi_tier3.py) TIDAK
+# memuat ukuran model maupun kunci baseline/fine-tuned — tirai dibuka saat analisis.
+# Mekanisme pembagian sama dengan Tugas 2: reservasi per giliran, `target` 2 = dua dokter.
+# --------------------------------------------------------------------------- #
+def _muat_soal_val() -> dict | None:
+    """Dari dataset PRIVAT: isinya keluhan pasien dari test set, sedangkan Space publik."""
+    if not HF_TOKEN:
+        return None
+    try:
+        from huggingface_hub import hf_hub_download
+        path = hf_hub_download(HF_DATASET_REPO, "validasi_soal.json", repo_type="dataset",
+                               token=HF_TOKEN)
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        _log(f"[validasi] daftar pasangan tidak bisa dimuat: {e}")
+        return None
+
+
+_VAL = _muat_soal_val()
+_VAL_ID = {s["id"]: s for s in _VAL["soal"]} if _VAL else {}
+_VAL_LABEL: dict[str, set[str]] = {}          # id -> email yang sudah menilai
+_VAL_PESAN: dict[str, dict[str, float]] = {}  # id -> {email: batas waktu reservasi}
+_VAL_KUNCI = threading.Lock()
+VAL_PER_GILIRAN = 5
+VAL_TTL_PESAN = 45 * 60
+# 100 pasangan + 20 ganda = 120 slot = 4 dokter × 30 (±2 menit per pasangan, ±1 jam).
+VAL_MAKS_PER_DOKTER = int(os.environ.get("VAL_MAKS_PER_DOKTER", "30"))
+PILIHAN_VAL = {"aman": {"ya", "tidak"}, "akurat": {"ya", "sebagian", "tidak"},
+               "menyesatkan": {"ya", "tidak"}}
+
+
+def _catat_label_val(rek: dict) -> None:
+    if rek.get("uji"):
+        return
+    email = rek["email"].lower()
+    for n in rek["nilai"]:
+        _VAL_LABEL.setdefault(n["id"], set()).add(email)
+
+
+def _sinkron_validasi() -> int:
+    if not (HF_TOKEN and _VAL):
+        return 0
+    try:
+        from huggingface_hub import snapshot_download
+        folder = snapshot_download(HF_DATASET_REPO, repo_type="dataset", token=HF_TOKEN,
+                                   allow_patterns=["validasi/*.json"])
+        d = os.path.join(folder, "validasi")
+        n = 0
+        for nama in os.listdir(d) if os.path.isdir(d) else []:
+            with open(os.path.join(d, nama), encoding="utf-8") as f:
+                _catat_label_val(json.load(f))
+            n += 1
+        return n
+    except Exception as e:
+        _log(f"[validasi] sinkron dari dataset gagal (tidak fatal): {e}")
+        return 0
+
+
+def _progres_val(email: str = "") -> dict:
+    n = [len(_VAL_LABEL.get(s["id"], ())) for s in _VAL["soal"]]
+    saya = sum(email in v for v in _VAL_LABEL.values()) if email else 0
+    return {"total": len(n), "selesai": sum(x >= 1 for x in n),
+            "slot_terisi": sum(min(x, s["target"]) for x, s in zip(n, _VAL["soal"])),
+            "slot_total": sum(s["target"] for s in _VAL["soal"]),
+            "saya": saya, "kuota": VAL_MAKS_PER_DOKTER}
+
+
+@rute.get("/validasi/awal")
+def validasi_awal(request: Request):
+    tolak = _kode_salah(request)
+    if tolak is not None:
+        return tolak
+    if not _VAL:
+        return JSONResponse({"galat": "Daftar pasangan validasi belum dipasang."}, status_code=503)
+    with _VAL_KUNCI:
+        return {"per_giliran": VAL_PER_GILIRAN, **_progres_val()}
+
+
+@rute.get("/validasi/ambil")
+def validasi_ambil(email: str, request: Request):
+    tolak = _kode_salah(request)
+    if tolak is not None:
+        return tolak
+    if not _VAL:
+        return JSONResponse({"galat": "Daftar pasangan validasi belum dipasang."}, status_code=503)
+    email = (email or "").strip().lower()
+    if not POLA_EMAIL.match(email):
+        return JSONResponse({"galat": "Isi email yang benar dulu."}, status_code=400)
+    sekarang = time.time()
+    with _VAL_KUNCI:
+        sisa_kuota = VAL_MAKS_PER_DOKTER - sum(email in v for v in _VAL_LABEL.values())
+        calon = []
+        for urut, s in enumerate(_VAL["soal"]):
+            sudah = _VAL_LABEL.get(s["id"], set())
+            if email in sudah:
+                continue
+            pesan = {e: t for e, t in _VAL_PESAN.get(s["id"], {}).items()
+                     if t > sekarang and e != email}
+            terisi = len(sudah) + len(pesan)
+            if terisi >= s["target"]:
+                continue
+            calon.append((terisi, urut, s, pesan))
+        # Yang belum dinilai siapa pun didahulukan; penilaian kedua menyusul.
+        calon.sort(key=lambda x: x[:2])
+        ambil = []
+        for _, _, s, pesan in calon[:max(0, min(VAL_PER_GILIRAN, sisa_kuota))]:
+            pesan[email] = sekarang + VAL_TTL_PESAN
+            _VAL_PESAN[s["id"]] = pesan
+            ambil.append({"id": s["id"], "pertanyaan": s["pertanyaan"], "A": s["A"], "B": s["B"]})
+        return {"soal": ambil, **_progres_val(email)}
+
+
+class NilaiJawaban(BaseModel):
+    aman: str
+    akurat: str
+    menyesatkan: str
+
+
+class NilaiPasangan(BaseModel):
+    id: str
+    A: NilaiJawaban
+    B: NilaiJawaban
+    lebih_baik: str
+    catatan: str = ""
+
+
+class SimpanVal(BaseModel):
+    penilai: str
+    email: str
+    nilai: list[NilaiPasangan]
+    uji: bool = False
+
+
+@rute.post("/validasi/simpan")
+def validasi_simpan(p: SimpanVal, request: Request):
+    tolak = _kode_salah(request)
+    if tolak is not None:
+        return tolak
+    if not HF_TOKEN:
+        return JSONResponse({"galat": "HF_TOKEN belum dipasang di Secret Space"}, status_code=503)
+    email = (p.email or "").strip().lower()
+    if not (p.penilai or "").strip():
+        return JSONResponse({"galat": "Isi dulu nama penilai."}, status_code=400)
+    if not POLA_EMAIL.match(email):
+        return JSONResponse({"galat": "Format email belum benar — contoh: andi@contoh.com."},
+                            status_code=400)
+    if not 1 <= len(p.nilai) <= 2 * VAL_PER_GILIRAN:
+        return JSONResponse({"galat": "Tidak ada penilaian untuk disimpan."}, status_code=400)
+    ids = [x.id for x in p.nilai]
+    if any(i not in _VAL_ID for i in ids) or len(set(ids)) != len(ids):
+        return JSONResponse({"galat": "Daftar pasangan tidak dikenal — muat ulang halaman."},
+                            status_code=400)
+    # Validasi diulang di server: yang di browser hanya kenyamanan.
+    for x in p.nilai:
+        for sisi in (x.A, x.B):
+            for kolom, boleh in PILIHAN_VAL.items():
+                if getattr(sisi, kolom) not in boleh:
+                    return JSONResponse({"galat": f"Pasangan {x.id}: kolom '{kolom}' belum diisi."},
+                                        status_code=400)
+        if x.lebih_baik not in {"A", "B", "seri"}:
+            return JSONResponse({"galat": f"Pasangan {x.id}: pilih jawaban yang lebih baik."},
+                                status_code=400)
+
+    waktu = datetime.datetime.now(datetime.timezone.utc)
+    rek = {
+        "waktu_utc": waktu.isoformat(timespec="seconds"),
+        "versi": _VAL.get("versi", ""),
+        "penilai": p.penilai.strip(),
+        "email": email,
+        "uji": bool(p.uji),
+        "nilai": [{"id": x.id, "A": x.A.model_dump(), "B": x.B.model_dump(),
+                   "lebih_baik": x.lebih_baik, "catatan": x.catatan.strip()} for x in p.nilai],
+    }
+    nama = f"val_{waktu.strftime('%Y%m%dT%H%M%S')}_{uuid.uuid4().hex[:8]}.json"
+    try:
+        from huggingface_hub import HfApi
+        HfApi(token=HF_TOKEN).upload_file(
+            path_or_fileobj=json.dumps(rek, ensure_ascii=False, indent=1).encode("utf-8"),
+            path_in_repo=f"validasi/{nama}", repo_id=HF_DATASET_REPO, repo_type="dataset",
+            commit_message=f"validasi {p.penilai.strip()} ({len(p.nilai)} pasangan)")
+    except Exception as e:
+        return JSONResponse({"galat": f"gagal menyimpan ke HF Dataset: {type(e).__name__}: {e}"},
+                            status_code=502)
+    with _VAL_KUNCI:
+        _catat_label_val(rek)
+        for i in ids:
+            _VAL_PESAN.get(i, {}).pop(email, None)
+        prog = _progres_val(email)
+    return {"ok": True, "berkas": nama, "waktu": waktu.strftime("%H:%M"), **prog}
+
+
 # Didaftarkan dua kali supaya halaman yang sama bisa dipakai apa adanya, baik saat
 # di-serve dari Space ini maupun saat diletakkan di belakang proxy yang memangkas /api.
 app.include_router(rute, prefix="/api")
@@ -850,6 +1048,7 @@ def _dukungan_gpu() -> bool | None:
 
 _N_BANK = _sinkron_bank_dari_dataset()
 _N_RF = _sinkron_redflag()
+_N_VAL = _sinkron_validasi()
 _GPU_OK = _dukungan_gpu()
 if GPU_LAYERS and _GPU_OK is False:
     _log("[arena] ⚠ GPU_LAYERS>0 tetapi llama-cpp-python TANPA dukungan GPU — "
@@ -860,4 +1059,5 @@ if not GPU_LAYERS and _GPU_OK:
 _log(f"[arena] versi protokol {VERSI} | bank {DIR_BANK} ({_N_BANK} berkas) "
      f"| gpu_layers={GPU_LAYERS} (dukungan GPU: {_GPU_OK}) | maks dimuat {MAKS_DIMUAT} "
      f"| kode akses {'AKTIF' if KODE_AKSES else 'MATI'} "
-     f"| tanda bahaya {len(_RF_ID)} soal, {_N_RF} berkas label")
+     f"| tanda bahaya {len(_RF_ID)} soal, {_N_RF} berkas label "
+     f"| validasi {len(_VAL_ID)} pasangan, {_N_VAL} berkas")
