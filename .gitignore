@@ -148,5 +148,7 @@ artikel/JUTIF_naskah*.docx
 artikel/~$*
 artikel/main.pdf
 artikel/Contoh_Artikel_lolos/
+# PDF sumber sitasi (berhak cipta pihak ketiga; unduh ulang dari DOI di refs.bib)
+artikel/sumber/
 results/__pycache__/
 results/quant_gap/*.log
