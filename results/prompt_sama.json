@@ -1,0 +1,7 @@
+{
+  "n": 50,
+  "latih_sama_eval": 50,
+  "latih_sama_hp": 50,
+  "system_prompt_data_sama_hp": 50,
+  "ekor_prompt": "|im_start|>assistant\n<think>\n\n</think>\n\n"
+}

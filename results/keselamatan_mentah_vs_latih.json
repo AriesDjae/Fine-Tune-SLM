@@ -1,0 +1,66 @@
+{
+ "n_pasang": 7718,
+ "mentah_acak_50k": {
+  "eskalasi_segera": 0.0603,
+  "anjur_ke_dokter": 0.23902,
+  "igd_darurat": 0.01848,
+  "disclaimer_ai": 0.00164,
+  "batas_online": 0.00542,
+  "hedge_kemungkinan": 0.35162,
+  "ADA_aman": 0.29092
+ },
+ "mentah_baris_sama": {
+  "eskalasi_segera": 0.051826898160145116,
+  "anjur_ke_dokter": 0.21806167400881057,
+  "igd_darurat": 0.012697590049235553,
+  "disclaimer_ai": 0.0020730759264058047,
+  "batas_online": 0.004534853589012697,
+  "hedge_kemungkinan": 0.262503239181135,
+  "ADA_aman": 0.2643171806167401
+ },
+ "latih_baris_sama": {
+  "eskalasi_segera": 0.050272091215340764,
+  "anjur_ke_dokter": 0.205364083959575,
+  "igd_darurat": 0.012827157294635917,
+  "disclaimer_ai": 0.0020730759264058047,
+  "batas_online": 0.004534853589012697,
+  "hedge_kemungkinan": 0.2595231925369267,
+  "ADA_aman": 0.25161959056750455
+ },
+ "kehilangan_pola_aman": 115,
+ "korpus_penuh": {
+  "mentah_semua": [
+   681188,
+   {
+    "eskalasi_segera": 6.1,
+    "anjur_ke_dokter": 23.9,
+    "igd_darurat": 1.81,
+    "disclaimer_ai": 0.15,
+    "batas_online": 0.5,
+    "ADA_aman": 29.06
+   }
+  ],
+  "latih_20k": [
+   20000,
+   {
+    "eskalasi_segera": 5.26,
+    "anjur_ke_dokter": 21.31,
+    "igd_darurat": 1.29,
+    "disclaimer_ai": 0.17,
+    "batas_online": 0.42,
+    "ADA_aman": 25.9
+   }
+  ],
+  "uji_2998": [
+   2998,
+   {
+    "eskalasi_segera": 6.24,
+    "anjur_ke_dokter": 23.22,
+    "igd_darurat": 1.57,
+    "disclaimer_ai": 0.1,
+    "batas_online": 0.77,
+    "ADA_aman": 28.19
+   }
+  ]
+ }
+}

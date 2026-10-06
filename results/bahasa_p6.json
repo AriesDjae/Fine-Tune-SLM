@@ -1,0 +1,49 @@
+{
+  "train": {
+    "n": 20000,
+    "question_id_pct": 99.73,
+    "answer_id_pct": 100.0,
+    "question_lang": {
+      "id": 19946,
+      "tl": 30,
+      "de": 10,
+      "en": 5,
+      "lt": 3,
+      "so": 3,
+      "ro": 1,
+      "et": 1,
+      "ca": 1
+    },
+    "answer_lang": {
+      "id": 20000
+    }
+  },
+  "val": {
+    "n": 2947,
+    "question_id_pct": 99.83,
+    "answer_id_pct": 100.0,
+    "question_lang": {
+      "id": 2942,
+      "tl": 4,
+      "de": 1
+    },
+    "answer_lang": {
+      "id": 2947
+    }
+  },
+  "test": {
+    "n": 2998,
+    "question_id_pct": 99.73,
+    "answer_id_pct": 100.0,
+    "question_lang": {
+      "id": 2990,
+      "tl": 5,
+      "it": 1,
+      "et": 1,
+      "en": 1
+    },
+    "answer_lang": {
+      "id": 2998
+    }
+  }
+}

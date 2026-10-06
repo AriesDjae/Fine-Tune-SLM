@@ -57,8 +57,8 @@ SIMPUL = {
 }
 
 
-def tepi(i, sisi):
-    _, cx, cy, w, h, _ = SIMPUL[i]
+def tepi(i, sisi, simpul=None):
+    _, cx, cy, w, h, _ = (simpul or SIMPUL)[i]
     return {"atas": (cx, cy - h / 2), "bawah": (cx, cy + h / 2),
             "kiri": (cx - w / 2, cy), "kanan": (cx + w / 2, cy)}[sisi]
 
@@ -87,7 +87,8 @@ PANAH = [
 
 
 # ------------------------------------------------------------------ PNG (matplotlib)
-def gambar_png() -> pathlib.Path:
+def gambar_png(simpul=None, panah=None, W=W, H=H, UK=UK, nama="fig_p6_flowchart.png") -> pathlib.Path:
+    simpul, panah = simpul or SIMPUL, panah or PANAH
     plt.rcParams["font.family"] = FONT
     fig = plt.figure(figsize=(W, H), facecolor="white")
     ax = fig.add_axes([0, 0, 1, 1])
@@ -96,7 +97,7 @@ def gambar_png() -> pathlib.Path:
     ax.axis("off")
     lw = 0.9
 
-    for i, (jenis, cx, cy, w, h, teks) in SIMPUL.items():
+    for i, (jenis, cx, cy, w, h, teks) in simpul.items():
         x0, y0 = cx - w / 2, cy - h / 2
         warna = WARNA[jenis]
         if jenis == "terminal":
@@ -117,8 +118,8 @@ def gambar_png() -> pathlib.Path:
         ax.text(cx, cy, teks, ha="center", va="center", fontsize=UK, color=GARIS,
                 fontweight=tebal, linespacing=1.2)
 
-    for dari, sd, ke, sk, belok, label, pos, ujung in PANAH:
-        titik = [tepi(dari, sd)] + belok + [tepi(ke, sk)]
+    for dari, sd, ke, sk, belok, label, pos, ujung in panah:
+        titik = [tepi(dari, sd, simpul)] + belok + [tepi(ke, sk, simpul)]
         # Dua cabang yang bertemu di satu titik: ujung panah hanya pada ruas terakhir.
         for (x1, y1), (x2, y2) in zip(titik[:-2], titik[1:-1]):
             ax.plot([x1, x2], [y1, y2], color=GARIS, lw=lw, solid_capstyle="butt")
@@ -131,7 +132,7 @@ def gambar_png() -> pathlib.Path:
                     fontstyle="italic", bbox=dict(fc="white", ec="none", pad=0.5))
 
     OUT.mkdir(parents=True, exist_ok=True)
-    p = OUT / "fig_p6_flowchart.png"
+    p = OUT / nama
     fig.savefig(p, dpi=300, facecolor="white")
     plt.close(fig)
     return p
@@ -179,6 +180,54 @@ def tulis_drawio() -> pathlib.Path:
     return p
 
 
+# ------------------------------------------------------------------ versi satu kolom (RESTI)
+# Isi kotak SAMA dengan SIMPUL di atas, hanya baris dipatah ulang supaya muat di satu kolom
+# template RESTI (lebar kolom 7,8 cm = 3,07 inci) dan tercetak 1:1 dengan huruf 7 pt.
+W1, H1, UK1 = 3.07, 6.12, 7.0
+K1, K2 = 0.86, 2.33                     # pusat sub-kolom kiri & kanan
+SIMPUL_1KOL = {
+    "mulai": ("terminal", K1, 0.19, 0.80, 0.28, "Start"),
+    "korpus": ("data", K1, 0.66, 1.42, 0.46, "Alodokter\npatient–doctor\nQA corpus"),
+    "praproses": ("proses", K1, 1.26, 1.42, 0.54, "Preprocessing:\n12 quality filters,\nrecall audit and fixes"),
+    "split": ("data", K1, 1.90, 1.42, 0.54, "Train 20,000 /\nvalidation 2,947 /\ntest 2,998"),
+    "pilot": ("proses", K1, 2.54, 1.42, 0.54, "Pilot fine-tuning per\nsize (Qwen3.5 0.8B, 2B,\n4B; 250 steps)"),
+    "cek": ("keputusan", K1, 3.36, 1.40, 0.82, "Pilot passes\nall four\nchecks?"),
+    "latih": ("proses", K1, 4.22, 1.42, 0.66, "Full LoRA fine-tuning\n(bf16, 3 epochs, early\nstopping, best\nvalidation loss)"),
+    "ekspor": ("proses", K1, 4.98, 1.42, 0.66, "Export: merge adapters\n→ 16-bit model;\nGGUF Q4_K_M\nand Q8_0"),
+    "A1": ("konektor", K1, 5.56, 0.28, 0.28, "A"),
+    "A2": ("konektor", K2, 0.22, 0.28, 0.28, "A"),
+    "tier1": ("proses", K2, 0.86, 1.34, 0.80, "Tier 1: token-F1,\nROUGE-L, BERTScore;\ninter-physician\nagreement; ablations\n(RQ1, RQ2)"),
+    "tier2": ("proses", K2, 1.74, 1.34, 0.66, "Tier 2: blind paired\nLLM judge; red-flag\nescalation analysis\n(RQ4)"),
+    "device": ("proses", K2, 2.62, 1.34, 0.80, "On-device test:\nQ4_K_M under\nllama.cpp on a laptop\nand an Android phone\n(RQ3)"),
+    "gerbang": ("keputusan", K2, 3.62, 1.34, 0.96, "Peak RAM\nwithin the budget\nof the device\nclass?"),
+    "layak": ("proses", 1.985, 4.66, 0.64, 0.54, "Size in\nthe feasible\nset"),
+    "tidak": ("proses", 2.675, 4.66, 0.64, 0.54, "Size\nexcluded for\nthat class"),
+    "banding": ("proses", K2, 5.40, 1.34, 0.54, "Compare quality,\nsafety and device cost\nacross the three sizes"),
+    "selesai": ("terminal", K2, 5.94, 0.80, 0.28, "End"),
+}
+PANAH_1KOL = [
+    ("mulai", "bawah", "korpus", "atas", [], "", None, True),
+    ("korpus", "bawah", "praproses", "atas", [], "", None, True),
+    ("praproses", "bawah", "split", "atas", [], "", None, True),
+    ("split", "bawah", "pilot", "atas", [], "", None, True),
+    ("pilot", "bawah", "cek", "atas", [], "", None, True),
+    ("cek", "bawah", "latih", "atas", [], "Yes", (K1 + 0.13, 3.83), True),
+    ("cek", "kiri", "pilot", "kiri", [(0.06, 3.36), (0.06, 2.54)], "No", (0.10, 3.20), True),
+    ("latih", "bawah", "ekspor", "atas", [], "", None, True),
+    ("ekspor", "bawah", "A1", "atas", [], "", None, True),
+    ("A2", "bawah", "tier1", "atas", [], "", None, True),
+    ("tier1", "bawah", "tier2", "atas", [], "", None, True),
+    ("tier2", "bawah", "device", "atas", [], "", None, True),
+    ("device", "bawah", "gerbang", "atas", [], "", None, True),
+    ("gerbang", "bawah", "layak", "atas", [(K2, 4.25), (1.985, 4.25)], "Yes", (K2 - 0.20, 4.17), True),
+    ("gerbang", "kanan", "tidak", "atas", [(3.00, 4.25), (2.675, 4.25)], "No", (2.92, 3.86), True),
+    ("layak", "bawah", "banding", "atas", [(1.985, 5.03), (K2, 5.03)], "", None, True),
+    ("tidak", "bawah", "banding", "atas", [(2.675, 5.03), (K2, 5.03)], "", None, True),
+    ("banding", "bawah", "selesai", "atas", [], "", None, True),
+]
+
+
 if __name__ == "__main__":
-    for p in (gambar_png(), tulis_drawio()):
+    for p in (gambar_png(), tulis_drawio(),
+              gambar_png(SIMPUL_1KOL, PANAH_1KOL, W1, H1, UK1, "fig_p6_flowchart_1kol.png")):
         print(f"tersimpan: {p.relative_to(ROOT)} ({p.stat().st_size // 1024} KB)")

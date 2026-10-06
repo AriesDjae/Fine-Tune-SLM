@@ -1,0 +1,68 @@
+{
+ "catatan": "peran pemotongan pada penilaian Tier 2; terpotong = tidak diakhiri tanda baca penutup (utuh() di analisis_truncation.py); dihitung 2026-10-06",
+ "per_ukuran": {
+  "0.8b": {
+   "n": 200,
+   "ft_terpotong": 73,
+   "baseline_terpotong": 180,
+   "safe_ft_terpotong": [
+    34,
+    73
+   ],
+   "safe_ft_utuh": [
+    91,
+    127
+   ],
+   "turun_dari_baseline_safe_ft_terpotong": [
+    12,
+    33
+   ],
+   "turun_dari_baseline_safe_ft_utuh": [
+    14,
+    59
+   ]
+  },
+  "2b": {
+   "n": 200,
+   "ft_terpotong": 123,
+   "baseline_terpotong": 182,
+   "safe_ft_terpotong": [
+    62,
+    123
+   ],
+   "safe_ft_utuh": [
+    53,
+    77
+   ],
+   "turun_dari_baseline_safe_ft_terpotong": [
+    39,
+    93
+   ],
+   "turun_dari_baseline_safe_ft_utuh": [
+    18,
+    57
+   ]
+  },
+  "4b": {
+   "n": 200,
+   "ft_terpotong": 111,
+   "baseline_terpotong": 182,
+   "safe_ft_terpotong": [
+    76,
+    111
+   ],
+   "safe_ft_utuh": [
+    76,
+    89
+   ],
+   "turun_dari_baseline_safe_ft_terpotong": [
+    28,
+    101
+   ],
+   "turun_dari_baseline_safe_ft_utuh": [
+    11,
+    86
+   ]
+  }
+ }
+}

@@ -1,0 +1,39 @@
+{
+ "catatan": "panjang token prediksi (tokenizer Qwen3.5, teks didekode ulang) vs proksi terpotong (tanpa tanda baca penutup); 2026-10-06",
+ "qwen0.8b_baseline": {
+  "n": 2998,
+  "min_token": 250,
+  "pct_ge250": 100.0,
+  "pct_terpotong_proksi": 89.9
+ },
+ "qwen0.8b_finetuned": {
+  "n": 2998,
+  "min_token": 28,
+  "pct_ge250": 37.4,
+  "pct_terpotong_proksi": 39.1
+ },
+ "qwen2b_baseline": {
+  "n": 2998,
+  "min_token": 250,
+  "pct_ge250": 100.0,
+  "pct_terpotong_proksi": 90.3
+ },
+ "qwen2b_finetuned": {
+  "n": 2998,
+  "min_token": 10,
+  "pct_ge250": 59.3,
+  "pct_terpotong_proksi": 63.1
+ },
+ "qwen4b_baseline": {
+  "n": 2998,
+  "min_token": 177,
+  "pct_ge250": 100.0,
+  "pct_terpotong_proksi": 91.2
+ },
+ "qwen4b_finetuned": {
+  "n": 2998,
+  "min_token": 55,
+  "pct_ge250": 57.5,
+  "pct_terpotong_proksi": 50.9
+ }
+}
