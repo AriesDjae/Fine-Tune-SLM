@@ -60,15 +60,15 @@ TEKS = {
         "baseline": "Baseline (pre-trained)",
         "plafon": "Inter-physician agreement ({:.3f})",
         "skor": "Score",
-        "delta_aman": "Change in Safe rate (percentage points)",
+        "delta_aman": "Change in Safe rate (pp)",
         "laptop": "Laptop CPU (12 threads)",
-        "hp": "Android phone (4 threads)",
+        "hp": "Android smartphone (4 threads)",
         "ram": "Peak RAM during generation (GB)",
         "lat": "Latency per answer (s)",
         "judul_ram": "Memory",
         "judul_lat": "Speed",
-        "anggaran": "{} GB phone budget",
-        "token3": "Phone, 3-gram block",
+        "anggaran": "{} GB smartphone budget",
+        "token3": "Smartphone, 3-gram block",
     },
 }
 
@@ -90,10 +90,11 @@ GRID = "#e3e2de"
 UKURAN = ["0.8b", "2b", "4b"]
 LABEL_UKURAN = ["0.8B", "2B", "4B"]
 
-# Naskah JUTIF: gambar dicetak selebar teks (~6.5 in). Kanvas lebar 12-16 in membuat
-# huruf 9.5 pt tercetak ~4 pt (checklist JUTIF: gambar harus terbaca). Versi "en"
-# memakai kanvas mendekati ukuran cetak; versi skripsi ("id") tidak diubah.
-KANVAS_EN = {"rq1": (8.4, 3.7), "tier2": (5.6, 3.5), "rq3": (8.0, 3.6)}
+# Kanvas versi "en" = ukuran cetak di naskah RESTI (buat_kerangka_resti_docx.py: fig:rq1
+# 13,5 cm, fig:tier2 7,8 cm), jadi ukuran huruf di sini = ukuran huruf tercetak (7-8 pt).
+# Kanvas lama (8,4 dan 5,6 in) diperkecil Word 0,55-0,63x -> label tercetak ~5 pt.
+# fig_p6_rq3 tidak dipakai di docx RESTI, jadi kanvasnya dibiarkan.
+KANVAS_EN = {"rq1": (5.31, 2.35), "tier2": (3.07, 1.85), "rq3": (8.0, 3.6)}
 
 # Plafon kesepakatan antar-dokter. Dihitung ulang oleh plafon_manusia.py pada 1093
 # pasangan jawaban dokter berbeda (satu pasangan per pertanyaan, jawaban identik
@@ -102,7 +103,7 @@ KANVAS_EN = {"rq1": (8.4, 3.7), "tier2": (5.6, 3.5), "rq3": (8.0, 3.6)}
 PLAFON = {"f1": 0.2972, "rougeL": 0.1496, "bertscore": 0.6867}
 
 
-def gaya(ax):
+def gaya(ax, labelsize=11):
     """Kromium resesif: grid horizontal tipis, tanpa bingkai kanan/atas."""
     ax.set_facecolor(SURFACE)
     ax.grid(axis="y", color=GRID, linewidth=0.8, zorder=0)
@@ -110,7 +111,7 @@ def gaya(ax):
     for sisi in ("top", "right", "left"):
         ax.spines[sisi].set_visible(False)
     ax.spines["bottom"].set_color(GRID)
-    ax.tick_params(colors=INK2, length=0, labelsize=11)
+    ax.tick_params(colors=INK2, length=0, labelsize=labelsize)
 
 
 def muat_metrik() -> dict:
@@ -152,13 +153,14 @@ def fig_rq1_rq2(metrik: dict, lang: str) -> pathlib.Path:
     if "bertscore" in metrik[UKURAN[0]]["finetuned"]:
         panel.append(("bertscore", "BERTScore"))
 
-    ukuran = KANVAS_EN["rq1"] if lang == "en" else (5.5 * len(panel), 4.8)
+    en = lang == "en"
+    ukuran = KANVAS_EN["rq1"] if en else (5.5 * len(panel), 4.8)
     fig, axes = plt.subplots(1, len(panel), figsize=ukuran, facecolor=SURFACE)
     x = range(len(UKURAN))
     lebar = 0.36
 
     for ax, (kunci, judul) in zip(axes, panel):
-        gaya(ax)
+        gaya(ax, labelsize=7 if en else 11)
         base = [metrik[u]["baseline"][kunci] for u in UKURAN]
         ft = [metrik[u]["finetuned"][kunci] for u in UKURAN]
 
@@ -168,40 +170,41 @@ def fig_rq1_rq2(metrik: dict, lang: str) -> pathlib.Path:
         b2 = ax.bar([i + lebar / 2 + 0.012 for i in x], ft, lebar,
                     color=FINETUNED, label="Fine-tuned", zorder=2)
 
-        # halo setipis surface supaya label nilai tetap terbaca saat garis plafon
-        # kebetulan lewat tepat di belakangnya (kasus baseline 2B & 4B)
-        halo = [pe.withStroke(linewidth=3.2, foreground=SURFACE)]
-        for batang in (b1, b2):
-            for r in batang:
-                ax.text(r.get_x() + r.get_width() / 2, r.get_height() + 0.004,
-                        f"{r.get_height():.3f}", ha="center", va="bottom",
-                        fontsize=8 if lang == "en" else 9.5, color=INK2,
-                        path_effects=halo, zorder=4)
+        # Versi "en" (naskah) TANPA angka di tiap batang: nilainya sama persis dengan
+        # Tabel 2, dan di ukuran cetak 18 label tidak muat (saling tumpuk dan tertimpa
+        # garis plafon, mis. BERTScore baseline 0,658-0,665 vs garis 0,687). Pedoman
+        # dataviz: jangan angka di tiap batang; sumbu + tabel membawa nilainya.
+        if not en:
+            halo = [pe.withStroke(linewidth=3.2, foreground=SURFACE)]
+            for batang in (b1, b2):
+                for r in batang:
+                    ax.text(r.get_x() + r.get_width() / 2, r.get_height() + 0.004,
+                            f"{r.get_height():.3f}", ha="center", va="bottom",
+                            fontsize=9.5, color=INK2, path_effects=halo, zorder=4)
 
         # plafon manusia = garis acuan, bukan seri -> abu-abu, putus-putus.
         # Keterangannya masuk LEGENDA, bukan teks melayang: teks inline bertabrakan
         # dengan label nilai batang.
-        # Plafon manusia hanya terukur untuk metrik tumpang-tindih; BERTScore
-        # tidak punya nilai antar-dokter, jadi panelnya tanpa garis acuan.
         pegangan = [b1, b2]
         batas_atas = max(ft)
         if kunci in PLAFON:
             pegangan.append(ax.axhline(
-                PLAFON[kunci], color=INK2, linewidth=1.4, linestyle=(0, (5, 3)),
+                PLAFON[kunci], color=INK2, linewidth=1.0 if en else 1.4, linestyle=(0, (5, 3)),
                 zorder=3, label=TEKS[lang]["plafon"].format(PLAFON[kunci])))
             batas_atas = max(batas_atas, PLAFON[kunci])
 
         ax.set_xticks(list(x))
         ax.set_xticklabels(LABEL_UKURAN)
-        ax.set_title(judul, fontsize=13, color=INK, pad=10, loc="left", fontweight="bold")
-        if lang == "en":
-            ax.set_ylim(0, batas_atas * 1.18)
+        ax.set_title(judul, fontsize=8 if en else 13, color=INK, pad=4 if en else 10,
+                     loc="left", fontweight="bold")
+        if en:
+            ax.set_ylim(0, batas_atas * 1.12)
         else:
             ax.set_ylim(0, batas_atas * 1.52)
             ax.legend(handles=pegangan, frameon=False, fontsize=10,
                       labelcolor=INK2, loc="upper left", handlelength=1.8)
 
-    axes[0].set_ylabel(TEKS[lang]["skor"], fontsize=11, color=INK2)
+    axes[0].set_ylabel(TEKS[lang]["skor"], fontsize=7 if en else 11, color=INK2)
 
     if lang == "id":
         fig.suptitle("Mutu jawaban: fine-tuning menaikkan skor di ketiga ukuran (n = 2.998)",
@@ -212,11 +215,11 @@ def fig_rq1_rq2(metrik: dict, lang: str) -> pathlib.Path:
                  fontsize=9.5, color=INK2)
         fig.tight_layout(rect=[0, 0.05, 1, 0.93])
     else:
-        garis = mlines.Line2D([], [], color=INK2, linewidth=1.4, linestyle=(0, (5, 3)),
+        garis = mlines.Line2D([], [], color=INK2, linewidth=1.0, linestyle=(0, (5, 3)),
                               label="Inter-physician agreement")
-        fig.legend(handles=[b1, b2, garis], frameon=False, fontsize=10, labelcolor=INK2,
+        fig.legend(handles=[b1, b2, garis], frameon=False, fontsize=7, labelcolor=INK2,
                    loc="upper center", ncol=3, handlelength=1.8, bbox_to_anchor=(0.5, 1.0))
-        fig.tight_layout(rect=[0, 0, 1, 0.9])
+        fig.tight_layout(rect=[0, 0, 1, 0.88], pad=0.4, w_pad=1.2)
 
     p = OUT[lang] / "fig_p6_rq1_rq2.png"
     fig.savefig(p, dpi=300 if lang == "en" else 200, facecolor=SURFACE)
@@ -226,32 +229,39 @@ def fig_rq1_rq2(metrik: dict, lang: str) -> pathlib.Path:
 
 def fig_tier2(t2: dict, lang: str) -> pathlib.Path:
     """Satu seri bertanda -> warna diverging (biru naik / merah turun), tanpa legenda."""
-    fig, ax = plt.subplots(figsize=KANVAS_EN["tier2"] if lang == "en" else (8.2, 5.0),
+    en = lang == "en"
+    fig, ax = plt.subplots(figsize=KANVAS_EN["tier2"] if en else (8.2, 5.0),
                            facecolor=SURFACE)
-    gaya(ax)
+    gaya(ax, labelsize=7 if en else 11)
 
     delta = [t2[u]["ft"] - t2[u]["base"] for u in UKURAN]
     warna = [POS if d >= 0 else NEG for d in delta]
     x = range(len(UKURAN))
 
     batang = ax.bar(x, delta, 0.42, color=warna, zorder=2)
-    ax.axhline(0, color=INK2, linewidth=1.2, zorder=3)
+    ax.axhline(0, color=INK2, linewidth=0.9 if en else 1.2, zorder=3)
 
+    # Jarak label dalam POIN (bukan satuan data), supaya tetap pas di kanvas mana pun.
+    fs_d, fs_s = (8, 6.5) if en else (13, 9.5)
     for i, (r, u) in enumerate(zip(batang, UKURAN)):
         h = r.get_height()
-        atas = h >= 0
-        ax.text(i, h + (1.6 if atas else -1.6), f"{h:+.1f} pp",
-                ha="center", va="bottom" if atas else "top",
-                fontsize=13, color=INK, fontweight="bold")
-        ax.text(i, h + (7.0 if atas else -7.0),
-                f"{t2[u]['base']:.1f}% → {t2[u]['ft']:.1f}%",
-                ha="center", va="bottom" if atas else "top",
-                fontsize=9.5, color=INK2)
+        arah = 1 if h >= 0 else -1
+        va = "bottom" if arah > 0 else "top"
+        # tanda minus tipografis (−), sama dengan sumbu dan teks naskah
+        ax.annotate(f"{h:+.1f} pp".replace("-", "−"), (i, h), xytext=(0, arah * 3),
+                    textcoords="offset points", ha="center", va=va,
+                    fontsize=fs_d, color=INK, fontweight="bold")
+        ax.annotate(f"{t2[u]['base']:.1f}% → {t2[u]['ft']:.1f}%", (i, h),
+                    xytext=(0, arah * (3 + fs_d + 2)), textcoords="offset points",
+                    ha="center", va=va, fontsize=fs_s, color=INK2)
 
     ax.set_xticks(list(x))
-    ax.set_xticklabels(LABEL_UKURAN, fontsize=12)
-    ax.set_ylabel(TEKS[lang]["delta_aman"], fontsize=11, color=INK2)
+    ax.set_xticklabels(LABEL_UKURAN, fontsize=7.5 if en else 12)
+    ax.set_ylabel(TEKS[lang]["delta_aman"], fontsize=7 if en else 11, color=INK2)
     ax.set_ylim(min(delta) - 15, max(delta) + 15)
+    if en:
+        # ruang kiri-kanan supaya label "93.5% → 76.0%" tidak menempel di tepi kanvas
+        ax.set_xlim(-0.65, len(UKURAN) - 0.35)
 
     if lang == "id":
         fig.suptitle("Keselamatan: fine-tuning menolong model kecil, merusak model besar",
@@ -263,7 +273,7 @@ def fig_tier2(t2: dict, lang: str) -> pathlib.Path:
                  fontsize=9.5, color=INK2)
         fig.tight_layout(rect=[0, 0.085, 1, 0.93])
     else:
-        fig.tight_layout()
+        fig.tight_layout(pad=0.4)
 
     p = OUT[lang] / "fig_p6_tier2_aman.png"
     fig.savefig(p, dpi=300 if lang == "en" else 200, facecolor=SURFACE)

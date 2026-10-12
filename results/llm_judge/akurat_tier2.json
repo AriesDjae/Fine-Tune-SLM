@@ -1,0 +1,173 @@
+{
+  "sumber": "results/llm_judge/tier2_<ukuran>.jsonl (run utama, openai:gpt-4o)",
+  "bootstrap": "llm_judge_tier2._bootstrap_delta, 5000x, seed 42",
+  "per_ukuran": {
+    "0.8b": {
+      "n": 200,
+      "distribusi_pct": {
+        "baseline": {
+          "ya": 0.5,
+          "sebagian": 51.5,
+          "tidak": 48.0
+        },
+        "finetuned": {
+          "ya": 0.0,
+          "sebagian": 69.5,
+          "tidak": 30.5
+        }
+      },
+      "tidak_akurat_pct": {
+        "baseline": 48.0,
+        "finetuned": 30.5
+      },
+      "delta_tidak_akurat_pp": -17.5,
+      "delta_tidak_akurat_ci95_pp": [
+        -27.5,
+        -7.5
+      ],
+      "tidak_akurat_yang_juga_tidak_aman": {
+        "baseline": {
+          "tidak_akurat": 96,
+          "juga_tidak_aman": 83
+        },
+        "finetuned": {
+          "tidak_akurat": 61,
+          "juga_tidak_aman": 51
+        }
+      }
+    },
+    "2b": {
+      "n": 200,
+      "distribusi_pct": {
+        "baseline": {
+          "ya": 1.0,
+          "sebagian": 82.0,
+          "tidak": 17.0
+        },
+        "finetuned": {
+          "ya": 0.5,
+          "sebagian": 72.5,
+          "tidak": 27.0
+        }
+      },
+      "tidak_akurat_pct": {
+        "baseline": 17.0,
+        "finetuned": 27.0
+      },
+      "delta_tidak_akurat_pp": 10.0,
+      "delta_tidak_akurat_ci95_pp": [
+        2.0,
+        18.0
+      ],
+      "tidak_akurat_yang_juga_tidak_aman": {
+        "baseline": {
+          "tidak_akurat": 34,
+          "juga_tidak_aman": 32
+        },
+        "finetuned": {
+          "tidak_akurat": 54,
+          "juga_tidak_aman": 50
+        }
+      }
+    },
+    "4b": {
+      "n": 200,
+      "distribusi_pct": {
+        "baseline": {
+          "ya": 5.5,
+          "sebagian": 92.0,
+          "tidak": 2.5
+        },
+        "finetuned": {
+          "ya": 2.0,
+          "sebagian": 88.5,
+          "tidak": 9.5
+        }
+      },
+      "tidak_akurat_pct": {
+        "baseline": 2.5,
+        "finetuned": 9.5
+      },
+      "delta_tidak_akurat_pp": 7.0,
+      "delta_tidak_akurat_ci95_pp": [
+        2.5,
+        11.5
+      ],
+      "tidak_akurat_yang_juga_tidak_aman": {
+        "baseline": {
+          "tidak_akurat": 5,
+          "juga_tidak_aman": 4
+        },
+        "finetuned": {
+          "tidak_akurat": 19,
+          "juga_tidak_aman": 19
+        }
+      }
+    }
+  },
+  "holm_9_selisih": [
+    {
+      "ukuran": "0.8b",
+      "dimensi": "safe",
+      "p_bootstrap": 0.0,
+      "ambang_holm": 0.0056,
+      "lolos": true
+    },
+    {
+      "ukuran": "0.8b",
+      "dimensi": "misleading",
+      "p_bootstrap": 0.0,
+      "ambang_holm": 0.0063,
+      "lolos": true
+    },
+    {
+      "ukuran": "2b",
+      "dimensi": "safe",
+      "p_bootstrap": 0.0,
+      "ambang_holm": 0.0071,
+      "lolos": true
+    },
+    {
+      "ukuran": "4b",
+      "dimensi": "safe",
+      "p_bootstrap": 0.0,
+      "ambang_holm": 0.0083,
+      "lolos": true
+    },
+    {
+      "ukuran": "4b",
+      "dimensi": "misleading",
+      "p_bootstrap": 0.0004,
+      "ambang_holm": 0.01,
+      "lolos": true
+    },
+    {
+      "ukuran": "0.8b",
+      "dimensi": "not_accurate",
+      "p_bootstrap": 0.0012,
+      "ambang_holm": 0.0125,
+      "lolos": true
+    },
+    {
+      "ukuran": "4b",
+      "dimensi": "not_accurate",
+      "p_bootstrap": 0.0024,
+      "ambang_holm": 0.0167,
+      "lolos": true
+    },
+    {
+      "ukuran": "2b",
+      "dimensi": "not_accurate",
+      "p_bootstrap": 0.0152,
+      "ambang_holm": 0.025,
+      "lolos": true
+    },
+    {
+      "ukuran": "2b",
+      "dimensi": "misleading",
+      "p_bootstrap": 0.0208,
+      "ambang_holm": 0.05,
+      "lolos": true
+    }
+  ]
+}
