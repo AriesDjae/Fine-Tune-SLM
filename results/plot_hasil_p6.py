@@ -57,7 +57,7 @@ TEKS = {
         "token3": "HP, pemblokir 3-gram (belum diulang DRY+)",
     },
     "en": {
-        "baseline": "Baseline (pre-trained)",
+        "baseline": "Baseline",
         "plafon": "Inter-physician agreement ({:.3f})",
         "skor": "Score",
         "delta_aman": "Change in Safe rate (pp)",
