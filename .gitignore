@@ -150,5 +150,12 @@ artikel/main.pdf
 artikel/Contoh_Artikel_lolos/
 # PDF sumber sitasi (berhak cipta pihak ketiga; unduh ulang dari DOI di refs.bib)
 artikel/sumber/
+# Arsip naskah lama (arsip/artikel_lama/): keluaran docx/pdf tetap tidak di-commit
+arsip/artikel_lama/jutif/JUTIF_naskah*.docx
+arsip/artikel_lama/pdf_basi/
+# Coretan root lama yang dulu gitignored, kini disimpan di arsip
+arsip/pivot6_jalur-lama/output*.png
+arsip/pivot6_jalur-lama/test_local_api.py
+arsip/pivot6_jalur-lama/tmp_proxy_smoke.py
 results/__pycache__/
 results/quant_gap/*.log
