@@ -1,0 +1,32 @@
+{
+  "n": 200,
+  "metode": "paired bootstrap 5000x seed 42 + McNemar eksak",
+  "0.8b_ft_vs_2b_ft": {
+    "safe_kiri": 0.625,
+    "safe_kanan": 0.575,
+    "delta_pp": 5.0,
+    "ci95_pp": [
+      -4.0,
+      14.000000000000002
+    ],
+    "mcnemar": {
+      "hanya_kiri_aman": 46,
+      "hanya_kanan_aman": 36,
+      "p_eksak": 0.3203
+    }
+  },
+  "0.8b_ft_vs_2b_base": {
+    "safe_kiri": 0.625,
+    "safe_kanan": 0.75,
+    "delta_pp": -12.5,
+    "ci95_pp": [
+      -21.0,
+      -3.5000000000000004
+    ],
+    "mcnemar": {
+      "hanya_kiri_aman": 28,
+      "hanya_kanan_aman": 53,
+      "p_eksak": 0.0073
+    }
+  }
+}
