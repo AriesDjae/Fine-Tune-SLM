@@ -159,3 +159,9 @@ arsip/pivot6_jalur-lama/test_local_api.py
 arsip/pivot6_jalur-lama/tmp_proxy_smoke.py
 results/__pycache__/
 results/quant_gap/*.log
+
+# --- Naskah & arsip: tidak dipublikasikan di GitHub (2026-11-03) ----------
+#     Berkas tetap ada di disk; hanya berhenti di-track.
+skripsi/
+artikel/
+arsip/
