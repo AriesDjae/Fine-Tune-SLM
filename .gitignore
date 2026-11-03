@@ -165,3 +165,5 @@ results/quant_gap/*.log
 skripsi/
 artikel/
 arsip/
+# Salinan unduhan dari HF AriesDjaenuri/p6-hasil (bisa diunduh ulang)
+analisis_revisi_resti/hf_p6hasil/

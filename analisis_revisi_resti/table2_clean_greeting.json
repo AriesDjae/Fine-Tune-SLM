@@ -1,0 +1,134 @@
+{
+ "tanpa_clean|0.8b|f1": {
+  "baseline": 0.2593,
+  "finetuned": 0.2965,
+  "n": 2998,
+  "delta": 0.0372,
+  "ci95": [
+   0.0349,
+   0.0395
+  ],
+  "signifikan": true
+ },
+ "tanpa_clean|0.8b|rougeL": {
+  "baseline": 0.1162,
+  "finetuned": 0.1554,
+  "n": 2998,
+  "delta": 0.0392,
+  "ci95": [
+   0.0378,
+   0.0406
+  ],
+  "signifikan": true
+ },
+ "tanpa_clean|2b|f1": {
+  "baseline": 0.2716,
+  "finetuned": 0.2956,
+  "n": 2998,
+  "delta": 0.024,
+  "ci95": [
+   0.0216,
+   0.0263
+  ],
+  "signifikan": true
+ },
+ "tanpa_clean|2b|rougeL": {
+  "baseline": 0.1182,
+  "finetuned": 0.1522,
+  "n": 2998,
+  "delta": 0.0341,
+  "ci95": [
+   0.0327,
+   0.0354
+  ],
+  "signifikan": true
+ },
+ "tanpa_clean|4b|f1": {
+  "baseline": 0.276,
+  "finetuned": 0.3096,
+  "n": 2998,
+  "delta": 0.0336,
+  "ci95": [
+   0.031,
+   0.0362
+  ],
+  "signifikan": true
+ },
+ "tanpa_clean|4b|rougeL": {
+  "baseline": 0.1209,
+  "finetuned": 0.163,
+  "n": 2998,
+  "delta": 0.0421,
+  "ci95": [
+   0.0404,
+   0.0438
+  ],
+  "signifikan": true
+ },
+ "dengan_clean|0.8b|f1": {
+  "baseline": 0.2605,
+  "finetuned": 0.2965,
+  "n": 2998,
+  "delta": 0.036,
+  "ci95": [
+   0.0337,
+   0.0383
+  ],
+  "signifikan": true
+ },
+ "dengan_clean|0.8b|rougeL": {
+  "baseline": 0.1169,
+  "finetuned": 0.1554,
+  "n": 2998,
+  "delta": 0.0384,
+  "ci95": [
+   0.0371,
+   0.0398
+  ],
+  "signifikan": true
+ },
+ "dengan_clean|2b|f1": {
+  "baseline": 0.2726,
+  "finetuned": 0.2956,
+  "n": 2998,
+  "delta": 0.0231,
+  "ci95": [
+   0.0207,
+   0.0254
+  ],
+  "signifikan": true
+ },
+ "dengan_clean|2b|rougeL": {
+  "baseline": 0.1188,
+  "finetuned": 0.1522,
+  "n": 2998,
+  "delta": 0.0334,
+  "ci95": [
+   0.0321,
+   0.0347
+  ],
+  "signifikan": true
+ },
+ "dengan_clean|4b|f1": {
+  "baseline": 0.2767,
+  "finetuned": 0.3096,
+  "n": 2998,
+  "delta": 0.0329,
+  "ci95": [
+   0.0303,
+   0.0355
+  ],
+  "signifikan": true
+ },
+ "dengan_clean|4b|rougeL": {
+  "baseline": 0.1214,
+  "finetuned": 0.163,
+  "n": 2998,
+  "delta": 0.0416,
+  "ci95": [
+   0.0399,
+   0.0433
+  ],
+  "signifikan": true
+ }
+}

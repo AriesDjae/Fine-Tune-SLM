@@ -1,0 +1,265 @@
+{
+ "R2_06_table2": {
+  "0.8b|f1": {
+   "baseline": 0.260494,
+   "finetuned": 0.296491,
+   "delta_6d": 0.035997,
+   "n": 2998,
+   "delta": 0.036,
+   "ci95": [
+    0.0337,
+    0.0383
+   ],
+   "signifikan": true
+  },
+  "0.8b|rougeL": {
+   "baseline": 0.116947,
+   "finetuned": 0.155378,
+   "delta_6d": 0.038431,
+   "n": 2998,
+   "delta": 0.0384,
+   "ci95": [
+    0.0371,
+    0.0398
+   ],
+   "signifikan": true
+  },
+  "2b|f1": {
+   "baseline": 0.272554,
+   "finetuned": 0.295638,
+   "delta_6d": 0.023084,
+   "n": 2998,
+   "delta": 0.0231,
+   "ci95": [
+    0.0207,
+    0.0254
+   ],
+   "signifikan": true
+  },
+  "2b|rougeL": {
+   "baseline": 0.118845,
+   "finetuned": 0.152241,
+   "delta_6d": 0.033396,
+   "n": 2998,
+   "delta": 0.0334,
+   "ci95": [
+    0.0321,
+    0.0347
+   ],
+   "signifikan": true
+  },
+  "4b|f1": {
+   "baseline": 0.276735,
+   "finetuned": 0.309616,
+   "delta_6d": 0.032881,
+   "n": 2998,
+   "delta": 0.0329,
+   "ci95": [
+    0.0303,
+    0.0355
+   ],
+   "signifikan": true
+  },
+  "4b|rougeL": {
+   "baseline": 0.121361,
+   "finetuned": 0.162958,
+   "delta_6d": 0.041596,
+   "n": 2998,
+   "delta": 0.0416,
+   "ci95": [
+    0.0399,
+    0.0433
+   ],
+   "signifikan": true
+  }
+ },
+ "jawaban_diubah_clean_greeting": {
+  "qwen0.8b_baseline": 2763,
+  "qwen0.8b_finetuned": 1,
+  "qwen2b_baseline": 2930,
+  "qwen2b_finetuned": 1,
+  "qwen4b_baseline": 2815,
+  "qwen4b_finetuned": 0
+ },
+ "referensi": {
+  "n": 2998,
+  "berubah_bila_diclean_lagi": 7,
+  "contoh": [
+   "usia 29 sudah 3-4bulan ini menderita sakit batuk berdahak [walaupun da",
+   "hasil pemeriksaan USG post histerektomi diartikan setelah melakuksn op",
+   "met pagi dok. saya ingin bertanya, anak saya skrng usia 12 tahun dan d",
+   "terima kasih untuk pertanyaannya. Testis merupakan salah satu organ re",
+   "adalah kelainan yang terbentuk karena penyumbatan pada kelenjar Bartho"
+  ]
+ },
+ "sensitivitas_refs_diclean_lagi": {
+  "qwen0.8b_baseline": {
+   "f1": [
+    0.2605,
+    0.2605
+   ],
+   "rougeL": [
+    0.1169,
+    0.1169
+   ]
+  },
+  "qwen0.8b_finetuned": {
+   "f1": [
+    0.2965,
+    0.2965
+   ],
+   "rougeL": [
+    0.1554,
+    0.1554
+   ]
+  },
+  "qwen2b_baseline": {
+   "f1": [
+    0.2726,
+    0.2726
+   ],
+   "rougeL": [
+    0.1188,
+    0.1188
+   ]
+  },
+  "qwen2b_finetuned": {
+   "f1": [
+    0.2956,
+    0.2956
+   ],
+   "rougeL": [
+    0.1522,
+    0.1522
+   ]
+  },
+  "qwen4b_baseline": {
+   "f1": [
+    0.2767,
+    0.2767
+   ],
+   "rougeL": [
+    0.1214,
+    0.1214
+   ]
+  },
+  "qwen4b_finetuned": {
+   "f1": [
+    0.3096,
+    0.3096
+   ],
+   "rougeL": [
+    0.163,
+    0.163
+   ]
+  }
+ },
+ "R2_02d_uji_decoding": {
+  "polos": {
+   "n": 100,
+   "diubah": 0,
+   "ref_sama_test": true,
+   "f1": [
+    0.1678,
+    0.1678
+   ],
+   "rougeL": [
+    0.0976,
+    0.0976
+   ]
+  },
+  "token3": {
+   "n": 100,
+   "diubah": 0,
+   "ref_sama_test": true,
+   "f1": [
+    0.2993,
+    0.2993
+   ],
+   "rougeL": [
+    0.152,
+    0.152
+   ]
+  },
+  "kalimat": {
+   "n": 100,
+   "diubah": 0,
+   "ref_sama_test": true,
+   "f1": [
+    0.2352,
+    0.2352
+   ],
+   "rougeL": [
+    0.1345,
+    0.1345
+   ]
+  },
+  "dry": {
+   "n": 100,
+   "diubah": 0,
+   "ref_sama_test": true,
+   "f1": [
+    0.2944,
+    0.2944
+   ],
+   "rougeL": [
+    0.1551,
+    0.1551
+   ]
+  },
+  "dry_plus": {
+   "n": 100,
+   "diubah": 0,
+   "ref_sama_test": true,
+   "f1": [
+    0.2956,
+    0.2956
+   ],
+   "rougeL": [
+    0.1559,
+    0.1559
+   ]
+  }
+ },
+ "R2_02c_quant_gap_hitung_ulang": {
+  "0.8b": {
+   "n": 400,
+   "f1": {
+    "q4": 0.2927,
+    "16bit": 0.2931,
+    "delta": -0.0003
+   },
+   "rougeL": {
+    "q4": 0.1515,
+    "16bit": 0.1541,
+    "delta": -0.0026
+   }
+  },
+  "2b": {
+   "n": 400,
+   "f1": {
+    "q4": 0.2936,
+    "16bit": 0.2936,
+    "delta": 0.0001
+   },
+   "rougeL": {
+    "q4": 0.1512,
+    "16bit": 0.1511,
+    "delta": 0.0001
+   }
+  },
+  "4b": {
+   "n": 400,
+   "f1": {
+    "q4": 0.3148,
+    "16bit": 0.3085,
+    "delta": 0.0064
+   },
+   "rougeL": {
+    "q4": 0.1646,
+    "16bit": 0.1625,
+    "delta": 0.002
+   }
+  }
+ }
+}
