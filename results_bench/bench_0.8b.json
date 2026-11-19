@@ -1,0 +1,128 @@
+{
+  "label": "0.8b",
+  "gguf": "Qwen3.5-0.8B.Q4_K_M.gguf",
+  "kuantisasi": "Q4_K_M",
+  "arsitektur": {
+    "family": "Qwen3.5-0.8B",
+    "total_params_B": 0.8
+  },
+  "perangkat": {
+    "cpu": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "threads": 12,
+    "ram_total_GB": 16.9,
+    "ram_tersedia_saat_mulai_GB": 7.24,
+    "os": "Windows 10",
+    "CATATAN": "angka dari mesin ini PROKSI; ulangi di HP nyata via Termux"
+  },
+  "ukuran_berkas_GB": 0.542,
+  "ram_GB": {
+    "dasar": 0.043,
+    "setelah_muat": 0.638,
+    "puncak_muat": 0.588,
+    "puncak_infer": 0.993,
+    "bobot_saja": 0.595
+  },
+  "waktu": {
+    "muat_s": 0.55,
+    "latensi_s_mean": 6.13,
+    "latensi_s_std": 3.35,
+    "tok_per_s_mean": 44.07,
+    "tok_per_s_std": 2.2,
+    "token_keluaran_mean": 265.2,
+    "n_queries": 12,
+    "max_new_tokens": "tanpa batas",
+    "decoding": "dry_plus",
+    "terpotong": 0,
+    "n_ctx": 1024
+  },
+  "redflag_overhead_ms_per_pertanyaan": 0.835,
+  "gerbang_ram": {
+    "HP 3 GB": {
+      "ram_total_GB": 3.0,
+      "diasumsikan_tersedia_GB": 1.65,
+      "puncak_infer_GB": 0.99,
+      "lolos": true
+    },
+    "HP 4 GB": {
+      "ram_total_GB": 4.0,
+      "diasumsikan_tersedia_GB": 2.2,
+      "puncak_infer_GB": 0.99,
+      "lolos": true
+    },
+    "HP 6 GB": {
+      "ram_total_GB": 6.0,
+      "diasumsikan_tersedia_GB": 3.3,
+      "puncak_infer_GB": 0.99,
+      "lolos": true
+    },
+    "HP 8 GB": {
+      "ram_total_GB": 8.0,
+      "diasumsikan_tersedia_GB": 4.4,
+      "puncak_infer_GB": 0.99,
+      "lolos": true
+    }
+  },
+  "jawaban": [
+    {
+      "token": 279,
+      "latensi_s": 6.18,
+      "selesai": "stop"
+    },
+    {
+      "token": 211,
+      "latensi_s": 4.57,
+      "selesai": "stop"
+    },
+    {
+      "token": 259,
+      "latensi_s": 6.07,
+      "selesai": "stop"
+    },
+    {
+      "token": 170,
+      "latensi_s": 3.79,
+      "selesai": "stop"
+    },
+    {
+      "token": 329,
+      "latensi_s": 7.13,
+      "selesai": "stop"
+    },
+    {
+      "token": 223,
+      "latensi_s": 4.77,
+      "selesai": "stop"
+    },
+    {
+      "token": 129,
+      "latensi_s": 3.11,
+      "selesai": "stop"
+    },
+    {
+      "token": 640,
+      "latensi_s": 16.57,
+      "selesai": "stop"
+    },
+    {
+      "token": 185,
+      "latensi_s": 4.15,
+      "selesai": "stop"
+    },
+    {
+      "token": 277,
+      "latensi_s": 6.44,
+      "selesai": "stop"
+    },
+    {
+      "token": 258,
+      "latensi_s": 5.8,
+      "selesai": "stop"
+    },
+    {
+      "token": 222,
+      "latensi_s": 4.96,
+      "selesai": "stop"
+    }
+  ],
+  "CATATAN_TEKS": "Teks pertanyaan (Alodokter verbatim) dan jawaban model dihapus dari salinan publik; angka per butir (token, latensi_s, selesai) dipertahankan."
+}
