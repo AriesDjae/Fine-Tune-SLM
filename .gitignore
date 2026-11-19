@@ -1,17 +1,17 @@
 # ===========================================================================
-# Fine-Tune SLM for Medical Chatbot — .gitignore
-# Git = dokumentasi (kode + catatan + hasil ringan).
-# Semua artefak BERAT (dataset, model, venv) tetap di Google Drive.
+# Fine-Tune SLM for Medical Chatbot — .gitignore  (repo PUBLIK)
+# Git = kode + hasil ringkas. Dataset, bobot model, jawaban model lengkap,
+# data penilaian dokter, dan naskah TIDAK pernah masuk git.
 # ===========================================================================
 
-# --- Virtual environments (5 GB+) ----------------------------------------
+# --- Virtual environments -------------------------------------------------
 .venv/
 .venv-gpu/
 venv/
 env/
 ENV/
 
-# --- Datasets (di Drive, jangan di-track) ---------------------------------
+# --- Dataset (teks Alodokter verbatim; sumber: DOI 10.57967/hf/8356) -------
 Data/
 processed/
 processed_*/
@@ -23,12 +23,14 @@ processed_*/
 *.arrow
 *.npz
 
-# --- Model / training artifacts -------------------------------------------
+# --- Bobot model & artefak training ---------------------------------------
 outputs/
 checkpoints/
 merged/
 gguf/
+.local_models/
 llama.cpp/
+llama_bin/
 *.gguf
 *.safetensors
 *.bin
@@ -40,22 +42,7 @@ adapter_model.*
 adapter_config.json
 tokenizer.model
 
-# --- Python caches --------------------------------------------------------
-__pycache__/
-*.py[cod]
-*$py.class
-.ipynb_checkpoints/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-
-# --- Deploy webapp (arena penilaian dokter) -------------------------------
-# `npx vercel` menulis id proyek & org ke sini; bukan rahasia keras, tapi tidak ada
-# gunanya di repo dan bikin ribut kalau dua mesin men-deploy proyek yang sama.
-.vercel/
-node_modules/
-
-# --- Secrets / credentials ------------------------------------------------
+# --- Rahasia / kredensial -------------------------------------------------
 .env
 .env.*
 *.pem
@@ -65,37 +52,44 @@ hf_token*
 *credentials*.json
 service_account*.json
 
-# --- Smoke test manual webapp (Agustus 2026) ------------------------------
-#     Dipakai sekali waktu menelusuri proxy webapp/api/index.py, yang kini
-#     diarsipkan. Fungsinya tertutup scripts/uji_konsistensi.py.
-/test_local_api.py
-/tmp_proxy_smoke.py
+# --- Naskah, skripsi, arsip pivot lama, catatan internal ------------------
+artikel/
+skripsi/
+arsip/
+/artikel*.zip
+CLAUDE.md
+.claude/
 
-# --- Stray screenshots / scratch images (bukan figur skripsi) -------------
+# --- Bank soal / jawaban (teks Alodokter verbatim) ------------------------
+human_eval/bank_pertanyaan.csv
+human_eval/validasi_soal.json
+hf_space_arena/bank/
+results_bench/pertanyaan_bench.json
+results_bench/teks_lengkap/
+tools/bench_hp.zip
+
+# --- Log & keluaran sementara ---------------------------------------------
+evaluasi_app.log
+pilot_generations.txt
 /output.png
 /output_preview.png
+/test_local_api.py
+/tmp_proxy_smoke.py
 training/download*.png
+analisis_revisi_resti/hf_p6hasil/
 
-# --- Binari llama.cpp lokal (42MB; unduh dari release resmi) --------------
-llama_bin/
+# --- Python / Jupyter -----------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-# --- Artefak run notebook (di-generate ulang tiap run) ---------------------
-pilot_generations.txt
-
-# --- Bundle unggah Overleaf (dibuat ulang dari artikel/) -------------------
-/artikel*.zip
-
-# --- Log runtime aplikasi penilaian dokter (Space arena) ------------------
-#     Jejak sesi yang sesungguhnya diarsipkan ke logs/ di HF Dataset.
-evaluasi_app.log
-
-# --- Draf skripsi: repo PUBLIK -> jangan publikasikan sebelum sidang. ------
-#     (Hapus baris ini bila memang ingin skripsi ikut ter-push.)
-skripsi/
-
-# --- OS / editor cruft ----------------------------------------------------
-#     .vscode/settings.json memuat path absolut mesin ini, jadi tidak berguna
-#     di repo; .agent_harnesses.json adalah state alat, bukan kode.
+# --- Deploy / editor / OS -------------------------------------------------
+.vercel/
+node_modules/
 .vscode/
 .agent_harnesses.json
 .DS_Store
@@ -105,65 +99,20 @@ desktop.ini
 *~
 
 # ===========================================================================
-# WHITELIST: hasil ringan untuk skripsi tetap di-track walau pola di atas
-# meng-exclude (*.json aman; *.jsonl/*.csv di results/ di-include lagi).
+# WHITELIST results/: hasil ringkas (json/csv kecil) tetap di-track walau
+# pola di atas meng-exclude *.csv. Pengecualian di bawahnya berlaku lagi.
 # ===========================================================================
 !results/
 !results/**
-# ...tapi dump record mentah (flagged jsonl) tetap di Drive, bukan git
+results/__pycache__/
 results/*.jsonl
 results/**/*.jsonl
-
-# ...dan prediksi mentah eval P6 (6 file, ~20 MB) — arsip resmi di HuggingFace
-# `AriesDjaenuri/p6-hasil/preds/`. Lihat results/preds_p6/README.md untuk cara tarik ulang.
-results/preds_p6/preds/
-
-# ===========================================================================
-# Bank jawaban Tier 3. Teks pertanyaan = QnA Alodokter verbatim, jadi ia
-# mengikuti aturan yang sama dengan Data/: tidak masuk git. Catatan
-# reproduksinya ada di human_eval/bank_indeks.json (indeks saja, ter-track).
-# ===========================================================================
-human_eval/bank_pertanyaan.csv
-# Validasi Tier 3: teks pertanyaan + jawaban model (indeksnya di validasi_indeks.json).
-human_eval/validasi_soal.json
-hf_space_arena/bank/
-
-# Cache GGUF yang diunduh untuk pra-generate bank (7+ GB).
-.local_models/
-
-# Daftar pertanyaan benchmark RQ3: teks Alodokter verbatim, aturan sama dengan Data/.
-# Dibuat ulang kapan saja: benchmark_ondevice.py --simpan-pertanyaan
-results_bench/pertanyaan_bench.json
-
-# Paket benchmark HP dibangun ulang dari berkas repo; isinya memuat
-# pertanyaan Alodokter verbatim, jadi jangan ikut di-commit.
-tools/bench_hp.zip
-
-# ===========================================================================
-# Naskah JUTIF: docx/pdf = keluaran artikel/ke_jutif_docx.py (bangkitkan ulang,
-# jangan di-commit); ~$*.docx = berkas kunci Word; contoh artikel = rujukan
-# pihak ketiga, bukan bagian proyek.
-# ===========================================================================
-artikel/JUTIF_naskah*.docx
-artikel/~$*
-artikel/main.pdf
-artikel/Contoh_Artikel_lolos/
-# PDF sumber sitasi (berhak cipta pihak ketiga; unduh ulang dari DOI di refs.bib)
-artikel/sumber/
-# Arsip naskah lama (arsip/artikel_lama/): keluaran docx/pdf tetap tidak di-commit
-arsip/artikel_lama/jutif/JUTIF_naskah*.docx
-arsip/artikel_lama/pdf_basi/
-# Coretan root lama yang dulu gitignored, kini disimpan di arsip
-arsip/pivot6_jalur-lama/output*.png
-arsip/pivot6_jalur-lama/test_local_api.py
-arsip/pivot6_jalur-lama/tmp_proxy_smoke.py
-results/__pycache__/
 results/quant_gap/*.log
-
-# --- Naskah & arsip: tidak dipublikasikan di GitHub (2026-11-03) ----------
-#     Berkas tetap ada di disk; hanya berhenti di-track.
-skripsi/
-artikel/
-arsip/
-# Salinan unduhan dari HF AriesDjaenuri/p6-hasil (bisa diunduh ulang)
-analisis_revisi_resti/hf_p6hasil/
+# Jawaban model untuk 2.998 soal tes -> arsip di HF AriesDjaenuri/p6-hasil
+results/preds_p6/preds/
+results/preds_p6/.cache/
+# Teks pertanyaan Alodokter verbatim (dibuat ulang oleh redflag_annotate.py)
+results/redflag/anotasi_redflag.csv
+results/redflag/redflag_soal.json
+# Hasil pivot 5 (lama) berisi contoh jawaban dokter verbatim
+results/eval_pivot5/

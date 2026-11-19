@@ -2,16 +2,32 @@
 
 Studi **scaling satu keluarga**: `Qwen3.5` ukuran **0.8B / 2B / 4B**, masing-masing dibandingkan
 dengan dirinya sendiri — **baseline (pra-latih)** vs **fine-tuned (LoRA bf16)** pada QnA
-pasien–dokter berbahasa Indonesia. Target luaran: Jurnal RESTI (SINTA 2 + Scopus Q3) + preprint
-arXiv.
+pasien–dokter berbahasa Indonesia. Repo ini berisi kode, prompt sistem, rubrik penilai, dan
+skrip analisis untuk naskah jurnal terkait.
+
+> [!WARNING]
+> **Prototipe riset — bukan untuk penggunaan klinis.** Model dan kode di repo ini dibuat untuk
+> studi kelayakan. Jawabannya bisa keliru, tidak lengkap, atau berbahaya, dan tidak pernah
+> disaring tenaga kesehatan. Jangan memakainya untuk diagnosis, pengobatan, atau keputusan
+> medis apa pun. Dalam keadaan darurat, segera hubungi fasilitas kesehatan terdekat atau 119.
+>
+> *Research prototype — not for clinical use. Do not use it for diagnosis, treatment, or any
+> medical decision.*
 
 **Sasaran deploy = HP milik masyarakat umum di wilayah tanpa jaringan**, bukan fasilitas
 kesehatan. Tidak ada tenaga kesehatan yang menyaring keluaran model, jadi sistem diposisikan
 sebagai **informasi dan triase awal, bukan diagnosis**, dan seluruh naskah dibingkai sebagai
 **studi kelayakan**.
 
-> Dokumen orientasi lengkap (keputusan, angka, gotcha operasional) ada di `CLAUDE.md`.
-> Pivot 1–5 diarsipkan di `arsip/`.
+### Yang tidak ada di repo ini
+
+- **Bobot model** (adapter LoRA, merged 16-bit, GGUF): diarsipkan di Hugging Face
+  `AriesDjaenuri/*`.
+- **Jawaban model untuk 2.998 soal tes**: diarsipkan di Hugging Face `AriesDjaenuri/p6-hasil`
+  (lihat `results/preds_p6/README.md`).
+- **Dataset**: teks QnA Alodokter, tersedia dari sumber aslinya (DOI `10.57967/hf/8356`).
+- **Data penilaian dokter (Tier 3)**: disimpan privat untuk melindungi identitas penilai. Repo
+  hanya memuat ringkasan agregat.
 
 ---
 
@@ -22,11 +38,9 @@ sebagai **informasi dan triase awal, bukan diagnosis**, dan seluruh naskah dibin
 
 ### 1. Akses
 
-- **GitHub** — repo ini privat. Pemilik mengundang akun tester sebagai *collaborator*; terima
-  undangannya lewat email atau `https://github.com/AriesDjae/Fine-Tune-SLM/invitations`.
-- **Hugging Face** — sejak 2026-11-05 semua repo model `AriesDjaenuri/*` privat (alasan etis:
-  model medis tanpa penyaring tenaga kesehatan). Minta **token baca** dari pemilik repo, cukup
-  untuk tiga repo `*-GGUF`. Token itu untuk Anda sendiri; jangan dibagikan atau di-commit.
+Repo model di Hugging Face `AriesDjaenuri/*` dibatasi aksesnya (alasan etis: model medis tanpa
+penyaring tenaga kesehatan). Minta **token baca** ke penulis, cukup untuk tiga repo `*-GGUF`.
+Token itu untuk Anda sendiri; jangan dibagikan atau di-commit.
 
 ### 2. Menjalankan chatbot di laptop (CPU, offline setelah model terunduh)
 
@@ -160,10 +174,9 @@ yang disebut eksplisit di naskah.
 | 2B | 1.9196 | step 2500 (EarlyStopping, ~2,3 epoch) |
 | 4B | 1.7723 | step 2500 (EarlyStopping, ~2,3 epoch) |
 
-Adapter, merged 16-bit, dan GGUF (Q4_K_M + Q8_0) ada di HuggingFace `AriesDjaenuri/*`. **Sejak
-2026-11-05 semuanya privat**, termasuk ringkasan hasil `AriesDjaenuri/p6-hasil`, Space
-`Medis-Chat`, dan dataset `processed-id-final`; unduhan butuh token. Yang masih publik hanya
-Space arena `evaluasi-chatbot-medis`.
+Adapter, merged 16-bit, dan GGUF (Q4_K_M + Q8_0) ada di Hugging Face `AriesDjaenuri/*`,
+begitu pula jawaban keenam konfigurasi untuk 2.998 soal tes (`AriesDjaenuri/p6-hasil`). Tidak
+ada bobot model maupun berkas jawaban lengkap di repo GitHub ini.
 
 ---
 
@@ -183,7 +196,8 @@ Dua sumber jawaban, satu protokol (GGUF Q4_K_M, greedy, `seed=42`, pemblokir 3-g
 - **Live** — pertanyaan di luar bank dijalankan di dalam Space.
 
 Penilaian ditulis ke dataset privat `AriesDjaenuri/p6-penilaian-dokter` (`ratings/*.json`,
-log sesi di `logs/*.jsonl`).
+log sesi di `logs/*.jsonl`). Data penilaian ini **tidak dibagikan** untuk melindungi identitas
+penilai; repo hanya memuat ringkasan agregat (`results/tier3/ringkasan.json`).
 
 ### Menjalankan Space
 
@@ -216,43 +230,40 @@ restart menggugurkan jawaban yang sedang dikerjakan.
 ## Struktur berkas
 
 ```
-├── CLAUDE.md · README.md · RUN_SERVERLESS.md   # orientasi + runbook training
+├── README.md · LICENSE · RUN_SERVERLESS.md     # orientasi + runbook training
 ├── RUN_TERMUX.md                               # runbook benchmark/demo di HP Android
-├── skripsi/ · artikel/                         # draf skripsi (ID) + naskah jurnal (EN)
 ├── eval.py                                     # eval kanonik (token-F1/ROUGE-L/BERTScore)
 ├── chat_format.py                              # sumber kebenaran format prompt
 ├── ukur_disclaimer.py                          # rate disclaimer/eskalasi (offline, gratis)
 ├── llm_judge_tier2.py · judge_run.py           # Tier 2: rubrik, ablation, kappa
 ├── redflag/ · redflag_annotate.py              # lapisan keselamatan rule-based
-├── human_eval/                                 # rubrik dokter, gold set, bank pertanyaan
+├── human_eval/                                 # rubrik dokter + indeks sampel (tanpa teks soal)
 ├── arena/ · hf_space_arena/ · scripts/space_mode.py   # arena penilaian dokter (Tier 3)
 ├── benchmark_ondevice.py · demo_chat.py        # RQ3 on-device (HP/laptop) + peraga chat
 ├── pengaman_decoding.py                        # pengaman pengulangan DRY+ untuk deploy
 ├── serverless/ · handler.py · Dockerfile       # harness training H100
 ├── notebooks/ · preprocessing/
-├── results/ · results_bench_hp/                # semua hasil (JSON ringkas ter-track)
-└── arsip/                                      # pivot 1–5 + jalur P6 lama
+└── results/ · results_bench/ · results_bench_hp/   # hasil ringkas (JSON, tanpa teks soal)
 ```
 
-Gitignored: `Data/`, `outputs/`, `results/**/*.jsonl`, `*.key`, berkas bank jawaban
-(`hf_space_arena/bank/`, `human_eval/bank_pertanyaan.csv` — teks Alodokter
-verbatim, aturannya sama dengan `Data/`).
+Tidak di-track (lihat `.gitignore`): `Data/`, bobot model, `results/**/*.jsonl`, jawaban model
+lengkap, data penilaian dokter, `*.key`, dan semua berkas yang memuat teks Alodokter verbatim
+(bank soal arena, `human_eval/bank_pertanyaan.csv`, daftar soal red-flag dan benchmark). Skrip
+yang membutuhkannya membuat ulang berkas itu dari dataset sumber.
 
 ---
 
-## Sisa pekerjaan, urut dampak
+## Keterbatasan
 
-1. **Penulisan naskah Jurnal RESTI** — faktor tunggal terbesar untuk diterima; revisi pembimbing
-   sedang berjalan.
-2. **Evaluasi dokter (Tier 3)** n=10–20 lewat arena, plus 400 baris anotasi red-flag. Per
-   2026-10-01 baru 15/100 pasangan dari 3 dokter, red-flag 0/60 — belum layak dilaporkan.
-3. Penilai kedua lintas-galur (butuh OpenRouter/Anthropic berbayar; Gemini tier gratis tidak
-   layak, 20 permintaan/hari).
-4. Replikasi seed untuk anomali 2B.
+Data latih 20K · hyperparameter seragam tanpa tuning per ukuran · anggaran epoch tidak sama
+antar ukuran · satu penilai LLM dan satu seed · ROUGE-L absolut masih di bawah 0,30.
 
-**Limitasi yang wajib disebut:** data latih 20K · hyperparameter seragam tanpa tuning per
-ukuran · anggaran epoch tidak sama antar ukuran · satu penilai dan satu seed · ROUGE-L absolut
-masih di bawah target 0,30.
+---
+
+## Lisensi
+
+Kode dirilis dengan lisensi [MIT](LICENSE). Lisensi ini tidak mencakup dataset sumber maupun
+bobot model; masing-masing mengikuti ketentuan sumbernya.
 
 ---
 

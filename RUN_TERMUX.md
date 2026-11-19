@@ -95,13 +95,15 @@ curl -L -o Qwen3.5-0.8B.Q4_K_M.gguf \
 
 ## 4. Ambil kode dan daftar pertanyaan
 
-Repo GitHub-nya **privat**, jadi `git clone` di HP akan meminta kredensial dan gagal
-(GitHub sudah mematikan autentikasi password). Paket kecil berisi skrip + modul `redflag/` +
-daftar pertanyaan diunggah ke repo HuggingFace publik, sehingga bisa ditarik tanpa token:
+Daftar pertanyaan benchmark berisi teks Alodokter verbatim, jadi tidak ada di repo GitHub.
+Paket kecil berisi skrip + modul `redflag/` + daftar pertanyaan ada di repo HuggingFace
+`AriesDjaenuri/p6-hasil`, yang aksesnya dibatasi; set `HF_TOKEN` berisi token baca dari
+penulis:
 
 ```bash
 mkdir -p ~/bench && cd ~/bench
-curl -L -o bench_hp.zip   https://huggingface.co/AriesDjaenuri/p6-hasil/resolve/main/tools/bench_hp.zip
+curl -L -H "Authorization: Bearer $HF_TOKEN" -o bench_hp.zip \
+  https://huggingface.co/AriesDjaenuri/p6-hasil/resolve/main/tools/bench_hp.zip
 unzip bench_hp.zip
 ```
 

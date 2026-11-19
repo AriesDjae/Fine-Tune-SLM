@@ -1,7 +1,7 @@
 """
 plot_loss_p6.py — kurva loss pelatihan ketiga model Pivot 6 (0.8B / 2B / 4B).
 
-Sumber: log_history.json tiap run di HF `AriesDjaenuri/p6-hasil` (terbaca tanpa token),
+Sumber: log_history.json tiap run di HF `AriesDjaenuri/p6-hasil` (akses dibatasi; butuh HF_TOKEN),
 disalin ke results/loss_p6/ supaya grafik bisa dibuat ulang tanpa jaringan.
 
     python results/plot_loss_p6.py                 # -> skripsi/latex/gambar/ + results/figures/

@@ -7,7 +7,7 @@ git hanya kode + catatan + hasil ringan). Arsip resminya ada di HuggingFace:
 AriesDjaenuri/p6-hasil  →  preds/<label>.preds.json
 ```
 
-Repo HF itu bisa dibaca **tanpa token**. Tarik ulang:
+Repo HF itu dibatasi aksesnya; set `HF_TOKEN` berisi token baca dari penulis, lalu tarik ulang:
 
 ```python
 from huggingface_hub import hf_hub_download
